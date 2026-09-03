@@ -1,0 +1,42 @@
+# ==============================================================================
+# AutoPublisher Pro - Git Ignore Rules
+# ==============================================================================
+
+# Credenciais e Variáveis de Ambiente
+.env
+.env.local
+*.json
+!skills.json
+!plugins.json
+!mcp_config.json
+credentials.json
+client_secret*.json
+service-account*.json
+*.pem
+*.key
+
+# Build e Compilação
+target/
+build/
+out/
+bin/
+*.class
+*.jar
+*.war
+
+# IDEs e Editores
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Maven & Gradle
+.mvn/timing.properties
+.gradle/
