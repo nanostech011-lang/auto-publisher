@@ -40,3 +40,12 @@ logs/
 # Maven & Gradle
 .mvn/timing.properties
 .gradle/
+
+# Node & Playwright
+node_modules/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+!package.json
+!package-lock.json

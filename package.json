@@ -1,0 +1,27 @@
+{
+  "name": "autopublisher",
+  "version": "1.0.0",
+  "description": "> Microsserviço backend serverless em **Java 21** e **Spring Boot 3** para automação e orquestração de postagens de vídeos em redes sociais (YouTube Shorts, Instagram Reels, TikTok), com foco em **canais automatizados/dark**, **monetização** e **custo operacional R$ 0,00**.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andreyvdecarvalho/auto-publisher.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/andreyvdecarvalho/auto-publisher/issues"
+  },
+  "homepage": "https://github.com/andreyvdecarvalho/auto-publisher#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "playwright": "^1.62.1"
+  }
+}

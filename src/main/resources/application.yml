@@ -1,0 +1,39 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: autopublisher-pro
+  threads:
+    virtual:
+      enabled: ${SPRING_THREADS_VIRTUAL_ENABLED:true}
+  main:
+    banner-mode: console
+
+autopublisher:
+  youtube:
+    client-id: ${YOUTUBE_CLIENT_ID:}
+    client-secret: ${YOUTUBE_CLIENT_SECRET:}
+    refresh-token: ${YOUTUBE_REFRESH_TOKEN:}
+    application-name: "AutoPublisher-Pro"
+  sheets:
+    spreadsheet-id: ${GOOGLE_SHEETS_SPREADSHEET_ID:}
+    tab-name: ${GOOGLE_SHEETS_TAB_NAME:Cronograma}
+  security:
+    api-key: ${AUTO_PUBLISHER_API_KEY:}
+  limits:
+    max-daily-uploads: 6
+  instagram:
+    enabled: ${INSTAGRAM_ENABLED:false}
+    business-account-id: ${INSTAGRAM_BUSINESS_ACCOUNT_ID:}
+    access-token: ${META_ACCESS_TOKEN:}
+    graph-api-version: ${META_GRAPH_API_VERSION:v20.0}
+  tiktok:
+    enabled: ${TIKTOK_ENABLED:false}
+    access-token: ${TIKTOK_ACCESS_TOKEN:}
+
+logging:
+  level:
+    root: INFO
+    com.autopublisher: ${LOGGING_LEVEL_COM_AUTOPUBLISHER:INFO}
+    org.springframework.web: INFO

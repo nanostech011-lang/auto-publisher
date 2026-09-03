@@ -6,7 +6,8 @@ Bem-vindo à documentação oficial do **AutoPublisher Pro**, um microsserviço 
 
 ## 📚 Mapa da Documentação
 
-A documentação do projeto está dividida em quatro pilares estruturais:
+### 🌐 [Manual Interativo do Usuário (HTML)](manual/index.html)
+> **[Abrir o Manual Interativo](manual/index.html)**: Guia visual completo com diagramas, exemplos práticos de preenchimento da planilha (17 colunas), passo a passo do Google Drive, configuração de credenciais OAuth 2.0 permanentes, deploy serverless e FAQ.
 
 ### 1. [Product Requirements Document (PRD v2.0)](PRD_AutoPublisher_Completo.md)
 *   **Finalidade do Produto:** Objetivos de negócio, canais de monetização e regras de SEO.

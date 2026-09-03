@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual do Usuário | AutoPublisher Pro</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            900: '#4c1d95',
+                        },
+                        dark: {
+                            bg: '#0b0f19',
+                            card: '#111827',
+                            border: '#1f2937',
+                            subtle: '#374151'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+        .gradient-text {
+            background: linear-gradient(135deg, #a78bfa 0%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .glow {
+            box-shadow: 0 0 50px -10px rgba(124, 58, 237, 0.25);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased min-h-screen flex flex-col selection:bg-purple-500 selection:text-white">
+
+    <!-- Top Navigation -->
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-slate-950/80 border-b border-slate-800/80 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                    <i class="fa-solid fa-bolt-lightning text-white text-lg"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-extrabold tracking-tight">AutoPublisher <span class="gradient-text font-black">PRO</span></span>
+                    <span class="ml-2 text-xs bg-purple-900/60 text-purple-300 px-2 py-0.5 rounded-full border border-purple-700/50 font-mono">v2.0</span>
+                </div>
+            </div>
+            
+            <nav class="hidden md:flex items-center space-x-6 text-sm font-medium text-slate-300">
+                <a href="#visao-geral" class="hover:text-purple-400 transition-colors">Visão Geral</a>
+                <a href="#planilha" class="hover:text-purple-400 transition-colors">Planilha Sheets</a>
+                <a href="#google-drive" class="hover:text-purple-400 transition-colors">Google Drive</a>
+                <a href="#credenciais" class="hover:text-purple-400 transition-colors">Credenciais</a>
+                <a href="#monetizacao" class="hover:text-purple-400 transition-colors">Monetização</a>
+                <a href="#deploy" class="hover:text-purple-400 transition-colors">Deploy R$ 0,00</a>
+                <a href="#faq" class="hover:text-purple-400 transition-colors">FAQ</a>
+            </nav>
+
+            <div class="flex items-center space-x-3">
+                <a href="#deploy" class="text-xs bg-purple-600 hover:bg-purple-500 text-white font-semibold px-4 py-2 rounded-lg transition-all shadow-md shadow-purple-600/30 flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span>Iniciar Deploy</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="max-w-7xl mx-auto px-6 py-12 flex-1 w-full grid grid-cols-1 lg:grid-cols-4 gap-10">
+
+        <!-- Sidebar Navigation (Desktop) -->
+        <aside class="hidden lg:block col-span-1">
+            <div class="sticky top-28 bg-slate-900/60 p-5 rounded-2xl border border-slate-800/80 backdrop-blur-sm space-y-2">
+                <p class="text-xs font-bold uppercase text-purple-400 tracking-wider mb-3 px-3">Sumário do Manual</p>
+                <a href="#visao-geral" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-compass w-4 text-purple-400"></i> 1. Visão Geral</a>
+                <a href="#arquitetura" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-network-wired w-4 text-purple-400"></i> 2. Arquitetura</a>
+                <a href="#planilha" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-table-cells w-4 text-purple-400"></i> 3. Google Sheets</a>
+                <a href="#google-drive" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-brands fa-google-drive w-4 text-purple-400"></i> 4. Google Drive</a>
+                <a href="#credenciais" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-key w-4 text-purple-400"></i> 5. Credenciais & OAuth</a>
+                <a href="#monetizacao" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-sack-dollar w-4 text-purple-400"></i> 6. Monetização & SEO</a>
+                <a href="#execucao-local" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-laptop-code w-4 text-purple-400"></i> 7. Execução Local</a>
+                <a href="#deploy" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-cloud-arrow-up w-4 text-purple-400"></i> 8. Deploy Cloud (R$ 0,00)</a>
+                <a href="#faq" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-circle-question w-4 text-purple-400"></i> 9. FAQ & Soluções</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="col-span-1 lg:col-span-3 space-y-16">
+
+            <!-- Hero Section -->
+            <section class="space-y-4">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-purple-950/60 text-purple-300 border border-purple-800/60">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Manual Oficial de Operação & Implantação
+                </div>
+                <h1 class="text-4xl md:text-5xl font-black tracking-tight text-white leading-tight">
+                    Domine a automação de vídeos com <span class="gradient-text">Custo R$ 0,00</span>
+                </h1>
+                <p class="text-lg text-slate-400 leading-relaxed max-w-3xl">
+                    O <strong>AutoPublisher Pro</strong> é um microsserviço serverless projetado em <strong>Java 21 LTS</strong> e <strong>Spring Boot 3</strong> para publicar conteúdos programados no <strong>YouTube (Shorts e Vídeos Longos)</strong>, <strong>Instagram Reels</strong> e <strong>TikTok</strong>, lendo sua programação diretamente do Google Sheets e seus arquivos de vídeo do Google Drive.
+                </p>
+
+                <!-- Destaques em Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+                        <div class="text-purple-400 text-xl mb-1"><i class="fa-solid fa-coins"></i></div>
+                        <div class="font-bold text-white text-base">Custo R$ 0,00/mês</div>
+                        <div class="text-xs text-slate-400 mt-1">Scale-to-Zero no Cloud Run + Cloud Scheduler na camada gratuita.</div>
+                    </div>
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+                        <div class="text-sky-400 text-xl mb-1"><i class="fa-solid fa-memory"></i></div>
+                        <div class="font-bold text-white text-base">Zero-Copy Streaming</div>
+                        <div class="text-xs text-slate-400 mt-1">Memória RAM &lt; 256MB sem carregar bytes de vídeo na heap.</div>
+                    </div>
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+                        <div class="text-emerald-400 text-xl mb-1"><i class="fa-solid fa-chart-line"></i></div>
+                        <div class="font-bold text-white text-base">Monetização Total</div>
+                        <div class="text-xs text-slate-400 mt-1">Conformidade COPPA, SEO algorítmico e Primeiro Comentário Fixado.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 1. Visão Geral -->
+            <section id="visao-geral" class="space-y-6 pt-6 border-t border-slate-800">
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 bg-purple-950 text-purple-400 rounded-lg text-sm font-bold font-mono">01</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Visão Geral do Funcionamento</h2>
+                </div>
+                <p class="text-slate-300 leading-relaxed">
+                    A operação do AutoPublisher Pro foi desenvolvida para que o criador não precise acessar painéis complexos ou codificar nada no dia a dia:
+                </p>
+                
+                <div class="bg-slate-900/70 rounded-2xl border border-slate-800 p-6 space-y-4">
+                    <ol class="relative border-l border-purple-800/40 ml-3 space-y-6">
+                        <li class="mb-2 ml-6">
+                            <span class="absolute flex items-center justify-center w-6 h-6 bg-purple-900 rounded-full -left-3 ring-4 ring-slate-950 text-purple-300 text-xs font-bold">1</span>
+                            <h3 class="font-bold text-white text-base">Criação do Conteúdo</h3>
+                            <p class="text-sm text-slate-400 mt-1">Você ou suas ferramentas de IA geram os vídeos e salvam no Google Drive.</p>
+                        </li>
+                        <li class="mb-2 ml-6">
+                            <span class="absolute flex items-center justify-center w-6 h-6 bg-purple-900 rounded-full -left-3 ring-4 ring-slate-950 text-purple-300 text-xs font-bold">2</span>
+                            <h3 class="font-bold text-white text-base">Agendamento na Planilha</h3>
+                            <p class="text-sm text-slate-400 mt-1">Preencha uma linha na aba <code class="text-purple-300 bg-purple-950/80 px-1.5 py-0.5 rounded">Cronograma</code> do Google Sheets com título, horário, plataforma e ID do vídeo.</p>
+                        </li>
+                        <li class="mb-2 ml-6">
+                            <span class="absolute flex items-center justify-center w-6 h-6 bg-purple-900 rounded-full -left-3 ring-4 ring-slate-950 text-purple-300 text-xs font-bold">3</span>
+                            <h3 class="font-bold text-white text-base">Disparo Serverless Autônomo</h3>
+                            <p class="text-sm text-slate-400 mt-1">A cada 30 minutos, o Google Cloud Scheduler acorda a aplicação no Cloud Run por alguns segundos.</p>
+                        </li>
+                        <li class="ml-6">
+                            <span class="absolute flex items-center justify-center w-6 h-6 bg-purple-900 rounded-full -left-3 ring-4 ring-slate-950 text-purple-300 text-xs font-bold">4</span>
+                            <h3 class="font-bold text-white text-base">Publicação e Rastreamento</h3>
+                            <p class="text-sm text-slate-400 mt-1">O robô faz streaming direto do vídeo para a rede social, publica miniatura e primeiro comentário, e atualiza a planilha com <span class="text-emerald-400 font-semibold">PUBLICADO</span> e a URL final.</p>
+                        </li>
+                    </ol>
+                </div>
+            </section>
+
+            <!-- 2. Arquitetura -->
+            <section id="arquitetura" class="space-y-6 pt-6 border-t border-slate-800">
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 bg-purple-950 text-purple-400 rounded-lg text-sm font-bold font-mono">02</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Arquitetura Hexagonal & Fluxo de Dados</h2>
+                </div>
+                <p class="text-slate-300 leading-relaxed">
+                    O projeto segue os princípios rigorosos de <strong>Clean Architecture (Ports & Adapters)</strong>: o núcleo de regras de agendamento e monetização é totalmente desacoplado dos provedores externos de rede.
+                </p>
+
+                <!-- Box de Arquitetura em ASCII/Diagrama -->
+                <div class="bg-slate-900/90 rounded-2xl border border-slate-800 p-5 font-mono text-xs text-slate-300 overflow-x-auto leading-relaxed">
+                    <pre class="text-purple-300">
+┌───────────────────────────┐          ┌───────────────────────────┐
+│   Google Sheets (Entrada) │          │    Google Drive (Mídia)   │
+│   Aba: "Cronograma"       │          │    Vídeos & Miniaturas    │
+└─────────────┬─────────────┘          └─────────────┬─────────────┘
+              │ Leitura cirúrgica                    │ Streaming (InputStream)
+              ▼                                      ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                   AutoPublisher Pro (Cloud Run)                  │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │ Use Case: PublishScheduledPostsService                     │  │
+│  │ - Filtra posts vencidos                                    │  │
+│  │ - Quota Guard (Trava de segurança 10k unidades YouTube)    │  │
+│  │ - Conformidade COPPA (madeForKids = false)                 │  │
+│  │ - SEO e Hashtag #Shorts / #fyp                             │  │
+│  └────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────┬────────────────────────────────┘
+                                  │ Resumable Upload
+        ┌─────────────────────────┼─────────────────────────┐
+        ▼                         ▼                         ▼
+┌───────────────┐         ┌───────────────┐         ┌───────────────┐
+│ YouTube API   │         │ Meta Graph    │         │ TikTok API    │
+│ (Shorts/Long) │         │ (Insta Reels) │         │ (Content API) │
+└───────────────┘         └───────────────┘         └───────────────┘
+                    </pre>
+                </div>
+            </section>
+
+            <!-- 3. Google Sheets -->
+            <section id="planilha" class="space-y-6 pt-6 border-t border-slate-800">
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 bg-purple-950 text-purple-400 rounded-lg text-sm font-bold font-mono">03</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Contrato de Dados da Planilha (Google Sheets)</h2>
+                </div>
+                <p class="text-slate-300 leading-relaxed">
+                    Sua planilha atua como o banco de dados e painel de controle. A aba deve se chamar <strong>estritamente <code class="text-purple-400">Cronograma</code></strong> e conter o cabeçalho na Linha 1 com as <strong>17 colunas</strong> (de A até Q):
+                </p>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-800">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900 text-slate-300 uppercase tracking-wider font-semibold border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">Coluna</th>
+                                <th class="p-3">Nome do Campo</th>
+                                <th class="p-3">Tipo / Formato</th>
+                                <th class="p-3">Exemplo</th>
+                                <th class="p-3">Descrição / Regra</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/60 text-slate-300 font-mono">
+                            <tr class="hover:bg-slate-900/40">
+                                <td class="p-3 font-bold text-purple-400">A</td>
+                                <td class="p-3 font-semibold text-white">ID</td>
+                                <td class="p-3">String</td>
+                                <td class="p-3 text-slate-400">POST-001</td>
+                                <td class="p-3 font-sans">Identificador único do agendamento.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40">
+                                <td class="p-3 font-bold text-purple-400">B</td>
+                                <td class="p-3 font-semibold text-white">Data_Agendamento</td>
+                                <td class="p-3">Data/Hora</td>
+                                <td class="p-3 text-slate-400">2026-09-03 15:30:00</td>
+                                <td class="p-3 font-sans">Horário planejado para ir ao ar (UTC ou BRT).</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40">
+                                <td class="p-3 font-bold text-purple-400">C</td>
+                                <td class="p-3 font-semibold text-white">Plataforma</td>
+                                <td class="p-3">Enum</td>
+                                <td class="p-3 text-emerald-400">YOUTUBE_SHORTS</td>
+                                <td class="p-3 font-sans">YOUTUBE_SHORTS, YOUTUBE_VIDEO, INSTAGRAM_REELS ou TIKTOK.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40">
+                                <td class="p-3 font-bold text-purple-400">D</td>
+                                <td class="p-3 font-semibold text-white">Drive_Video_ID</td>
+                                <td class="p-3">String</td>
+                                <td class="p-3 text-slate-400">1a2B3c4D_drive_id</td>
+                                <td class="p-3 font-sans">ID do arquivo MP4 salvo no seu Google Drive.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40">
+                                <td class="p-3 font-bold text-purple-400">E</td>
+                                <td class="p-3 font-semibold text-white">Drive_Thumbnail_ID</td>
+                                <td class="p-3">String (Opcional)</td>
+                                <td class="p-3 text-slate-400">1xY_thumb_id</td>
+                                <td class="p-3 font-sans">ID da imagem (JPG/PNG). Se vazio, usa thumbnail automática.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40">
+                                <td class="p-3 font-bold text-purple-400">F</td>
+                                <td class="p-3 font-semibold text-white">Titulo</td>
+                                <td class="p-3">String (máx 100)</td>
+                                <td class="p-3 text-slate-400">Como Criar Renda Passiva</td>
+                                <td class="p-3 font-sans">Título do vídeo. #Shorts é injetado automaticamente se faltar.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40">
+                                <td class="p-3 font-bold text-purple-400">G</td>
+                                <td class="p-3 font-semibold text-white">Descricao</td>
+                                <td class="p-3">Texto longo</td>
+                                <td class="p-3 text-slate-400">Acesse o link: https://...</td>
+                                <td class="p-3 font-sans">Descrição com links de afiliados, hashtags e parâmetros UTM.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40">
+                                <td class="p-3 font-bold text-purple-400">H</td>
+                                <td class="p-3 font-semibold text-white">Tags</td>
+                                <td class="p-3">Lista</td>
+                                <td class="p-3 text-slate-400">financas, investimentos</td>
+                                <td class="p-3 font-sans">Tags separadas por vírgula para ranqueamento SEO.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40">
+                                <td class="p-3 font-bold text-purple-400">I</td>
+                                <td class="p-3 font-semibold text-white">Categoria_ID</td>
+                                <td class="p-3">Numérico</td>
+                                <td class="p-3 text-slate-400">24</td>
+                                <td class="p-3 font-sans">ID numérico do YouTube (24: Entretenimento, 28: Ciência/Tecnologia).</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40">
+                                <td class="p-3 font-bold text-purple-400">J</td>
+                                <td class="p-3 font-semibold text-white">Made_For_Kids</td>
+                                <td class="p-3">Boolean</td>
+                                <td class="p-3 text-rose-400">FALSE</td>
+                                <td class="p-3 font-sans"><strong>Mandatório FALSE</strong> para canais monetizados com anúncios.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40">
+                                <td class="p-3 font-bold text-purple-400">K</td>
+                                <td class="p-3 font-semibold text-white">Privacidade</td>
+                                <td class="p-3">Enum</td>
+                                <td class="p-3 text-slate-400">PUBLIC</td>
+                                <td class="p-3 font-sans">PUBLIC, PRIVATE ou UNLISTED.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40">
+                                <td class="p-3 font-bold text-purple-400">L</td>
+                                <td class="p-3 font-semibold text-white">Status</td>
+                                <td class="p-3">Status</td>
+                                <td class="p-3 text-amber-400">PENDENTE</td>
+                                <td class="p-3 font-sans">Você coloca PENDENTE. O robô altera para PROCESSANDO e PUBLICADO.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40">
+                                <td class="p-3 font-bold text-purple-400">M</td>
+                                <td class="p-3 font-semibold text-white">URL_Publicada</td>
+                                <td class="p-3">Link</td>
+                                <td class="p-3 text-sky-400">https://youtube.com/shorts/...</td>
+                                <td class="p-3 font-sans">Preenchido automaticamente pelo sistema após o upload.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40">
+                                <td class="p-3 font-bold text-purple-400">N</td>
+                                <td class="p-3 font-semibold text-white">Data_Publicacao</td>
+                                <td class="p-3">Timestamp</td>
+                                <td class="p-3 text-slate-400">2026-09-03 15:31:12</td>
+                                <td class="p-3 font-sans">Timestamp exato em que a publicação foi confirmada.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40">
+                                <td class="p-3 font-bold text-purple-400">O</td>
+                                <td class="p-3 font-semibold text-white">Log_Erro</td>
+                                <td class="p-3">Texto</td>
+                                <td class="p-3 text-slate-400">Publicado com sucesso!</td>
+                                <td class="p-3 font-sans">Mensagem de sucesso ou descrição da falha para diagnóstico.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40">
+                                <td class="p-3 font-bold text-purple-400">P</td>
+                                <td class="p-3 font-semibold text-white">Tentativas</td>
+                                <td class="p-3">Numérico</td>
+                                <td class="p-3 text-slate-400">0</td>
+                                <td class="p-3 font-sans">Contador de retentativas automáticas (0 a 3).</td>
+                            </tr>
+                            <tr class="hover:bg-slate-900/40 bg-purple-950/20">
+                                <td class="p-3 font-bold text-purple-400">Q</td>
+                                <td class="p-3 font-semibold text-white">Primeiro_Comentario</td>
+                                <td class="p-3">Texto (Opcional)</td>
+                                <td class="p-3 text-yellow-300">🔥 Cupom 50% OFF no link...</td>
+                                <td class="p-3 font-sans">Comentário fixado de alta conversão para afiliados publicado após o vídeo!</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Estados da Máquina de Status -->
+                <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-3">
+                    <h4 class="font-bold text-white text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-arrows-rotate text-purple-400"></i> Ciclo de Vida do Campo "Status"
+                    </h4>
+                    <div class="flex flex-wrap gap-2 text-xs">
+                        <span class="px-2.5 py-1 rounded-md bg-amber-950/60 text-amber-300 border border-amber-800/60 font-mono">PENDENTE</span>
+                        <span class="text-slate-500 self-center">➔</span>
+                        <span class="px-2.5 py-1 rounded-md bg-sky-950/60 text-sky-300 border border-sky-800/60 font-mono">PROCESSANDO</span>
+                        <span class="text-slate-500 self-center">➔</span>
+                        <span class="px-2.5 py-1 rounded-md bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 font-mono">PUBLICADO</span>
+                    </div>
+                    <p class="text-xs text-slate-400">
+                        Em caso de instabilidade transitória de rede, o status muda para <span class="text-orange-400 font-mono">ERRO_TEMPORARIO</span> e incrementa o contador. Se a cota diária do YouTube acabar, o status muda para <span class="text-rose-400 font-mono">COTA_ESGOTADA</span> e o robô interrompe as chamadas imediatamente para não queimar requisições.
+                    </p>
+                </div>
+            </section>
+
+            <!-- 4. Google Drive -->
+            <section id="google-drive" class="space-y-6 pt-6 border-t border-slate-800">
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 bg-purple-950 text-purple-400 rounded-lg text-sm font-bold font-mono">04</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Como Armazenar e Obter o ID no Google Drive</h2>
+                </div>
+                <div class="space-y-4 text-slate-300 leading-relaxed text-sm">
+                    <p>O AutoPublisher Pro baixa os arquivos diretamente do seu Google Drive via streaming, sem que você precise subir arquivos manualmente em servidores.</p>
+                    
+                    <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-3">
+                        <h4 class="font-bold text-white text-base">Passo a Passo para obter o ID do Vídeo:</h4>
+                        <ol class="list-decimal list-inside space-y-2 text-slate-300">
+                            <li>Abra o <strong>Google Drive</strong> e clique com o botão direito no arquivo de vídeo MP4.</li>
+                            <li>Selecione <strong>Compartilhar ➔ Copiar link</strong>.</li>
+                            <li>O link copiado terá o formato:
+                                <div class="bg-slate-950 p-2.5 rounded-lg font-mono text-xs text-purple-300 my-2 overflow-x-auto">
+                                    https://drive.google.com/file/d/<span class="text-emerald-400 font-bold underline">1a2B3c4D5e6F7g8H9i0J</span>/view?usp=sharing
+                                </div>
+                            </li>
+                            <li>Copie apenas o trecho destacado entre <code class="text-purple-300">/d/</code> e <code class="text-purple-300">/view</code>: esse é o seu <strong>Drive_Video_ID</strong> (ex: <code class="text-emerald-400">1a2B3c4D5e6F7g8H9i0J</code>).</li>
+                            <li>Cole esse código na coluna <code class="text-purple-400 font-bold">D</code> da sua planilha.</li>
+                        </ol>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-amber-950/30 border border-amber-800/40 text-amber-200 text-xs flex gap-3 items-start">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-400 text-base mt-0.5"></i>
+                        <div>
+                            <strong>Permissão de Acesso:</strong> Certifique-se de que o arquivo ou pasta no Drive esteja com acesso liberado para "Qualquer pessoa com o link" (Leitor) ou compartilhado com o e-mail da sua conta de serviço/OAuth do Google Cloud.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. Credenciais -->
+            <section id="credenciais" class="space-y-6 pt-6 border-t border-slate-800">
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 bg-purple-950 text-purple-400 rounded-lg text-sm font-bold font-mono">05</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Configuração de Credenciais (.env)</h2>
+                </div>
+                <p class="text-slate-300 leading-relaxed text-sm">
+                    Todas as credenciais são mantidas exclusivamente no arquivo <code class="text-purple-300">.env</code> na raiz do projeto (protegido pelo <code class="text-slate-400">.gitignore</code>) ou injetadas no Cloud Run via variáveis de ambiente.
+                </p>
+
+                <div class="bg-slate-900 rounded-xl border border-slate-800 p-5 space-y-3 font-mono text-xs text-slate-300 overflow-x-auto">
+                    <p class="text-slate-500 font-sans text-xs mb-2">Exemplo do arquivo .env configurado:</p>
+                    <pre class="text-emerald-300">
+# ==============================================================================
+# AutoPublisher Pro - Variaveis de Ambiente
+# ==============================================================================
+
+# Seguranca do Gatilho HTTP
+AUTO_PUBLISHER_API_KEY=sua-chave-ultra-secreta-de-disparo-12345
+
+# Google Sheets
+GOOGLE_SHEETS_SPREADSHEET_ID=1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms
+GOOGLE_SHEETS_TAB_NAME=Cronograma
+
+# YouTube Data API v3 (OAuth 2.0 Headless)
+YOUTUBE_CLIENT_ID=seu-client-id.apps.googleusercontent.com
+YOUTUBE_CLIENT_SECRET=GOCSPX-seu-client-secret
+YOUTUBE_REFRESH_TOKEN=1//04seu-refresh-token-permanente
+
+# Meta Graph API (Instagram Reels - Opcional)
+INSTAGRAM_ENABLED=true
+INSTAGRAM_BUSINESS_ACCOUNT_ID=17841400000000000
+META_ACCESS_TOKEN=EAA...seu-long-lived-token
+META_GRAPH_API_VERSION=v20.0
+
+# TikTok Content Posting API (Opcional)
+TIKTOK_ENABLED=true
+TIKTOK_ACCESS_TOKEN=act.seu-token-tiktok
+                    </pre>
+                </div>
+
+                <!-- Alerta Anti-Expiração 7 Dias -->
+                <div class="p-4 rounded-xl bg-purple-950/40 border border-purple-800/60 text-purple-200 text-xs flex gap-3 items-start">
+                    <i class="fa-solid fa-shield-halved text-purple-400 text-lg mt-0.5"></i>
+                    <div class="space-y-1">
+                        <strong class="text-white text-sm">Regra de Ouro: Como evitar que o Refresh Token expire em 7 dias?</strong>
+                        <p class="text-slate-300 leading-relaxed">
+                            No Google Cloud Console, na tela de consentimento OAuth (<a href="https://console.cloud.google.com/apis/credentials/consent" target="_blank" class="text-purple-400 underline">OAuth Consent Screen</a>), se o status do app estiver como <span class="text-amber-400 font-bold">Testing</span>, o Google expira o refresh token a cada 7 dias. Para torná-lo <strong>permanente</strong>, clique no botão <span class="text-emerald-400 font-bold">Publish App</span> (Publicar aplicativo) para o status <span class="text-emerald-400 font-bold">In Production</span>. Como é para seu próprio canal, não é necessária a verificação pública da Google!
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. Monetização & SEO -->
+            <section id="monetizacao" class="space-y-6 pt-6 border-t border-slate-800">
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 bg-purple-950 text-purple-400 rounded-lg text-sm font-bold font-mono">06</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Regras de Ouro da Monetização & Algoritmo</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-2">
+                        <div class="text-emerald-400 font-bold flex items-center gap-2">
+                            <i class="fa-solid fa-check-double"></i> COPPA: selfDeclaredMadeForKids = false
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Vídeos marcados como conteúdo infantil perdem anúncios personalizados, desativam os comentários e reduzem a receita em mais de 70%. O sistema força essa declaração para liberar 100% dos formatos de monetização.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-2">
+                        <div class="text-purple-400 font-bold flex items-center gap-2">
+                            <i class="fa-solid fa-comment-dots"></i> Primeiro Comentário Fixado (Coluna Q)
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            O primeiro comentário do criador tem taxa de clique (CTR) <strong>até 3x superior</strong> à descrição tradicional. Preencha a coluna Q com seu link de afiliado, cupons e UTMs para maximizar as vendas do canal.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-2">
+                        <div class="text-sky-400 font-bold flex items-center gap-2">
+                            <i class="fa-solid fa-hashtag"></i> SEO Algorítmico #Shorts
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            Para a plataforma <code class="text-sky-300">YOUTUBE_SHORTS</code>, o AutoPublisher Pro verifica e injeta a hashtag <code class="text-sky-300">#Shorts</code> automaticamente no título para entrega imediata no feed vertical do YouTube.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-2">
+                        <div class="text-amber-400 font-bold flex items-center gap-2">
+                            <i class="fa-solid fa-shield-cat"></i> Quota Guard (Trava de Segurança)
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            A cota gratuita diária do YouTube é de 10.000 unidades. Cada upload consome 1.650 unidades. O sistema limita preventivamente a 6 vídeos diários (9.900 unidades) para nunca exceder o limite nem gerar cobranças.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. Execução Local -->
+            <section id="execucao-local" class="space-y-6 pt-6 border-t border-slate-800">
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 bg-purple-950 text-purple-400 rounded-lg text-sm font-bold font-mono">07</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Execução Local & Testes Automatizados</h2>
+                </div>
+
+                <div class="space-y-4 text-xs font-mono">
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
+                        <p class="text-slate-400 font-sans">1. Executar a suíte de 32 testes unitários com JaCoCo:</p>
+                        <div class="bg-slate-950 p-2.5 rounded-lg text-purple-300 select-all">./mvnw clean test</div>
+                    </div>
+
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
+                        <p class="text-slate-400 font-sans">2. Iniciar a aplicação localmente na porta 8080:</p>
+                        <div class="bg-slate-950 p-2.5 rounded-lg text-purple-300 select-all">./mvnw spring-boot:run</div>
+                    </div>
+
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
+                        <p class="text-slate-400 font-sans">3. Disparar manualmente a publicação de posts pendentes:</p>
+                        <div class="bg-slate-950 p-2.5 rounded-lg text-purple-300 select-all">curl -X POST http://localhost:8080/api/v1/publisher/run -H "X-API-KEY: sua-chave-configurada"</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 8. Deploy Cloud Run -->
+            <section id="deploy" class="space-y-6 pt-6 border-t border-slate-800">
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 bg-purple-950 text-purple-400 rounded-lg text-sm font-bold font-mono">08</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Deploy Serverless no Google Cloud (Custo R$ 0,00)</h2>
+                </div>
+                <p class="text-slate-300 leading-relaxed text-sm">
+                    Para colocar em produção sem gastar nada, criamos scripts prontos que configuram o <strong>Cloud Run</strong> com escala para zero e o <strong>Cloud Scheduler</strong> para acionamento a cada 30 minutos:
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+                    <!-- Windows PowerShell -->
+                    <div class="bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-3">
+                        <div class="flex items-center gap-2 text-sky-400 font-bold font-sans">
+                            <i class="fa-brands fa-windows"></i> Windows (PowerShell)
+                        </div>
+                        <p class="text-slate-400 font-sans">Passo 1: Deploy no Cloud Run:</p>
+                        <div class="bg-slate-950 p-2 rounded text-slate-300 select-all">.\scripts\deploy-cloudrun.ps1 -ProjectId "seu-projeto-gcp"</div>
+                        
+                        <p class="text-slate-400 font-sans">Passo 2: Configurar Cloud Scheduler:</p>
+                        <div class="bg-slate-950 p-2 rounded text-slate-300 select-all">.\scripts\setup-scheduler.ps1 -ServiceUrl "https://sua-url.a.run.app"</div>
+                    </div>
+
+                    <!-- Linux / Cloud Shell -->
+                    <div class="bg-slate-900 p-5 rounded-xl border border-slate-800 space-y-3">
+                        <div class="flex items-center gap-2 text-emerald-400 font-bold font-sans">
+                            <i class="fa-brands fa-linux"></i> Linux / Mac / Cloud Shell
+                        </div>
+                        <p class="text-slate-400 font-sans">Passo 1: Deploy no Cloud Run:</p>
+                        <div class="bg-slate-950 p-2 rounded text-slate-300 select-all">./scripts/deploy-cloudrun.sh "seu-projeto-gcp"</div>
+                        
+                        <p class="text-slate-400 font-sans">Passo 2: Configurar Cloud Scheduler:</p>
+                        <div class="bg-slate-950 p-2 rounded text-slate-300 select-all">./scripts/setup-scheduler.sh "https://sua-url.a.run.app"</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 9. FAQ & Troubleshooting -->
+            <section id="faq" class="space-y-6 pt-6 border-t border-slate-800">
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 bg-purple-950 text-purple-400 rounded-lg text-sm font-bold font-mono">09</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Solução de Problemas (FAQ)</h2>
+                </div>
+
+                <div class="space-y-4">
+                    <details class="group bg-slate-900/60 rounded-xl border border-slate-800 p-4 [&_summary::-webkit-details-marker]:hidden">
+                        <summary class="flex items-center justify-between cursor-pointer font-semibold text-white text-sm">
+                            <span>Como reprocessar um vídeo que deu status ERRO_TEMPORARIO?</span>
+                            <span class="transition group-open:rotate-180"><i class="fa-solid fa-chevron-down text-purple-400"></i></span>
+                        </summary>
+                        <p class="mt-3 text-xs text-slate-400 leading-relaxed border-t border-slate-800 pt-3">
+                            Basta alterar a célula da coluna L de volta para <code class="text-amber-300 font-bold">PENDENTE</code> e zerar a coluna P (<code class="text-slate-300">Tentativas = 0</code>). No próximo ciclo de 30 minutos, o robô tentará publicar novamente.
+                        </p>
+                    </details>
+
+                    <details class="group bg-slate-900/60 rounded-xl border border-slate-800 p-4 [&_summary::-webkit-details-marker]:hidden">
+                        <summary class="flex items-center justify-between cursor-pointer font-semibold text-white text-sm">
+                            <span>Apareceu o status COTA_ESGOTADA na planilha. O que fazer?</span>
+                            <summary class="flex items-center justify-between cursor-pointer font-semibold text-white text-sm">
+                        </summary>
+                        <p class="mt-3 text-xs text-slate-400 leading-relaxed border-t border-slate-800 pt-3">
+                            A cota diária gratuita do YouTube de 10.000 unidades foi atingida no dia. O Google reseta a cota automaticamente todas as noites às 04:00 BRT (horário de Brasília). Não é necessário fazer nada: as postagens pendentes continuarão sendo enviadas no dia seguinte!
+                        </p>
+                    </details>
+
+                    <details class="group bg-slate-900/60 rounded-xl border border-slate-800 p-4 [&_summary::-webkit-details-marker]:hidden">
+                        <summary class="flex items-center justify-between cursor-pointer font-semibold text-white text-sm">
+                            <span>O robô retornou erro 401 Unauthorized no YouTube. Como resolver?</span>
+                        </summary>
+                        <p class="mt-3 text-xs text-slate-400 leading-relaxed border-t border-slate-800 pt-3">
+                            Isso ocorre se você tentou usar uma Conta de Serviço (Service Account) para o YouTube em vez de OAuth 2.0 User Consent, ou se o app estava em status "Testing" e o refresh token expirou após 7 dias. Publique o app como "In Production" no Google Cloud Console e gere um novo refresh token permanente offline.
+                        </p>
+                    </details>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 bg-slate-950 py-8 px-6 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>© 2026 AutoPublisher Pro. Desenvolvido para canais automatizados, alta monetização e Custo R$ 0,00.</p>
+            <div class="flex gap-4">
+                <a href="../README.md" class="hover:text-purple-400 transition-colors">Documentação Central</a>
+                <a href="../DoD.md" class="hover:text-purple-400 transition-colors">Definition of Done</a>
+                <a href="../backlog/README.md" class="hover:text-purple-400 transition-colors">Backlog</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
