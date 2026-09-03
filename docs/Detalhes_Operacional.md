@@ -52,3 +52,20 @@ Com o custo de infraestrutura travado em **R$ 0,00**, todo e qualquer faturament
 1. **Evitar o "Spam Flag":** Não agende mais de 6 vídeos simultaneamente no mesmo minuto. Distribua os horários (ex: 08:00, 12:00, 15:00, 18:00, 20:30) para maximizar a retenção do algoritmo.
 2. **Processamento Prévio (Content ID):** Ao usar `UNLISTED` com conversão para público ou `publishAt`, o YouTube analisa previamente reivindicações de direitos autorais de trilhas sonoras antes do tráfego orgânico entrar, prevenindo perdas de monetização.
 3. **Renovação Segura do Refresh Token:** Para evitar que o token de atualização expire a cada 7 dias em modo de teste, a tela de consentimento do Google Cloud Console deve ser colocada no status **"Em Produção"** (com tipo de usuário Externo, sem necessidade de verificação completa do Google caso apenas o proprietário utilize a aplicação).
+
+---
+
+## 4. Estratégia de Distribuição e Acesso Multi-Usuário
+
+Ao disponibilizar o projeto para outras pessoas (clientes, parceiros, alunos ou criadores), a estratégia adotada segue as seguintes diretrizes:
+
+### 4.1. Modelo Self-Hosted / Instância Própria (Recomendado)
+* **Como funciona:** Você entrega o projeto pronto para a pessoa subir a automação na conta dela do Google Cloud.
+* **Segurança e Chaves:** **Sim! Cada um terá a sua própria chave (`AUTO_PUBLISHER_API_KEY`) no seu próprio servidor.** A chave de um usuário não acessa o servidor nem a planilha do outro.
+* **Cotas 100% Individuais:** Cada usuário conta com suas próprias **10.000 unidades diárias da YouTube Data API v3** (até 6 vídeos/dia) sem concorrência ou divisão de cota.
+* **Custo R$ 0,00 Mantido:** Cada usuário consome a camada gratuita (*Always Free*) da sua própria conta do Google Cloud, sem custos de servidor para o mantenedor do projeto.
+
+### 4.2. Modelo SaaS Centralizado (Multi-Tenant)
+* **Como funciona:** Todas as pessoas utilizam a sua mesma URL central do Cloud Run.
+* **Requisitos de Evolução:** Podemos implementar o suporte **Multi-Tenant com banco de dados** (ex: PostgreSQL / Supabase / Firebase) para que você possa cadastrar clientes e gerar chaves individuais (`user_api_key`) por usuário, vinculando cada chave à respectiva planilha e canal social.
+* **Atenção à Cota:** Nesse formato compartilhado, a cota de 10.000 unidades do YouTube precisará ser gerida via OAuth individual por cliente ou solicitação de ampliação de cota junto ao Google.
