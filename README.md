@@ -27,6 +27,7 @@ Toda a documentação técnica, decisões de engenharia e regras operacionais es
   * [ADR 0003: Streaming Zero-Copy de Mídia via InputStream e Chunks](docs/adr/0003-streaming-zero-copy-inputstream-otimizacao-memoria.md)
   * [ADR 0004: Arquitetura Hexagonal (Ports and Adapters)](docs/adr/0004-arquitetura-hexagonal-ports-and-adapters.md)
   * [ADR 0005: Google Sheets como Banco de Dados e Painel Operacional](docs/adr/0005-google-sheets-como-banco-de-dados-e-painel-operacional.md)
+* 📊 [**Product Backlog (Épicos e Histórias)**](docs/backlog/README.md): 6 Épicos detalhados com histórias de usuário no padrão ágil e critérios de aceitação.
 
 ---
 

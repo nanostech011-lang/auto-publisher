@@ -31,6 +31,15 @@ Histórico e justificativa das decisões técnicas e de design do sistema:
 *   [**ADR 0004:** Adoção de Arquitetura Hexagonal (Ports and Adapters)](adr/0004-arquitetura-hexagonal-ports-and-adapters.md)
 *   [**ADR 0005:** Google Sheets como Banco de Dados Operacional e Interface do Usuário](adr/0005-google-sheets-como-banco-de-dados-e-painel-operacional.md)
 
+### 5. [Product Backlog (Épicos e Histórias)](backlog/README.md)
+Gestão ágil de demandas dividida em 6 épicos detalhados com critérios de aceitação:
+*   [**Épico 01:** Infraestrutura, Setup e Segurança](backlog/epico-01-infraestrutura-e-setup.md)
+*   [**Épico 02:** Núcleo de Domínio e Arquitetura Hexagonal](backlog/epico-02-dominio-e-portas.md)
+*   [**Épico 03:** Adaptadores de Integração e Streaming Zero-Copy](backlog/epico-03-adaptadores-e-streaming.md)
+*   [**Épico 04:** Orquestração, Monetização e Quota Guard](backlog/epico-04-orquestracao-e-monetizacao.md)
+*   [**Épico 05:** Gatilho Serverless e Deploy em Produção (Cloud Run + Scheduler)](backlog/epico-05-trigger-serverless-e-deploy.md)
+*   [**Épico 06:** Expansão Multiplataforma (Instagram Reels e TikTok)](backlog/epico-06-expansao-multiplataforma.md)
+
 ---
 
 ## 🚀 Fluxo Operacional Rápido
