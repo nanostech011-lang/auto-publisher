@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full bg-slate-950 text-slate-100 antialiased">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | AutoPublisher Pro</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        code, pre { font-family: 'JetBrains Mono', monospace; }
+        .gradient-text {
+            background: linear-gradient(135deg, #a78bfa 0%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="min-h-full flex flex-col bg-slate-950 selection:bg-purple-600 selection:text-white">
+
+    <!-- Top Navigation Bar -->
+    <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40 px-6 py-3.5">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <!-- Brand -->
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-600/30">
+                    <i class="fa-solid fa-bolt-lightning text-white text-base"></i>
+                </div>
+                <div>
+                    <span class="text-lg font-black tracking-tight text-white">AutoPublisher <span class="gradient-text">PRO</span></span>
+                    <span class="ml-2 text-[10px] bg-purple-900/60 text-purple-300 px-2 py-0.5 rounded-full border border-purple-700/50 font-mono">Painel de Controle</span>
+                </div>
+            </div>
+
+            <!-- Actions Right -->
+            <div class="flex items-center gap-3">
+                <!-- API Key Config Button -->
+                <button onclick="openApiKeyModal()" id="apiKeyBadge" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-key text-purple-400"></i>
+                    <span id="apiKeyStatusText">Configurar API Key</span>
+                </button>
+
+                <!-- Documentation Link -->
+                <a href="/docs/manual/index.html" target="_blank" class="text-xs text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
+                    <i class="fa-solid fa-book-open"></i>
+                    <span class="hidden sm:inline">Manual</span>
+                </a>
+
+                <!-- Trigger Run Button -->
+                <button onclick="triggerManualRun()" id="btnRunNow" class="text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md shadow-emerald-600/20 transition-all active:scale-95">
+                    <i class="fa-solid fa-play"></i>
+                    <span>Publicar Agora</span>
+                </button>
+
+                <!-- New Schedule Button -->
+                <button onclick="openCreateModal()" class="text-xs font-semibold bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md shadow-purple-600/20 transition-all active:scale-95">
+                    <i class="fa-solid fa-plus"></i>
+                    <span class="hidden sm:inline">Novo Agendamento</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-6 py-8 flex-1 w-full space-y-8">
+
+        <!-- KPI Cards Grid -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <!-- Total Posts -->
+            <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-800/80 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Agendado</span>
+                    <span class="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 flex items-center justify-center text-sm"><i class="fa-solid fa-calendar-days"></i></span>
+                </div>
+                <div class="mt-4">
+                    <div class="text-3xl font-black text-white" id="kpiTotal">--</div>
+                    <p class="text-xs text-slate-400 mt-1">Postagens na planilha</p>
+                </div>
+            </div>
+
+            <!-- Pending Posts -->
+            <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-800/80 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pendentes</span>
+                    <span class="w-8 h-8 rounded-lg bg-amber-950/60 text-amber-400 flex items-center justify-center text-sm"><i class="fa-solid fa-clock"></i></span>
+                </div>
+                <div class="mt-4">
+                    <div class="text-3xl font-black text-amber-400" id="kpiPending">--</div>
+                    <p class="text-xs text-slate-400 mt-1">Aguardando horário de disparo</p>
+                </div>
+            </div>
+
+            <!-- Published Posts -->
+            <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-800/80 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Publicados</span>
+                    <span class="w-8 h-8 rounded-lg bg-emerald-950/60 text-emerald-400 flex items-center justify-center text-sm"><i class="fa-solid fa-circle-check"></i></span>
+                </div>
+                <div class="mt-4">
+                    <div class="text-3xl font-black text-emerald-400" id="kpiPublished">--</div>
+                    <p class="text-xs text-slate-400 mt-1">Enviados com sucesso</p>
+                </div>
+            </div>
+
+            <!-- YouTube Quota Card -->
+            <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-800/80 flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Quota Guard (YouTube)</span>
+                    <span class="w-8 h-8 rounded-lg bg-rose-950/60 text-rose-400 flex items-center justify-center text-sm"><i class="fa-brands fa-youtube"></i></span>
+                </div>
+                <div class="mt-2">
+                    <div class="flex items-baseline justify-between">
+                        <span class="text-2xl font-black text-white" id="kpiQuotaVideos">0/6</span>
+                        <span class="text-xs text-slate-400 font-mono" id="kpiQuotaUnits">0 / 10.000 un</span>
+                    </div>
+                    <!-- Barra de Progresso -->
+                    <div class="w-full bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
+                        <div id="kpiQuotaBar" class="bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1 flex items-center justify-between">
+                        <span>Cota diária gratuita</span>
+                        <span id="kpiQuotaPercent" class="font-bold text-slate-300">0%</span>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Schedule Table Section -->
+        <section class="bg-slate-900/60 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+            <!-- Table Header Toolbar -->
+            <div class="p-5 border-b border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-table-list text-purple-400"></i>
+                        <span>Cronograma de Publicações</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Aba <span class="font-mono text-purple-300">Cronograma</span> sincronizada em tempo real</p>
+                </div>
+
+                <!-- Filters & Search -->
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Search Input -->
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                        <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Buscar por título ou ID..." class="bg-slate-950 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-purple-500 w-48 sm:w-60">
+                    </div>
+
+                    <!-- Platform Filter -->
+                    <select id="platformFilter" onchange="applyFilters()" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-purple-500">
+                        <option value="ALL">Todas as Redes</option>
+                        <option value="YOUTUBE_SHORTS">YouTube Shorts</option>
+                        <option value="YOUTUBE_VIDEO">YouTube Vídeo</option>
+                        <option value="INSTAGRAM_REELS">Instagram Reels</option>
+                        <option value="TIKTOK">TikTok</option>
+                    </select>
+
+                    <!-- Status Filter -->
+                    <select id="statusFilter" onchange="applyFilters()" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-purple-500">
+                        <option value="ALL">Todos os Status</option>
+                        <option value="PENDENTE">Pendente</option>
+                        <option value="PUBLICADO">Publicado</option>
+                        <option value="PROCESSANDO">Processando</option>
+                        <option value="ERRO_TEMPORARIO">Erro Temporário</option>
+                        <option value="COTA_ESGOTADA">Cota Esgotada</option>
+                    </select>
+
+                    <!-- Reload Button -->
+                    <button onclick="loadDashboardData()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition-colors" title="Atualizar dados">
+                        <i class="fa-solid fa-arrows-rotate" id="refreshIcon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-950/60 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                        <tr>
+                            <th class="p-3.5 pl-5">ID / Agendamento</th>
+                            <th class="p-3.5">Plataforma</th>
+                            <th class="p-3.5">Título & Conteúdo</th>
+                            <th class="p-3.5">Primeiro Comentário</th>
+                            <th class="p-3.5">Status</th>
+                            <th class="p-3.5 pr-5 text-right">Resultado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="postsTableBody" class="divide-y divide-slate-800/60 text-slate-300">
+                        <!-- Linhas geradas via JavaScript -->
+                        <tr>
+                            <td colspan="6" class="p-8 text-center text-slate-500">
+                                <i class="fa-solid fa-spinner fa-spin text-lg text-purple-400 mb-2"></i>
+                                <p>Carregando agendamentos do Google Sheets...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal: Novo Agendamento -->
+    <div id="modalCreate" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl overflow-y-auto max-h-[90vh]">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-circle-plus text-purple-400"></i>
+                    <span>Agendar Nova Postagem</span>
+                </h3>
+                <button onclick="closeCreateModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form id="formCreatePost" onsubmit="submitCreatePost(event)" class="space-y-4 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- ID -->
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">ID do Post</label>
+                        <input type="text" id="postCustomId" placeholder="Ex: POST-001 (ou deixe em branco)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
+                    </div>
+
+                    <!-- Horário Agendamento -->
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Data e Hora de Envio *</label>
+                        <input type="datetime-local" id="postScheduledTime" required class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-purple-500">
+                    </div>
+                </div>
+
+                <!-- Plataforma -->
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Plataforma Social *</label>
+                    <select id="postPlatform" required class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-purple-500">
+                        <option value="YOUTUBE_SHORTS">YouTube Shorts (Vertical 9:16)</option>
+                        <option value="YOUTUBE_VIDEO">YouTube Vídeo (Padrão 16:9)</option>
+                        <option value="INSTAGRAM_REELS">Instagram Reels</option>
+                        <option value="TIKTOK">TikTok</option>
+                    </select>
+                </div>
+
+                <!-- Título -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="font-semibold text-slate-300">Título do Vídeo *</label>
+                        <span id="titleCounter" class="text-[10px] text-slate-500 font-mono">0/100</span>
+                    </div>
+                    <input type="text" id="postTitle" maxlength="100" required oninput="updateTitleCounter()" placeholder="Título atraente para o algoritmo..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-purple-500">
+                </div>
+
+                <!-- Google Drive IDs -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Link ou ID do Vídeo (Google Drive) *</label>
+                        <input type="text" id="postVideoDriveId" required placeholder="Cole o link ou ID do arquivo..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Link ou ID da Miniatura (Opcional)</label>
+                        <input type="text" id="postThumbDriveId" placeholder="Cole o link ou ID da imagem..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
+                    </div>
+                </div>
+
+                <!-- Descrição -->
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Descrição & Links de Afiliados</label>
+                    <textarea id="postDescription" rows="3" placeholder="Descrição completa, links UTM de afiliados e hashtags..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-purple-500"></textarea>
+                </div>
+
+                <!-- Primeiro Comentário (US-06.3) -->
+                <div>
+                    <label class="block font-semibold text-purple-300 mb-1 flex items-center gap-1.5">
+                        <i class="fa-solid fa-comment-dots"></i>
+                        <span>Primeiro Comentário Fixado (Monetização / Afiliados)</span>
+                    </label>
+                    <input type="text" id="postFirstComment" placeholder="🔥 Cupom 50% OFF: https://afiliado.com/promo..." class="w-full bg-slate-950 border border-purple-900/60 rounded-lg p-2.5 text-yellow-300 placeholder-slate-600 focus:outline-none focus:border-purple-500">
+                    <p class="text-[10px] text-slate-400 mt-1">Fixado automaticamente no topo após a publicação para maximizar conversões.</p>
+                </div>
+
+                <!-- Tags -->
+                <div>
+                    <label class="block font-semibold text-slate-300 mb-1">Tags (separadas por vírgula)</label>
+                    <input type="text" id="postTags" placeholder="marketing, renda extra, shorts, viral" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-purple-500">
+                </div>
+
+                <!-- Botões Submit -->
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+                    <button type="button" onclick="closeCreateModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium">Cancelar</button>
+                    <button type="submit" id="btnSubmitPost" class="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-semibold flex items-center gap-2 shadow-lg shadow-purple-600/30">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>Salvar na Planilha</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Configuração API Key -->
+    <div id="modalApiKey" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-key text-purple-400"></i>
+                    <span>Chave de Segurança (X-API-KEY)</span>
+                </h3>
+                <button onclick="closeApiKeyModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">
+                Insira o valor da sua <code class="text-purple-300">AUTO_PUBLISHER_API_KEY</code>. Ela será salva com segurança no seu navegador para autorizar as requisições ao microsserviço.
+            </p>
+            <div>
+                <input type="password" id="inputApiKey" placeholder="sua-chave-secreta..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
+            </div>
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <button type="button" onclick="saveApiKey()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded-lg">Salvar Chave</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Relatório de Execução -->
+    <div id="modalReport" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-square-poll-vertical text-emerald-400"></i>
+                    <span>Relatório do Lote de Publicação</span>
+                </h3>
+                <button onclick="closeReportModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="reportContent" class="space-y-3 text-xs">
+                <!-- Preenchido dinamicamente -->
+            </div>
+            <div class="pt-3 border-t border-slate-800 flex justify-end">
+                <button type="button" onclick="closeReportModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-xl shadow-2xl text-xs flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <span id="toastMessage">Notificação</span>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        let allPostsData = [];
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            initApiKey();
+            loadDashboardData();
+            // Pré-preenche horário sugerido (próximos 15 min)
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + 15);
+            now.setSeconds(0, 0);
+            const localIso = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+            const timeInput = document.getElementById('postScheduledTime');
+            if (timeInput) timeInput.value = localIso;
+        });
+
+        // Gestão de API Key
+        function getApiKey() {
+            return localStorage.getItem('auto_publisher_api_key') || '';
+        }
+
+        function initApiKey() {
+            const key = getApiKey();
+            const badge = document.getElementById('apiKeyStatusText');
+            if (key) {
+                badge.innerText = 'API Key Configurada';
+                badge.classList.add('text-emerald-400');
+            } else {
+                badge.innerText = 'Configurar API Key';
+                badge.classList.remove('text-emerald-400');
+            }
+        }
+
+        function openApiKeyModal() {
+            document.getElementById('inputApiKey').value = getApiKey();
+            document.getElementById('modalApiKey').classList.remove('hidden');
+            document.getElementById('modalApiKey').classList.add('flex');
+        }
+
+        function closeApiKeyModal() {
+            document.getElementById('modalApiKey').classList.add('hidden');
+            document.getElementById('modalApiKey').classList.remove('flex');
+        }
+
+        function saveApiKey() {
+            const val = document.getElementById('inputApiKey').value.trim();
+            if (val) {
+                localStorage.setItem('auto_publisher_api_key', val);
+                showToast('Chave de API salva com sucesso!', 'success');
+            } else {
+                localStorage.removeItem('auto_publisher_api_key');
+                showToast('Chave de API removida.', 'info');
+            }
+            initApiKey();
+            closeApiKeyModal();
+            loadDashboardData();
+        }
+
+        // Carrega dados da API
+        async function loadDashboardData() {
+            const icon = document.getElementById('refreshIcon');
+            if (icon) icon.classList.add('fa-spin');
+
+            try {
+                const headers = {};
+                const key = getApiKey();
+                if (key) headers['X-API-KEY'] = key;
+
+                const response = await fetch('/api/v1/dashboard/overview', { headers });
+                if (response.status === 401) {
+                    showToast('Não autorizado. Configure sua API Key.', 'error');
+                    renderEmptyTable('Acesso não autorizado. Clique em "Configurar API Key" no topo.');
+                    return;
+                }
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                allPostsData = data.posts || [];
+
+                // Atualiza KPIs
+                document.getElementById('kpiTotal').innerText = data.totalPosts || 0;
+                document.getElementById('kpiPending').innerText = data.pendingPosts || 0;
+                document.getElementById('kpiPublished').innerText = data.publishedPosts || 0;
+
+                // Atualiza Quota Guard
+                const q = data.youtubeQuota || { publishedToday: 0, maxDailyVideos: 6, consumedUnits: 0, totalDailyUnits: 10000, percentageConsumed: 0 };
+                document.getElementById('kpiQuotaVideos').innerText = `${q.publishedToday}/${q.maxDailyVideos}`;
+                document.getElementById('kpiQuotaUnits').innerText = `${q.consumedUnits} / ${q.totalDailyUnits} un`;
+                document.getElementById('kpiQuotaPercent').innerText = `${Math.round(q.percentageConsumed)}%`;
+                
+                const bar = document.getElementById('kpiQuotaBar');
+                bar.style.width = `${q.percentageConsumed}%`;
+                if (q.percentageConsumed > 80) {
+                    bar.className = 'bg-rose-500 h-2 rounded-full transition-all duration-500';
+                } else if (q.percentageConsumed > 50) {
+                    bar.className = 'bg-amber-500 h-2 rounded-full transition-all duration-500';
+                } else {
+                    bar.className = 'bg-emerald-500 h-2 rounded-full transition-all duration-500';
+                }
+
+                applyFilters();
+
+            } catch (err) {
+                console.error('Erro ao buscar dados:', err);
+                showToast('Falha ao conectar com o microsserviço: ' + err.message, 'error');
+                renderEmptyTable('Erro ao carregar dados. Verifique os logs da aplicação.');
+            } finally {
+                if (icon) setTimeout(() => icon.classList.remove('fa-spin'), 600);
+            }
+        }
+
+        // Filtros e Renderização da Tabela
+        function applyFilters() {
+            const search = (document.getElementById('searchInput').value || '').toLowerCase();
+            const platform = document.getElementById('platformFilter').value;
+            const status = document.getElementById('statusFilter').value;
+
+            const filtered = allPostsData.filter(post => {
+                const matchSearch = !search ||
+                    post.id.toLowerCase().includes(search) ||
+                    (post.metadata && post.metadata.title && post.metadata.title.toLowerCase().includes(search));
+
+                const matchPlatform = (platform === 'ALL') || (post.platform === platform);
+                const matchStatus = (status === 'ALL') || (post.status === status);
+
+                return matchSearch && matchPlatform && matchStatus;
+            });
+
+            renderTable(filtered);
+        }
+
+        function renderTable(posts) {
+            const tbody = document.getElementById('postsTableBody');
+            if (!posts || posts.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="p-8 text-center text-slate-500">
+                            <i class="fa-solid fa-folder-open text-2xl mb-2 text-slate-600 block"></i>
+                            Nenhum agendamento encontrado para os filtros selecionados.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = posts.map(post => {
+                // Badge de Plataforma
+                let platformBadge = '';
+                if (post.platform === 'YOUTUBE_SHORTS') {
+                    platformBadge = '<span class="px-2 py-0.5 rounded bg-red-950/60 text-red-400 border border-red-800/60 text-[11px] font-semibold flex items-center gap-1 w-fit"><i class="fa-brands fa-youtube"></i> Shorts</span>';
+                } else if (post.platform === 'YOUTUBE_VIDEO') {
+                    platformBadge = '<span class="px-2 py-0.5 rounded bg-red-950/60 text-red-400 border border-red-800/60 text-[11px] font-semibold flex items-center gap-1 w-fit"><i class="fa-brands fa-youtube"></i> Vídeo</span>';
+                } else if (post.platform === 'INSTAGRAM_REELS') {
+                    platformBadge = '<span class="px-2 py-0.5 rounded bg-pink-950/60 text-pink-400 border border-pink-800/60 text-[11px] font-semibold flex items-center gap-1 w-fit"><i class="fa-brands fa-instagram"></i> Reels</span>';
+                } else if (post.platform === 'TIKTOK') {
+                    platformBadge = '<span class="px-2 py-0.5 rounded bg-sky-950/60 text-sky-400 border border-sky-800/60 text-[11px] font-semibold flex items-center gap-1 w-fit"><i class="fa-brands fa-tiktok"></i> TikTok</span>';
+                }
+
+                // Badge de Status
+                let statusBadge = '';
+                if (post.status === 'PUBLICADO') {
+                    statusBadge = '<span class="px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 font-mono text-[10px] font-semibold">PUBLICADO</span>';
+                } else if (post.status === 'PENDENTE') {
+                    statusBadge = '<span class="px-2 py-0.5 rounded-full bg-amber-950/80 text-amber-300 border border-amber-800/60 font-mono text-[10px] font-semibold">PENDENTE</span>';
+                } else if (post.status === 'PROCESSANDO') {
+                    statusBadge = '<span class="px-2 py-0.5 rounded-full bg-sky-950/80 text-sky-300 border border-sky-800/60 font-mono text-[10px] font-semibold animate-pulse">PROCESSANDO</span>';
+                } else if (post.status === 'COTA_ESGOTADA') {
+                    statusBadge = '<span class="px-2 py-0.5 rounded-full bg-rose-950/80 text-rose-300 border border-rose-800/60 font-mono text-[10px] font-semibold">COTA_ESGOTADA</span>';
+                } else {
+                    statusBadge = `<span class="px-2 py-0.5 rounded-full bg-orange-950/80 text-orange-300 border border-orange-800/60 font-mono text-[10px] font-semibold">${post.status}</span>`;
+                }
+
+                const scheduledFmt = post.scheduledTime ? post.scheduledTime.replace('T', ' ').substring(0, 16) : '--';
+                const firstCommentSnippet = post.firstComment ? `<div class="text-[11px] text-yellow-300/90 truncate max-w-xs font-mono" title="${post.firstComment}">💬 ${post.firstComment}</div>` : '<span class="text-slate-600">--</span>';
+                
+                return `
+                    <tr class="hover:bg-slate-900/40 transition-colors">
+                        <td class="p-3.5 pl-5">
+                            <div class="font-mono font-bold text-purple-300">${post.id}</div>
+                            <div class="text-slate-500 text-[11px] flex items-center gap-1 mt-0.5"><i class="fa-regular fa-clock"></i> ${scheduledFmt}</div>
+                        </td>
+                        <td class="p-3.5">${platformBadge}</td>
+                        <td class="p-3.5">
+                            <div class="font-semibold text-white truncate max-w-sm" title="${post.metadata ? post.metadata.title : ''}">${post.metadata ? post.metadata.title : 'Sem Título'}</div>
+                            <div class="text-slate-400 text-[11px] font-mono mt-0.5">Drive: ${post.videoDriveId || '--'}</div>
+                        </td>
+                        <td class="p-3.5">${firstCommentSnippet}</td>
+                        <td class="p-3.5">${statusBadge}</td>
+                        <td class="p-3.5 pr-5 text-right">
+                            ${post.status === 'PUBLICADO' ? '<span class="text-emerald-400 text-xs font-semibold"><i class="fa-solid fa-check"></i> Enviado</span>' : '<span class="text-slate-500">Aguardando</span>'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderEmptyTable(message) {
+            document.getElementById('postsTableBody').innerHTML = `
+                <tr><td colspan="6" class="p-8 text-center text-slate-500">${message}</td></tr>
+            `;
+        }
+
+        // Contador de Título
+        function updateTitleCounter() {
+            const len = document.getElementById('postTitle').value.length;
+            document.getElementById('titleCounter').innerText = `${len}/100`;
+        }
+
+        // Abertura e Fechamento de Modais
+        function openCreateModal() {
+            document.getElementById('modalCreate').classList.remove('hidden');
+            document.getElementById('modalCreate').classList.add('flex');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('modalCreate').classList.add('hidden');
+            document.getElementById('modalCreate').classList.remove('flex');
+        }
+
+        function closeReportModal() {
+            document.getElementById('modalReport').classList.add('hidden');
+            document.getElementById('modalReport').classList.remove('flex');
+        }
+
+        // Submissão do Formulário de Novo Post
+        async function submitCreatePost(event) {
+            event.preventDefault();
+            const btn = document.getElementById('btnSubmitPost');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gravando...';
+
+            try {
+                const payload = {
+                    id: document.getElementById('postCustomId').value.trim() || null,
+                    scheduledTime: document.getElementById('postScheduledTime').value,
+                    platform: document.getElementById('postPlatform').value,
+                    title: document.getElementById('postTitle').value.trim(),
+                    videoDriveId: document.getElementById('postVideoDriveId').value.trim(),
+                    thumbnailDriveId: document.getElementById('postThumbDriveId').value.trim() || null,
+                    description: document.getElementById('postDescription').value.trim(),
+                    firstComment: document.getElementById('postFirstComment').value.trim() || null,
+                    tags: document.getElementById('postTags').value.trim(),
+                    categoryId: 24,
+                    madeForKids: false,
+                    privacy: 'PUBLIC'
+                };
+
+                const headers = { 'Content-Type': 'application/json' };
+                const key = getApiKey();
+                if (key) headers['X-API-KEY'] = key;
+
+                const res = await fetch('/api/v1/dashboard/posts', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || `HTTP ${res.status}`);
+                }
+
+                showToast('Agendamento gravado na planilha com sucesso!', 'success');
+                closeCreateModal();
+                document.getElementById('formCreatePost').reset();
+                loadDashboardData();
+
+            } catch (err) {
+                console.error(err);
+                showToast('Falha ao agendar: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Salvar na Planilha';
+            }
+        }
+
+        // Disparo Manual ("Publicar Agora")
+        async function triggerManualRun() {
+            const btn = document.getElementById('btnRunNow');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publicando...';
+
+            try {
+                const headers = {};
+                const key = getApiKey();
+                if (key) headers['X-API-KEY'] = key;
+
+                const res = await fetch('/api/v1/dashboard/run', {
+                    method: 'POST',
+                    headers
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.error || `HTTP ${res.status}`);
+                }
+
+                const report = await res.json();
+                showBatchReport(report);
+                loadDashboardData();
+
+            } catch (err) {
+                console.error(err);
+                showToast('Erro na execução sob demanda: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-play"></i> Publicar Agora';
+            }
+        }
+
+        function showBatchReport(report) {
+            const content = document.getElementById('reportContent');
+            content.innerHTML = `
+                <div class="grid grid-cols-3 gap-2 text-center p-3 bg-slate-950 rounded-xl border border-slate-800">
+                    <div>
+                        <div class="text-slate-400 text-[10px] uppercase font-semibold">Total</div>
+                        <div class="text-lg font-black text-white">${report.totalFound != null ? report.totalFound : (report.totalProcessed || 0)}</div>
+                    </div>
+                    <div>
+                        <div class="text-emerald-400 text-[10px] uppercase font-semibold">Sucesso</div>
+                        <div class="text-lg font-black text-emerald-400">${report.successCount}</div>
+                    </div>
+                    <div>
+                        <div class="text-rose-400 text-[10px] uppercase font-semibold">Falhas</div>
+                        <div class="text-lg font-black text-rose-400">${report.failureCount}</div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="font-semibold text-slate-300 mb-1">Status da Cota:</div>
+                    <div class="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-400">
+                        ${report.quotaExceeded ? '<span class="text-rose-400 font-bold">⚠️ COTA DIÁRIA ATINGIDA (10.000 unidades)</span>' : '<span class="text-emerald-400 font-semibold">✅ Cota diária sob controle.</span>'}
+                    </div>
+                </div>
+            `;
+            document.getElementById('modalReport').classList.remove('hidden');
+            document.getElementById('modalReport').classList.add('flex');
+        }
+
+        // Toast Helper
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const msg = document.getElementById('toastMessage');
+
+            msg.innerText = message;
+            if (type === 'success') {
+                icon.className = 'fa-solid fa-circle-check text-emerald-400 text-base';
+            } else if (type === 'error') {
+                icon.className = 'fa-solid fa-circle-exclamation text-rose-400 text-base';
+            } else {
+                icon.className = 'fa-solid fa-circle-info text-sky-400 text-base';
+            }
+
+            toast.classList.remove('opacity-0', 'translate-y-20');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-20');
+            }, 3500);
+        }
+    </script>
+</body>
+</html>

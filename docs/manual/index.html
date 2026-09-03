@@ -104,7 +104,8 @@
                 <a href="#monetizacao" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-sack-dollar w-4 text-purple-400"></i> 6. Monetização & SEO</a>
                 <a href="#execucao-local" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-laptop-code w-4 text-purple-400"></i> 7. Execução Local</a>
                 <a href="#deploy" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-cloud-arrow-up w-4 text-purple-400"></i> 8. Deploy Cloud (R$ 0,00)</a>
-                <a href="#faq" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-circle-question w-4 text-purple-400"></i> 9. FAQ & Soluções</a>
+                <a href="#dashboard" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-desktop w-4 text-purple-400"></i> 9. Dashboard Web</a>
+                <a href="#faq" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-circle-question w-4 text-purple-400"></i> 10. FAQ & Soluções</a>
             </div>
         </aside>
 
@@ -577,10 +578,83 @@ TIKTOK_ACCESS_TOKEN=act.seu-token-tiktok
                 </div>
             </section>
 
-            <!-- 9. FAQ & Troubleshooting -->
-            <section id="faq" class="space-y-6 pt-6 border-t border-slate-800">
+            <!-- 9. Dashboard Web Interativo -->
+            <section id="dashboard" class="space-y-6 pt-6 border-t border-slate-800">
                 <div class="flex items-center gap-3">
                     <span class="px-3 py-1 bg-purple-950 text-purple-400 rounded-lg text-sm font-bold font-mono">09</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Interface Gráfica (Dashboard Web)</h2>
+                </div>
+                <p class="text-slate-300 leading-relaxed text-sm">
+                    A aplicação conta com uma <strong>interface visual moderna</strong> embutida diretamente no microsserviço (sem custos adicionais de hospedagem), acessível na raiz da aplicação:
+                </p>
+
+                <!-- URL do Dashboard -->
+                <div class="p-4 rounded-xl bg-purple-950/40 border border-purple-800/60 text-purple-200 text-xs flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-link text-purple-400"></i>
+                        <span>Acesso local: <strong class="text-white font-mono">http://localhost:8080/</strong></span>
+                    </div>
+                    <span class="text-emerald-400 font-semibold font-mono">Status: Embutido</span>
+                </div>
+
+                <!-- Preview Screenshot -->
+                <div class="rounded-2xl border border-slate-800 overflow-hidden shadow-2xl bg-slate-900">
+                    <div class="px-4 py-2 bg-slate-950 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                            <span class="ml-2 font-mono text-[11px] text-slate-500">AutoPublisher Pro - Dashboard Overview</span>
+                        </div>
+                        <span class="text-purple-400 font-mono text-[11px]">Playwright E2E Verified</span>
+                    </div>
+                    <img src="dashboard_screenshot.png" alt="Dashboard do AutoPublisher Pro" class="w-full h-auto">
+                </div>
+
+                <!-- Recursos do Dashboard -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-1.5">
+                        <div class="font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-purple-400"></i> Cards de Indicadores (KPIs)
+                        </div>
+                        <p class="text-slate-400 leading-relaxed">
+                            Contadores em tempo real de posts agendados, pendentes, publicados e o medidor visual de cota da API do YouTube (Quota Guard).
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-1.5">
+                        <div class="font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-circle-plus text-purple-400"></i> Modal de Novo Agendamento
+                        </div>
+                        <p class="text-slate-400 leading-relaxed">
+                            Formulário inteligente que extrai automaticamente o ID do vídeo a partir de links do Google Drive e grava a nova linha diretamente no Google Sheets.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-1.5">
+                        <div class="font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-play text-emerald-400"></i> Botão "Publicar Agora"
+                        </div>
+                        <p class="text-slate-400 leading-relaxed">
+                            Dispara o lote sob demanda imediatamente sem esperar o agendamento de 30 minutos, exibindo um relatório com os links publicados.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-1.5">
+                        <div class="font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-filter text-sky-400"></i> Filtros e Busca Rápida
+                        </div>
+                        <p class="text-slate-400 leading-relaxed">
+                            Filtre postagens por rede social (Shorts, Reels, TikTok), por status de execução ou pesquise instantaneamente pelo título.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 10. FAQ & Troubleshooting -->
+            <section id="faq" class="space-y-6 pt-6 border-t border-slate-800">
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 bg-purple-950 text-purple-400 rounded-lg text-sm font-bold font-mono">10</span>
                     <h2 class="text-2xl md:text-3xl font-bold text-white">Solução de Problemas (FAQ)</h2>
                 </div>
 

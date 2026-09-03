@@ -132,6 +132,92 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
         }
     }
 
+    @Override
+    public List<PostSchedule> findAllPosts() {
+        if (spreadsheetId == null || spreadsheetId.trim().isEmpty()) {
+            log.warn("GOOGLE_SHEETS_SPREADSHEET_ID nao configurado. Nenhum post sera retornado.");
+            return Collections.emptyList();
+        }
+
+        String range = String.format("%s!A2:Q", tabName);
+        try {
+            ValueRange response = sheetsService.spreadsheets().values()
+                    .get(spreadsheetId, range)
+                    .execute();
+
+            List<List<Object>> rows = response.getValues();
+            if (rows == null || rows.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            List<PostSchedule> allPosts = new ArrayList<>();
+            for (int i = 0; i < rows.size(); i++) {
+                int physicalRowIndex = i + 2;
+                List<Object> row = rows.get(i);
+                if (row == null || row.isEmpty()) {
+                    continue;
+                }
+                try {
+                    PostSchedule post = parseRow(row, physicalRowIndex);
+                    if (post != null) {
+                        allPosts.add(post);
+                    }
+                } catch (Exception e) {
+                    log.warn("Linha {} ignorada na listagem geral: {}", physicalRowIndex, e.getMessage());
+                }
+            }
+            return allPosts;
+        } catch (IOException e) {
+            log.error("Falha ao consultar todos os posts do Google Sheets: {}", e.getMessage(), e);
+            throw new RuntimeException("Erro ao consultar Google Sheets: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void appendPost(PostSchedule post) {
+        if (spreadsheetId == null || spreadsheetId.trim().isEmpty()) {
+            throw new IllegalStateException("GOOGLE_SHEETS_SPREADSHEET_ID nao configurado.");
+        }
+
+        String range = String.format("%s!A:Q", tabName);
+        String formattedScheduledTime = post.scheduledTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String tagsJoined = (post.metadata().tags() != null) ? String.join(", ", post.metadata().tags()) : "";
+
+        List<Object> newRow = Arrays.asList(
+                post.id(),
+                formattedScheduledTime,
+                post.platform().name(),
+                post.videoDriveId(),
+                post.thumbnailDriveId() != null ? post.thumbnailDriveId() : "",
+                post.metadata().title(),
+                post.metadata().description(),
+                tagsJoined,
+                post.metadata().categoryId() != null ? post.metadata().categoryId().toString() : "24",
+                post.metadata().madeForKids() ? "TRUE" : "FALSE",
+                post.metadata().privacy().name(),
+                post.status().name(),
+                "", // URL_Publicada inicial
+                "", // Data_Publicacao inicial
+                "", // Log_Erro inicial
+                post.attempts(),
+                post.firstComment() != null ? post.firstComment() : ""
+        );
+
+        ValueRange body = new ValueRange().setValues(List.of(newRow));
+
+        try {
+            sheetsService.spreadsheets().values()
+                    .append(spreadsheetId, range, body)
+                    .setValueInputOption("USER_ENTERED")
+                    .setInsertDataOption("INSERT_ROWS")
+                    .execute();
+            log.info("Novo post {} inserido com sucesso na aba {}", post.id(), tabName);
+        } catch (IOException e) {
+            log.error("Falha ao anexar novo post na planilha Google Sheets: {}", e.getMessage(), e);
+            throw new RuntimeException("Erro ao anexar post no Google Sheets: " + e.getMessage(), e);
+        }
+    }
+
     private PostSchedule parseRow(List<Object> row, int physicalRowIndex) {
         String id = getCell(row, 0);
         if (id.isEmpty()) {
