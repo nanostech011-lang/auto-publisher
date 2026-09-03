@@ -62,6 +62,16 @@ O backlog está organizado para viabilizar um MVP funcional focado em **monetiza
 | US-06.1 | InstagramPublisherAdapter (Meta Graph API / Reels) | Could | Alta | Concluído | [epico-06](epico-06-expansao-multiplataforma.md#us-061) |
 | US-06.2 | TikTokPublisherAdapter (TikTok Content Posting API) | Could | Alta | Concluído | [epico-06](epico-06-expansao-multiplataforma.md#us-062) |
 | US-06.3 | Publicação Automática de Primeiro Comentário Fixado | Could | Média | Concluído | [epico-06](epico-06-expansao-multiplataforma.md#us-063) |
+| **EP-07** | **Interface Web do Usuário e Central de Credenciais** | **Must** | **Média** | **Concluído** | [epico-07-interface-do-usuario.md](epico-07-interface-do-usuario.md) |
+| US-07.1 | Painel de Indicadores (KPIs) e Quota Guard YouTube | Must | Baixa | Concluído | [epico-07](epico-07-interface-do-usuario.md#us-071) |
+| US-07.2 | Monitor de Status, Busca e Filtros | Must | Baixa | Concluído | [epico-07](epico-07-interface-do-usuario.md#us-072) |
+| US-07.3 | Modal de Agendamento com Auto-Detecção de Drive ID | Must | Média | Concluído | [epico-07](epico-07-interface-do-usuario.md#us-073) |
+| US-07.4 | Central de Chaves & Credenciais All-in-One com Gerador .env | Must | Média | Concluído | [epico-07](epico-07-interface-do-usuario.md#us-074) |
+| **EP-08** | **SaaS Multi-Tenant e Gestão de Usuários (Fase Futura)** | **Could** | **Alta** | **Planejado** | [epico-08-saas-multi-tenant.md](epico-08-saas-multi-tenant.md) |
+| US-08.1 | Persistência com Banco de Dados Relacional Multi-Tenant | Could | Alta | Planejado | [epico-08](epico-08-saas-multi-tenant.md#us-081) |
+| US-08.2 | Isolamento de Planilhas e Recursos por Tenant | Could | Média | Planejado | [epico-08](epico-08-saas-multi-tenant.md#us-082) |
+| US-08.3 | Gestão Descentralizada de Cotas OAuth 2.0 por Cliente | Could | Alta | Planejado | [epico-08](epico-08-saas-multi-tenant.md#us-083) |
+| US-08.4 | Painel Administrativo de Gestão de Clientes | Could | Média | Planejado | [epico-08](epico-08-saas-multi-tenant.md#us-084) |
 
 ---
 
