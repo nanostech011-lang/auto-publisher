@@ -62,10 +62,10 @@
 
             <!-- Actions Right -->
             <div class="flex items-center gap-3">
-                <!-- API Key Config Button -->
-                <button onclick="openApiKeyModal()" id="apiKeyBadge" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-2 transition-all">
-                    <i class="fa-solid fa-key text-purple-400"></i>
-                    <span id="apiKeyStatusText">Configurar API Key</span>
+                <!-- Credentials Config Button -->
+                <button onclick="openCredentialsModal()" id="apiKeyBadge" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-sliders text-purple-400"></i>
+                    <span id="apiKeyStatusText">Chaves & Integrações</span>
                 </button>
 
                 <!-- Documentation Link -->
@@ -227,6 +227,203 @@
 
     </main>
 
+    <!-- Modal: Central de Chaves & Credenciais (All-in-One) -->
+    <div id="modalCredentials" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full p-6 space-y-5 shadow-2xl overflow-y-auto max-h-[92vh]">
+            
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div>
+                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-purple-400"></i>
+                        <span>Central de Chaves & Credenciais</span>
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Configure todas as APIs e tokens de acesso de forma amigável em um só lugar.</p>
+                </div>
+                <button onclick="closeCredentialsModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Chips de Status Rápido -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono">
+                <div id="chipApi" class="bg-slate-950 p-2 rounded-lg border border-slate-800 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-slate-500" id="dotApi"></span>
+                    <span class="truncate text-slate-300">API Key</span>
+                </div>
+                <div id="chipSheets" class="bg-slate-950 p-2 rounded-lg border border-slate-800 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-slate-500" id="dotSheets"></span>
+                    <span class="truncate text-slate-300">Sheets & Drive</span>
+                </div>
+                <div id="chipYoutube" class="bg-slate-950 p-2 rounded-lg border border-slate-800 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-slate-500" id="dotYoutube"></span>
+                    <span class="truncate text-slate-300">YouTube OAuth</span>
+                </div>
+                <div id="chipSocial" class="bg-slate-950 p-2 rounded-lg border border-slate-800 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-slate-500" id="dotSocial"></span>
+                    <span class="truncate text-slate-300">Meta & TikTok</span>
+                </div>
+            </div>
+
+            <!-- Abas do Modal -->
+            <div class="flex border-b border-slate-800 text-xs font-semibold overflow-x-auto space-x-1">
+                <button onclick="switchCredTab('tab-security')" id="btnTabSecurity" class="px-3.5 py-2 text-purple-400 border-b-2 border-purple-500 flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fa-solid fa-shield-halved"></i> Segurança (X-API-KEY)
+                </button>
+                <button onclick="switchCredTab('tab-sheets')" id="btnTabSheets" class="px-3.5 py-2 text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fa-solid fa-table-cells"></i> Google Sheets
+                </button>
+                <button onclick="switchCredTab('tab-youtube')" id="btnTabYoutube" class="px-3.5 py-2 text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fa-brands fa-youtube text-red-400"></i> YouTube Data API
+                </button>
+                <button onclick="switchCredTab('tab-social')" id="btnTabSocial" class="px-3.5 py-2 text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fa-brands fa-instagram text-pink-400"></i> Instagram & TikTok
+                </button>
+                <button onclick="switchCredTab('tab-env')" id="btnTabEnv" class="px-3.5 py-2 text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fa-solid fa-file-code text-emerald-400"></i> Gerar .env
+                </button>
+            </div>
+
+            <!-- Conteúdo das Abas -->
+            <div class="space-y-4 text-xs">
+                
+                <!-- ABA 1: Segurança -->
+                <div id="tab-security" class="space-y-3">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Chave de Segurança do Microsserviço (AUTO_PUBLISHER_API_KEY)</label>
+                        <div class="relative">
+                            <input type="password" id="inputApiKey" placeholder="sua-chave-secreta..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 pr-10 text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
+                            <button type="button" onclick="toggleVisibility('inputApiKey', 'eyeApi')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                                <i class="fa-solid fa-eye" id="eyeApi"></i>
+                            </button>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1">Essa chave protege o endpoint de disparo e autoriza o Dashboard a se comunicar com o backend.</p>
+                    </div>
+                </div>
+
+                <!-- ABA 2: Google Sheets & Drive -->
+                <div id="tab-sheets" class="space-y-3 hidden">
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">ID da Planilha (GOOGLE_SHEETS_SPREADSHEET_ID)</label>
+                        <input type="text" id="inputSpreadsheetId" placeholder="Ex: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
+                        <p class="text-[11px] text-slate-400 mt-1">Encontrado na URL da planilha do Google entre <code class="text-purple-300">/d/</code> e <code class="text-purple-300">/edit</code>.</p>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Nome da Aba (GOOGLE_SHEETS_TAB_NAME)</label>
+                        <input type="text" id="inputTabName" value="Cronograma" placeholder="Cronograma" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
+                        <p class="text-[11px] text-slate-400 mt-1">Padrão obrigatório: <strong>Cronograma</strong> com as 17 colunas (A a Q).</p>
+                    </div>
+                </div>
+
+                <!-- ABA 3: YouTube OAuth 2.0 -->
+                <div id="tab-youtube" class="space-y-3 hidden">
+                    <div class="p-3 bg-purple-950/30 border border-purple-800/40 rounded-xl text-purple-200 text-[11px] flex gap-2.5 items-start">
+                        <i class="fa-solid fa-lightbulb text-purple-400 text-sm mt-0.5"></i>
+                        <div>
+                            <strong>Dica Anti-Expiração (7 Dias):</strong> No Google Cloud Console, defina sua tela OAuth como <strong class="text-emerald-400">In Production</strong> (Publicar aplicativo) para que seu Refresh Token nunca expire.
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">YouTube Client ID (YOUTUBE_CLIENT_ID)</label>
+                        <input type="text" id="inputYtClientId" placeholder="Ex: 123456789-abc.apps.googleusercontent.com" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">YouTube Client Secret (YOUTUBE_CLIENT_SECRET)</label>
+                        <div class="relative">
+                            <input type="password" id="inputYtSecret" placeholder="GOCSPX-..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 pr-10 text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
+                            <button type="button" onclick="toggleVisibility('inputYtSecret', 'eyeYtSec')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                                <i class="fa-solid fa-eye" id="eyeYtSec"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">YouTube Refresh Token Permanente (YOUTUBE_REFRESH_TOKEN)</label>
+                        <div class="relative">
+                            <input type="password" id="inputYtRefreshToken" placeholder="1//04..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 pr-10 text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
+                            <button type="button" onclick="toggleVisibility('inputYtRefreshToken', 'eyeYtRef')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                                <i class="fa-solid fa-eye" id="eyeYtRef"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ABA 4: Instagram & TikTok -->
+                <div id="tab-social" class="space-y-4 hidden">
+                    <!-- Instagram -->
+                    <div class="p-3.5 bg-slate-950 rounded-xl border border-slate-800 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-pink-400 flex items-center gap-1.5"><i class="fa-brands fa-instagram"></i> Instagram Reels (Meta Graph API)</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="inputIgEnabled" class="sr-only peer">
+                                <div class="w-8 h-4 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Instagram Business Account ID</label>
+                            <input type="text" id="inputIgAccountId" placeholder="Ex: 17841400000000000" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">Meta Access Token de Longa Duração</label>
+                            <div class="relative">
+                                <input type="password" id="inputMetaToken" placeholder="EAA..." class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 pr-10 text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
+                                <button type="button" onclick="toggleVisibility('inputMetaToken', 'eyeIg')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                                    <i class="fa-solid fa-eye" id="eyeIg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TikTok -->
+                    <div class="p-3.5 bg-slate-950 rounded-xl border border-slate-800 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-sky-400 flex items-center gap-1.5"><i class="fa-brands fa-tiktok"></i> TikTok Content Posting API</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="inputTtEnabled" class="sr-only peer">
+                                <div class="w-8 h-4 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">TikTok Access Token</label>
+                            <div class="relative">
+                                <input type="password" id="inputTtToken" placeholder="act.example_tiktok_access_token..." class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 pr-10 text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
+                                <button type="button" onclick="toggleVisibility('inputTtToken', 'eyeTt')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                                    <i class="fa-solid fa-eye" id="eyeTt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ABA 5: Exportar .env -->
+                <div id="tab-env" class="space-y-3 hidden">
+                    <p class="text-slate-400">Conteúdo pronto do seu arquivo <code class="text-purple-300">.env</code> gerado com as configurações preenchidas acima:</p>
+                    <textarea id="envPreview" readonly rows="10" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-emerald-400 font-mono text-[11px] focus:outline-none"></textarea>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="copyEnvToClipboard()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-semibold flex items-center gap-1.5">
+                            <i class="fa-solid fa-copy"></i> Copiar Conteúdo
+                        </button>
+                        <button type="button" onclick="downloadEnvFile()" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg font-semibold flex items-center gap-1.5">
+                            <i class="fa-solid fa-download"></i> Baixar Arquivo .env
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer do Modal -->
+            <div class="flex items-center justify-between pt-4 border-t border-slate-800">
+                <button type="button" onclick="loadServerCredentials()" class="text-slate-400 hover:text-white text-xs flex items-center gap-1">
+                    <i class="fa-solid fa-arrows-rotate"></i> Consultar Servidor
+                </button>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="closeCredentialsModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium text-xs">Cancelar</button>
+                    <button type="button" onclick="saveAllCredentials()" class="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-semibold text-xs flex items-center gap-2 shadow-lg shadow-purple-600/30">
+                        <i class="fa-solid fa-floppy-disk"></i> Salvar Chaves
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
     <!-- Modal: Novo Agendamento -->
     <div id="modalCreate" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl overflow-y-auto max-h-[90vh]">
@@ -319,28 +516,6 @@
         </div>
     </div>
 
-    <!-- Modal: Configuração API Key -->
-    <div id="modalApiKey" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 class="text-base font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-key text-purple-400"></i>
-                    <span>Chave de Segurança (X-API-KEY)</span>
-                </h3>
-                <button onclick="closeApiKeyModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <p class="text-xs text-slate-400 leading-relaxed">
-                Insira o valor da sua <code class="text-purple-300">AUTO_PUBLISHER_API_KEY</code>. Ela será salva com segurança no seu navegador para autorizar as requisições ao microsserviço.
-            </p>
-            <div>
-                <input type="password" id="inputApiKey" placeholder="sua-chave-secreta..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
-            </div>
-            <div class="flex items-center justify-end gap-3 pt-2">
-                <button type="button" onclick="saveApiKey()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold rounded-lg">Salvar Chave</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal: Relatório de Execução -->
     <div id="modalReport" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
@@ -374,6 +549,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             initApiKey();
             loadDashboardData();
+            loadStoredCredentials();
             // Pré-preenche horário sugerido (próximos 15 min)
             const now = new Date();
             now.setMinutes(now.getMinutes() + 15);
@@ -383,7 +559,7 @@
             if (timeInput) timeInput.value = localIso;
         });
 
-        // Gestão de API Key
+        // Gestão de API Key e Credenciais
         function getApiKey() {
             return localStorage.getItem('auto_publisher_api_key') || '';
         }
@@ -391,38 +567,227 @@
         function initApiKey() {
             const key = getApiKey();
             const badge = document.getElementById('apiKeyStatusText');
+            const dot = document.getElementById('dotApi');
             if (key) {
-                badge.innerText = 'API Key Configurada';
+                badge.innerText = 'Chaves Configuradas';
                 badge.classList.add('text-emerald-400');
+                if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
             } else {
-                badge.innerText = 'Configurar API Key';
+                badge.innerText = 'Chaves & Integrações';
                 badge.classList.remove('text-emerald-400');
+                if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
             }
         }
 
-        function openApiKeyModal() {
-            document.getElementById('inputApiKey').value = getApiKey();
-            document.getElementById('modalApiKey').classList.remove('hidden');
-            document.getElementById('modalApiKey').classList.add('flex');
+        // Compatibilidade com teste Playwright
+        function openApiKeyModal() { openCredentialsModal(); }
+        function closeApiKeyModal() { closeCredentialsModal(); }
+        function saveApiKey() { saveAllCredentials(); }
+
+        function openCredentialsModal() {
+            loadStoredCredentials();
+            loadServerCredentials();
+            updateEnvPreview();
+            document.getElementById('modalCredentials').classList.remove('hidden');
+            document.getElementById('modalCredentials').classList.add('flex');
         }
 
-        function closeApiKeyModal() {
-            document.getElementById('modalApiKey').classList.add('hidden');
-            document.getElementById('modalApiKey').classList.remove('flex');
+        function closeCredentialsModal() {
+            document.getElementById('modalCredentials').classList.add('hidden');
+            document.getElementById('modalCredentials').classList.remove('flex');
         }
 
-        function saveApiKey() {
-            const val = document.getElementById('inputApiKey').value.trim();
-            if (val) {
-                localStorage.setItem('auto_publisher_api_key', val);
-                showToast('Chave de API salva com sucesso!', 'success');
+        function switchCredTab(tabId) {
+            const tabs = ['tab-security', 'tab-sheets', 'tab-youtube', 'tab-social', 'tab-env'];
+            const btns = ['btnTabSecurity', 'btnTabSheets', 'btnTabYoutube', 'btnTabSocial', 'btnTabEnv'];
+            
+            tabs.forEach(t => {
+                const el = document.getElementById(t);
+                if (el) el.classList.toggle('hidden', t !== tabId);
+            });
+
+            btns.forEach(b => {
+                const btn = document.getElementById(b);
+                if (btn) {
+                    const isCurrent = b.toLowerCase().includes(tabId.replace('tab-', '').toLowerCase());
+                    if (isCurrent) {
+                        btn.className = 'px-3.5 py-2 text-purple-400 border-b-2 border-purple-500 flex items-center gap-1.5 whitespace-nowrap';
+                    } else {
+                        btn.className = 'px-3.5 py-2 text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap';
+                    }
+                }
+            });
+
+            if (tabId === 'tab-env') {
+                updateEnvPreview();
+            }
+        }
+
+        function toggleVisibility(inputId, eyeIconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(eyeIconId);
+            if (!input || !icon) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
             } else {
-                localStorage.removeItem('auto_publisher_api_key');
-                showToast('Chave de API removida.', 'info');
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye';
             }
+        }
+
+        function loadStoredCredentials() {
+            document.getElementById('inputApiKey').value = localStorage.getItem('auto_publisher_api_key') || '';
+            document.getElementById('inputSpreadsheetId').value = localStorage.getItem('GOOGLE_SHEETS_SPREADSHEET_ID') || '';
+            document.getElementById('inputTabName').value = localStorage.getItem('GOOGLE_SHEETS_TAB_NAME') || 'Cronograma';
+            document.getElementById('inputYtClientId').value = localStorage.getItem('YOUTUBE_CLIENT_ID') || '';
+            document.getElementById('inputYtSecret').value = localStorage.getItem('YOUTUBE_CLIENT_SECRET') || '';
+            document.getElementById('inputYtRefreshToken').value = localStorage.getItem('YOUTUBE_REFRESH_TOKEN') || '';
+            document.getElementById('inputIgEnabled').checked = localStorage.getItem('INSTAGRAM_ENABLED') === 'true';
+            document.getElementById('inputIgAccountId').value = localStorage.getItem('INSTAGRAM_BUSINESS_ACCOUNT_ID') || '';
+            document.getElementById('inputMetaToken').value = localStorage.getItem('META_ACCESS_TOKEN') || '';
+            document.getElementById('inputTtEnabled').checked = localStorage.getItem('TIKTOK_ENABLED') === 'true';
+            document.getElementById('inputTtToken').value = localStorage.getItem('TIKTOK_ACCESS_TOKEN') || '';
+        }
+
+        async function loadServerCredentials() {
+            try {
+                const headers = {};
+                const key = getApiKey();
+                if (key) headers['X-API-KEY'] = key;
+
+                const res = await fetch('/api/v1/dashboard/credentials', { headers });
+                if (res.ok) {
+                    const data = await res.json();
+                    // Atualiza dots de status
+                    const dotSheets = document.getElementById('dotSheets');
+                    if (dotSheets) dotSheets.className = data.sheetsConfigured ? 'w-2 h-2 rounded-full bg-emerald-400' : 'w-2 h-2 rounded-full bg-slate-500';
+                    
+                    const dotYt = document.getElementById('dotYoutube');
+                    if (dotYt) dotYt.className = data.youtubeReady ? 'w-2 h-2 rounded-full bg-emerald-400' : 'w-2 h-2 rounded-full bg-slate-500';
+
+                    const dotSocial = document.getElementById('dotSocial');
+                    if (dotSocial) dotSocial.className = (data.instagramReady || data.tiktokReady) ? 'w-2 h-2 rounded-full bg-emerald-400' : 'w-2 h-2 rounded-full bg-slate-500';
+                }
+            } catch (e) {
+                console.log('Não foi possível checar credenciais do servidor:', e);
+            }
+        }
+
+        function saveAllCredentials() {
+            const apiKey = document.getElementById('inputApiKey').value.trim();
+            const sheetId = document.getElementById('inputSpreadsheetId').value.trim();
+            const tabName = document.getElementById('inputTabName').value.trim();
+            const ytClientId = document.getElementById('inputYtClientId').value.trim();
+            const ytSecret = document.getElementById('inputYtSecret').value.trim();
+            const ytRefresh = document.getElementById('inputYtRefreshToken').value.trim();
+            const igEnabled = document.getElementById('inputIgEnabled').checked;
+            const igAccountId = document.getElementById('inputIgAccountId').value.trim();
+            const metaToken = document.getElementById('inputMetaToken').value.trim();
+            const ttEnabled = document.getElementById('inputTtEnabled').checked;
+            const ttToken = document.getElementById('inputTtToken').value.trim();
+
+            if (apiKey) localStorage.setItem('auto_publisher_api_key', apiKey);
+            else localStorage.removeItem('auto_publisher_api_key');
+
+            localStorage.setItem('GOOGLE_SHEETS_SPREADSHEET_ID', sheetId);
+            localStorage.setItem('GOOGLE_SHEETS_TAB_NAME', tabName);
+            localStorage.setItem('YOUTUBE_CLIENT_ID', ytClientId);
+            localStorage.setItem('YOUTUBE_CLIENT_SECRET', ytSecret);
+            localStorage.setItem('YOUTUBE_REFRESH_TOKEN', ytRefresh);
+            localStorage.setItem('INSTAGRAM_ENABLED', igEnabled ? 'true' : 'false');
+            localStorage.setItem('INSTAGRAM_BUSINESS_ACCOUNT_ID', igAccountId);
+            localStorage.setItem('META_ACCESS_TOKEN', metaToken);
+            localStorage.setItem('TIKTOK_ENABLED', ttEnabled ? 'true' : 'false');
+            localStorage.setItem('TIKTOK_ACCESS_TOKEN', ttToken);
+
             initApiKey();
-            closeApiKeyModal();
+            updateEnvPreview();
+            closeCredentialsModal();
+            showToast('Todas as chaves e credenciais foram salvas!', 'success');
             loadDashboardData();
+        }
+
+        function getCredentialsPayload() {
+            return {
+                apiKey: document.getElementById('inputApiKey').value.trim(),
+                spreadsheetId: document.getElementById('inputSpreadsheetId').value.trim(),
+                tabName: document.getElementById('inputTabName').value.trim() || 'Cronograma',
+                youtubeClientId: document.getElementById('inputYtClientId').value.trim(),
+                youtubeClientSecret: document.getElementById('inputYtSecret').value.trim(),
+                youtubeRefreshToken: document.getElementById('inputYtRefreshToken').value.trim(),
+                instagramEnabled: document.getElementById('inputIgEnabled').checked,
+                instagramAccountId: document.getElementById('inputIgAccountId').value.trim(),
+                metaAccessToken: document.getElementById('inputMetaToken').value.trim(),
+                tiktokEnabled: document.getElementById('inputTtEnabled').checked,
+                tiktokAccessToken: document.getElementById('inputTtToken').value.trim()
+            };
+        }
+
+        async function updateEnvPreview() {
+            const payload = getCredentialsPayload();
+            const headers = { 'Content-Type': 'application/json' };
+            const key = getApiKey();
+            if (key) headers['X-API-KEY'] = key;
+
+            try {
+                const res = await fetch('/api/v1/dashboard/credentials/generate-env', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('envPreview').value = data.envContent;
+                    return;
+                }
+            } catch (e) {
+                // Fallback client-side se offline
+            }
+
+            // Fallback direto
+            const envStr = 
+`# AutoPublisher Pro - Variaveis de Ambiente
+AUTO_PUBLISHER_API_KEY=${payload.apiKey}
+
+GOOGLE_SHEETS_SPREADSHEET_ID=${payload.spreadsheetId}
+GOOGLE_SHEETS_TAB_NAME=${payload.tabName}
+
+YOUTUBE_CLIENT_ID=${payload.youtubeClientId}
+YOUTUBE_CLIENT_SECRET=${payload.youtubeClientSecret}
+YOUTUBE_REFRESH_TOKEN=${payload.youtubeRefreshToken}
+
+INSTAGRAM_ENABLED=${payload.instagramEnabled}
+INSTAGRAM_BUSINESS_ACCOUNT_ID=${payload.instagramAccountId}
+META_ACCESS_TOKEN=${payload.metaAccessToken}
+
+TIKTOK_ENABLED=${payload.tiktokEnabled}
+TIKTOK_ACCESS_TOKEN=${payload.tiktokAccessToken}
+`;
+            document.getElementById('envPreview').value = envStr;
+        }
+
+        function copyEnvToClipboard() {
+            const text = document.getElementById('envPreview').value;
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Conteúdo do .env copiado para a área de transferência!', 'success');
+            }).catch(() => {
+                showToast('Falha ao copiar. Selecione o texto manualmente.', 'error');
+            });
+        }
+
+        function downloadEnvFile() {
+            const text = document.getElementById('envPreview').value;
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '.env';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Arquivo .env baixado com sucesso!', 'success');
         }
 
         // Carrega dados da API
@@ -437,8 +802,8 @@
 
                 const response = await fetch('/api/v1/dashboard/overview', { headers });
                 if (response.status === 401) {
-                    showToast('Não autorizado. Configure sua API Key.', 'error');
-                    renderEmptyTable('Acesso não autorizado. Clique em "Configurar API Key" no topo.');
+                    showToast('Não autorizado. Clique em "Chaves & Integrações".', 'error');
+                    renderEmptyTable('Acesso não autorizado. Configure sua API Key na Central de Chaves no topo.');
                     return;
                 }
                 if (!response.ok) {

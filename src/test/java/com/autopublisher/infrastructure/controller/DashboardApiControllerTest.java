@@ -130,4 +130,41 @@ class DashboardApiControllerTest {
 
         verify(publishUseCase).execute();
     }
+
+    @Test
+    @DisplayName("Deve retornar status de credenciais mascaradas via GET /api/v1/dashboard/credentials")
+    void shouldReturnCredentialsStatusWithMaskedValues() throws Exception {
+        mockMvc.perform(get("/api/v1/dashboard/credentials")
+                        .header("X-API-KEY", API_KEY))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.apiKeyConfigured").value(true))
+                .andExpect(jsonPath("$.maskedApiKey").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("Deve gerar template .env via POST /api/v1/dashboard/credentials/generate-env")
+    void shouldGenerateEnvTemplateSuccessfully() throws Exception {
+        com.autopublisher.application.port.in.CredentialsSettingsPayload payload =
+                new com.autopublisher.application.port.in.CredentialsSettingsPayload(
+                        "my-secret-key",
+                        "sheet_123",
+                        "Cronograma",
+                        "client_123",
+                        "secret_456",
+                        "refresh_789",
+                        true,
+                        "ig_account_1",
+                        "meta_token_abc",
+                        true,
+                        "tiktok_token_xyz"
+                );
+
+        mockMvc.perform(post("/api/v1/dashboard/credentials/generate-env")
+                        .header("X-API-KEY", API_KEY)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.envContent").value(org.hamcrest.Matchers.containsString("AUTO_PUBLISHER_API_KEY=my-secret-key")))
+                .andExpect(jsonPath("$.envContent").value(org.hamcrest.Matchers.containsString("YOUTUBE_CLIENT_ID=client_123")));
+    }
 }

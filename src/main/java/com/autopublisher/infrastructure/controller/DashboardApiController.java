@@ -1,9 +1,11 @@
 package com.autopublisher.infrastructure.controller;
 
 import com.autopublisher.application.port.in.CreatePostRequest;
+import com.autopublisher.application.port.in.CredentialsSettingsPayload;
 import com.autopublisher.application.port.in.DashboardOverview;
 import com.autopublisher.application.port.in.PublishBatchReport;
 import com.autopublisher.application.port.in.PublishScheduledPostsUseCase;
+import com.autopublisher.application.port.in.SystemCredentialsStatus;
 import com.autopublisher.application.usecase.DashboardService;
 import com.autopublisher.domain.model.PostSchedule;
 import org.slf4j.Logger;
@@ -23,7 +25,7 @@ import java.util.Map;
 
 /**
  * Adaptador de Entrada (Inbound REST Controller) para o Dashboard Web da aplicacao.
- * Permite listar dados consolidados, adicionar novos agendamentos e disparar execucoes sob demanda.
+ * Permite listar dados consolidados, gerenciar credenciais, adicionar novos agendamentos e disparar execucoes.
  */
 @RestController
 @RequestMapping("/api/v1/dashboard")
@@ -35,14 +37,45 @@ public class DashboardApiController {
     private final PublishScheduledPostsUseCase publishUseCase;
     private final String expectedApiKey;
 
+    private final String spreadsheetId;
+    private final String tabName;
+    private final String youtubeClientId;
+    private final String youtubeClientSecret;
+    private final String youtubeRefreshToken;
+    private final boolean instagramEnabled;
+    private final String instagramAccountId;
+    private final String metaAccessToken;
+    private final boolean tiktokEnabled;
+    private final String tiktokAccessToken;
+
     public DashboardApiController(
             DashboardService dashboardService,
             PublishScheduledPostsUseCase publishUseCase,
-            @Value("${autopublisher.security.api-key:}") String expectedApiKey
+            @Value("${autopublisher.security.api-key:}") String expectedApiKey,
+            @Value("${autopublisher.sheets.spreadsheet-id:}") String spreadsheetId,
+            @Value("${autopublisher.sheets.tab-name:Cronograma}") String tabName,
+            @Value("${autopublisher.youtube.client-id:}") String youtubeClientId,
+            @Value("${autopublisher.youtube.client-secret:}") String youtubeClientSecret,
+            @Value("${autopublisher.youtube.refresh-token:}") String youtubeRefreshToken,
+            @Value("${autopublisher.instagram.enabled:false}") boolean instagramEnabled,
+            @Value("${autopublisher.instagram.business-account-id:}") String instagramAccountId,
+            @Value("${autopublisher.instagram.access-token:}") String metaAccessToken,
+            @Value("${autopublisher.tiktok.enabled:false}") boolean tiktokEnabled,
+            @Value("${autopublisher.tiktok.access-token:}") String tiktokAccessToken
     ) {
         this.dashboardService = dashboardService;
         this.publishUseCase = publishUseCase;
         this.expectedApiKey = expectedApiKey;
+        this.spreadsheetId = spreadsheetId;
+        this.tabName = tabName;
+        this.youtubeClientId = youtubeClientId;
+        this.youtubeClientSecret = youtubeClientSecret;
+        this.youtubeRefreshToken = youtubeRefreshToken;
+        this.instagramEnabled = instagramEnabled;
+        this.instagramAccountId = instagramAccountId;
+        this.metaAccessToken = metaAccessToken;
+        this.tiktokEnabled = tiktokEnabled;
+        this.tiktokAccessToken = tiktokAccessToken;
     }
 
     private boolean isUnauthorized(String providedHeader, String providedQuery) {
@@ -74,6 +107,65 @@ public class DashboardApiController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Erro ao carregar dados: " + e.getMessage()));
         }
+    }
+
+    @GetMapping("/credentials")
+    public ResponseEntity<?> getCredentialsStatus(
+            @RequestHeader(value = "X-API-KEY", required = false) String providedHeaderKey,
+            @RequestParam(value = "api_key", required = false) String providedQueryKey
+    ) {
+        if (isUnauthorized(providedHeaderKey, providedQueryKey)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Unauthorized: Invalid or missing X-API-KEY"));
+        }
+
+        boolean hasApiKey = expectedApiKey != null && !expectedApiKey.trim().isEmpty();
+        boolean hasSheets = spreadsheetId != null && !spreadsheetId.trim().isEmpty();
+        boolean hasYtSecret = youtubeClientSecret != null && !youtubeClientSecret.trim().isEmpty();
+        boolean hasYtRefresh = youtubeRefreshToken != null && !youtubeRefreshToken.trim().isEmpty();
+        boolean ytReady = hasYtSecret && hasYtRefresh && (youtubeClientId != null && !youtubeClientId.trim().isEmpty());
+
+        boolean hasIgToken = metaAccessToken != null && !metaAccessToken.trim().isEmpty();
+        boolean igReady = instagramEnabled && hasIgToken && (instagramAccountId != null && !instagramAccountId.trim().isEmpty());
+
+        boolean hasTtToken = tiktokAccessToken != null && !tiktokAccessToken.trim().isEmpty();
+        boolean ttReady = tiktokEnabled && hasTtToken;
+
+        SystemCredentialsStatus status = new SystemCredentialsStatus(
+                hasApiKey,
+                SystemCredentialsStatus.mask(expectedApiKey),
+                spreadsheetId != null ? spreadsheetId : "",
+                tabName != null ? tabName : "Cronograma",
+                hasSheets,
+                SystemCredentialsStatus.mask(youtubeClientId),
+                hasYtSecret,
+                hasYtRefresh,
+                ytReady,
+                instagramEnabled,
+                instagramAccountId != null ? instagramAccountId : "",
+                hasIgToken,
+                igReady,
+                tiktokEnabled,
+                hasTtToken,
+                ttReady
+        );
+
+        return ResponseEntity.ok(status);
+    }
+
+    @PostMapping("/credentials/generate-env")
+    public ResponseEntity<?> generateEnvTemplate(
+            @RequestBody CredentialsSettingsPayload payload,
+            @RequestHeader(value = "X-API-KEY", required = false) String providedHeaderKey,
+            @RequestParam(value = "api_key", required = false) String providedQueryKey
+    ) {
+        if (isUnauthorized(providedHeaderKey, providedQueryKey)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Unauthorized: Invalid or missing X-API-KEY"));
+        }
+
+        String envContent = payload.toEnvFormat();
+        return ResponseEntity.ok(Map.of("envContent", envContent));
     }
 
     @PostMapping("/posts")

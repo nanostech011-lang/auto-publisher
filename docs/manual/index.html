@@ -421,14 +421,38 @@
             <section id="credenciais" class="space-y-6 pt-6 border-t border-slate-800">
                 <div class="flex items-center gap-3">
                     <span class="px-3 py-1 bg-purple-950 text-purple-400 rounded-lg text-sm font-bold font-mono">05</span>
-                    <h2 class="text-2xl md:text-3xl font-bold text-white">Configuração de Credenciais (.env)</h2>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Central de Chaves & Credenciais</h2>
                 </div>
                 <p class="text-slate-300 leading-relaxed text-sm">
-                    Todas as credenciais são mantidas exclusivamente no arquivo <code class="text-purple-300">.env</code> na raiz do projeto (protegido pelo <code class="text-slate-400">.gitignore</code>) ou injetadas no Cloud Run via variáveis de ambiente.
+                    Para tornar a configuração 100% amigável, você pode configurar todas as chaves e APIs diretamente pela interface visual do <strong>Dashboard Web</strong> clicando no botão <span class="bg-slate-800 text-purple-300 px-2 py-1 rounded font-semibold border border-slate-700">Chaves & Integrações</span> no topo da página.
                 </p>
 
+                <!-- Screenshot Central de Credenciais -->
+                <div class="rounded-2xl border border-slate-800 overflow-hidden shadow-2xl bg-slate-900">
+                    <div class="px-4 py-2 bg-slate-950 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                        <span class="font-mono text-[11px] text-purple-300">Central de Chaves & Credenciais (All-in-One)</span>
+                        <span class="text-emerald-400 font-mono text-[11px]">Gerador e Exportador .env Automático</span>
+                    </div>
+                    <img src="dashboard_credentials_screenshot.png" alt="Central de Chaves do Dashboard" class="w-full h-auto">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
+                        <div class="font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-eye text-purple-400"></i> Ocultar / Ver Chaves</div>
+                        <p class="text-slate-400 mt-1">Alterne a visibilidade de tokens confidenciais com um clique sem expor na tela.</p>
+                    </div>
+                    <div class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
+                        <div class="font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-arrows-rotate text-emerald-400"></i> Status do Servidor</div>
+                        <p class="text-slate-400 mt-1">Verifique instantaneamente se o microsserviço já detectou cada chave no ambiente.</p>
+                    </div>
+                    <div class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
+                        <div class="font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-download text-sky-400"></i> Baixar Arquivo .env</div>
+                        <p class="text-slate-400 mt-1">Baixe o arquivo <code class="text-purple-300">.env</code> formatado para a raiz do projeto ou Cloud Run.</p>
+                    </div>
+                </div>
+
                 <div class="bg-slate-900 rounded-xl border border-slate-800 p-5 space-y-3 font-mono text-xs text-slate-300 overflow-x-auto">
-                    <p class="text-slate-500 font-sans text-xs mb-2">Exemplo do arquivo .env configurado:</p>
+                    <p class="text-slate-500 font-sans text-xs mb-2">Estrutura padrão do arquivo .env gerado:</p>
                     <pre class="text-emerald-300">
 # ==============================================================================
 # AutoPublisher Pro - Variaveis de Ambiente
@@ -647,6 +671,24 @@ TIKTOK_ACCESS_TOKEN=act.seu-token-tiktok
                         <p class="text-slate-400 leading-relaxed">
                             Filtre postagens por rede social (Shorts, Reels, TikTok), por status de execução ou pesquise instantaneamente pelo título.
                         </p>
+                </div>
+
+                <!-- Galeria de Modais da Interface -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <div class="rounded-xl border border-slate-800 overflow-hidden bg-slate-900">
+                        <div class="px-3 py-1.5 bg-slate-950 border-b border-slate-800 text-[11px] font-mono text-purple-300 flex items-center justify-between">
+                            <span>Formulário de Agendamento</span>
+                            <span class="text-slate-500">Auto Drive ID</span>
+                        </div>
+                        <img src="dashboard_modal_screenshot.png" alt="Modal de Agendamento" class="w-full h-auto">
+                    </div>
+
+                    <div class="rounded-xl border border-slate-800 overflow-hidden bg-slate-900">
+                        <div class="px-3 py-1.5 bg-slate-950 border-b border-slate-800 text-[11px] font-mono text-purple-300 flex items-center justify-between">
+                            <span>Central de Chaves & Credenciais</span>
+                            <span class="text-emerald-400">All-in-One</span>
+                        </div>
+                        <img src="dashboard_credentials_screenshot.png" alt="Central de Chaves" class="w-full h-auto">
                     </div>
                 </div>
             </section>
