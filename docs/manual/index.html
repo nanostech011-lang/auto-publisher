@@ -76,6 +76,7 @@
                 <a href="#google-drive" class="hover:text-purple-400 transition-colors">Google Drive</a>
                 <a href="#credenciais" class="hover:text-purple-400 transition-colors">Credenciais</a>
                 <a href="#monetizacao" class="hover:text-purple-400 transition-colors">Monetização</a>
+                <a href="#pipeline-ia" class="hover:text-purple-400 transition-colors">Vídeos IA</a>
                 <a href="#deploy" class="hover:text-purple-400 transition-colors">Deploy R$ 0,00</a>
                 <a href="#faq" class="hover:text-purple-400 transition-colors">FAQ</a>
             </nav>
@@ -105,7 +106,8 @@
                 <a href="#execucao-local" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-laptop-code w-4 text-purple-400"></i> 7. Execução Local</a>
                 <a href="#deploy" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-cloud-arrow-up w-4 text-purple-400"></i> 8. Deploy Cloud (R$ 0,00)</a>
                 <a href="#dashboard" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-desktop w-4 text-purple-400"></i> 9. Dashboard Web</a>
-                <a href="#faq" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-circle-question w-4 text-purple-400"></i> 10. FAQ & Soluções</a>
+                <a href="#pipeline-ia" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-wand-magic-sparkles w-4 text-purple-400"></i> 10. Vídeos por IA (Pipeline)</a>
+                <a href="#faq" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-circle-question w-4 text-purple-400"></i> 11. FAQ & Soluções</a>
             </div>
         </aside>
 
@@ -749,10 +751,90 @@
                 </div>
             </section>
 
-            <!-- 10. FAQ & Troubleshooting -->
-            <section id="faq" class="space-y-6 pt-6 border-t border-slate-800">
+            <!-- 10. Pipeline de Criação de Vídeos por IA (Épico 09) -->
+            <section id="pipeline-ia" class="space-y-6 pt-6 border-t border-slate-800">
                 <div class="flex items-center gap-3">
                     <span class="px-3 py-1 bg-purple-950 text-purple-400 rounded-lg text-sm font-bold font-mono">10</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Pipeline de Criação de Vídeos por IA</h2>
+                    <span class="text-xs bg-emerald-950/80 text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-800 font-mono font-bold">TikTok Rewards Ready (&ge; 60s)</span>
+                </div>
+
+                <p class="text-sm text-slate-300 leading-relaxed">
+                    O <strong>Upstream AI Video Engine</strong> é uma esteira 100% autônoma construída em Node.js no diretório <code class="text-purple-300 font-mono">pipeline/</code>. Ela transforma roteiros estruturados de neurociência e psicologia em vídeos verticais prontos para o TikTok e Shorts com narração neural ultra-realista, legendas dinâmicas em karaokê e cortes cinematográficos a cada 2 a 4 segundos, com <strong>Custo Operacional R$ 0,00</strong>.
+                </p>
+
+                <!-- Cards dos 4 Módulos do Pipeline -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2">
+                        <div class="font-bold text-white flex items-center gap-2 text-sm">
+                            <i class="fa-solid fa-brain text-purple-400"></i> Roteirização em 4 Blocos de Retenção
+                        </div>
+                        <p class="text-slate-400 leading-relaxed">
+                            Roteiros estruturados com Gancho (0-3s), Foco Científico (3-45s), Hack Prático (45-58s) e CTA (58-65s). Calibrados com 145 a 165 palavras para garantir que o vídeo final exceda rigorosamente os 60 segundos exigidos pelo <strong>TikTok Creator Rewards Program</strong>.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2">
+                        <div class="font-bold text-white flex items-center gap-2 text-sm">
+                            <i class="fa-solid fa-microphone-lines text-sky-400"></i> Voz Neural Gratuita (Edge-TTS)
+                        </div>
+                        <p class="text-slate-400 leading-relaxed">
+                            Locução natural humana via WebSocket com <code class="text-sky-300 font-mono">pt-BR-AntonioNeural</code> (taxa de locução ajustada em -4%), extraindo timestamps exatos de cada palavra (*word boundaries*) para sincronismo milimétrico.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2">
+                        <div class="font-bold text-white flex items-center gap-2 text-sm">
+                            <i class="fa-solid fa-closed-captioning text-amber-400"></i> Legendas Dinâmicas em Karaokê
+                        </div>
+                        <p class="text-slate-400 leading-relaxed">
+                            Renderização direta via libass em estilo <code class="text-amber-300 font-mono">.ass</code>. Cada palavra pronunciada acende instantaneamente em Amarelo Ouro (<code class="text-amber-300">#FFD700</code>) ou Ciano (<code class="text-cyan-300">#00E5FF</code>), multiplicando o tempo de tela do espectador.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 space-y-2">
+                        <div class="font-bold text-white flex items-center gap-2 text-sm">
+                            <i class="fa-solid fa-film text-emerald-400"></i> Compositor FFmpeg Headless
+                        </div>
+                        <p class="text-slate-400 leading-relaxed">
+                            Takes cinematográficos em 9:16 (1080x1920) com movimento de câmera Ken Burns (*zoompan*), transições suaves, áudio estéreo AAC 192k e queima de legendas com mapeamento explícito de streams (<code class="text-emerald-300 font-mono">-map [v_out]</code> e <code class="text-emerald-300 font-mono">-map 1:a</code>).
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Execução do Pipeline CLI -->
+                <div class="bg-slate-900/80 rounded-2xl border border-slate-800 p-5 space-y-3">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-white uppercase tracking-wide flex items-center gap-2">
+                            <i class="fa-solid fa-terminal text-purple-400"></i> Como Gerar um Vídeo por Linha de Comando (CLI)
+                        </span>
+                        <span class="text-purple-300 font-mono">pnpm pipeline</span>
+                    </div>
+                    <pre class="bg-slate-950 p-4 rounded-xl text-xs text-slate-300 font-mono overflow-x-auto border border-slate-800/80 leading-relaxed"><code><span class="text-slate-500"># 1. Instalar as dependências do pipeline</span>
+pnpm --prefix pipeline install
+
+<span class="text-slate-500"># 2. Executar o Roteiro 1 do canal piloto (@psicosegredo)</span>
+pnpm --prefix pipeline pipeline --channel psicosegredo --script 0
+
+<span class="text-slate-500"># 3. Gerar vídeo dinâmico a partir de um tema qualquer</span>
+pnpm --prefix pipeline pipeline --channel psicosegredo --topic "Como Ler Microexpressões Faciais"</code></pre>
+                </div>
+
+                <!-- Multi-Nicho: Arquitetura Declarativa por Canais -->
+                <div class="bg-slate-900/40 rounded-xl border border-slate-800 p-4 space-y-2 text-xs">
+                    <div class="font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-purple-400"></i> Suporte a Qualquer Nicho (Multi-Canal 100% Declarativo)
+                    </div>
+                    <p class="text-slate-400 leading-relaxed">
+                        Para criar um canal novo (ex: Estoicismo, Finanças, Fatos Curiosos), basta duplicar o modelo <code class="text-purple-300 font-mono">pipeline/config/channels/channel_template.json</code> para um novo arquivo como <code class="text-purple-300 font-mono">financas.json</code> e customizar o nome, voz, cores das legendas e links de afiliados. <strong>Nenhuma linha de código precisa ser alterada!</strong>
+                    </p>
+                </div>
+            </section>
+
+            <!-- 11. FAQ & Troubleshooting -->
+            <section id="faq" class="space-y-6 pt-6 border-t border-slate-800">
+                <div class="flex items-center gap-3">
+                    <span class="px-3 py-1 bg-purple-950 text-purple-400 rounded-lg text-sm font-bold font-mono">11</span>
                     <h2 class="text-2xl md:text-3xl font-bold text-white">Solução de Problemas (FAQ)</h2>
                 </div>
 

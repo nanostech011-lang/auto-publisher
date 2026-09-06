@@ -20,21 +20,25 @@ Para que canais automatizados gerem receita consistente (via YouTube Partner Pro
 
 ## 2. Escopo do Produto
 
-### 2.1. Escopo Atual (Fase 1 - MVP Focado em Monetização)
+### 2.1. Escopo Base (Fase 1 - MVP Focado em Monetização)
 *   **Painel de Controle & Banco de Dados:** Integração bidirecional com Google Sheets (leitura de cronograma e gravação de status/URLs geradas/logs).
 *   **Armazenamento de Assets:** Integração com Google Drive para streaming direto de vídeos e imagens de capa (thumbnails).
 *   **Distribuição Principal:** Integração com **YouTube Data API v3** (Shorts e vídeos tradicionais), com upload resumível e injeção de miniatura personalizada.
 *   **Gestão de Cotas & Erros:** Monitoramento de cotas diárias da API do YouTube (10.000 unidades/dia) com interrupção graciosa para evitar bloqueios.
 *   **Trigger Serverless:** Endpoint seguro compatível com **Google Cloud Scheduler** para disparo pontual sem custo de máquina ociosa.
 
-### 2.2. Escopo de Expansão (Fase 2 - Multiplataforma)
-*   **Instagram Reels:** Adaptador via Meta Graph API (Content Publishing API).
-*   **TikTok:** Adaptador via TikTok Content Posting API.
+### 2.2. Escopo Multiplataforma e Dashboard (Fase 2 - Concluído)
+*   **Instagram Reels:** Adaptador via Meta Graph API (Content Publishing API) com container de vídeo e polling de status.
+*   **TikTok:** Adaptador via TikTok Content Posting API (Direct Post via PULL_FROM_URL).
 *   **Comentário Fixado Automático:** Publicação do primeiro comentário com link de afiliado logo após o upload do vídeo.
+*   **Dashboard Web & Gerador de .env:** Interface gráfica moderna (`/dashboard`) com KPIs, monitor de status em tempo real, modal de agendamento e central de credenciais all-in-one.
 
-### 2.3. Fora do Escopo
-*   Geração e edição de vídeo/áudio por IA (feita previamente por ferramentas externas ou Google Labs).
-*   Interface gráfica nativa (o Google Sheets atua como a UI completa do usuário).
+### 2.3. Pipeline Upstream de Criação de Vídeos por IA (Fase 3 - Concluído)
+*   **Geração Autônoma por IA (Épico 09):** Motor upstream desacoplado (`pipeline/`) para roteirização em 4 blocos de retenção, síntese neural Edge-TTS (`pt-BR-AntonioNeural`), legendas dinâmicas em karaokê (`.ass`), curadoria de b-roll/assets 9:16 e composição com FFmpeg em MP4 de 60 segundos (elegível ao TikTok Creator Rewards Program). Documentado em detalhes no [PRD do Pipeline de Automação de Conteúdo](PRD_Pipeline_Automacao_Conteudo.md).
+
+### 2.4. Fora do Escopo
+*   Aplicativos móveis nativos (iOS/Android) — a plataforma opera 100% via Web Dashboard, Google Sheets e Cloud Run Serverless.
+*   Armazenamento persistente de vídeos brutos no servidor (streaming zero-copy garante descarte imediato).
 
 ---
 

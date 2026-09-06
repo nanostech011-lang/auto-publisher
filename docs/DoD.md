@@ -57,6 +57,13 @@ Nenhuma tarefa é considerada "Pronta" (*Done*) se violar:
     * Tempo de download e upload.
     * URL final gerada ou stack trace simplificado do erro.
 
+### 2.8. Pipeline Upstream de Geração de Vídeos por IA (Épico 09)
+- [x] **Duração Elegível ao TikTok Creator Rewards:** A esteira deve calibrar a taxa de fala do Edge-TTS (`msedge-tts`) e a contagem de palavras (145 a 165 palavras) para garantir duração final $\ge 60$ segundos (validada via FFprobe).
+- [x] **Mapeamento Explícito de Streams A/V no FFmpeg:** A composição de vídeo deve usar mapeamento explícito (`-map [v_out]` e `-map 1:a`), prevenindo o descarte da faixa de áudio por encadeamento de filtros complexos.
+- [x] **Legendas Dinâmicas em Karaokê (.ass):** O gerador de legendas deve gerar arquivos `.ass` com timestamps por palavra (*word boundary*), sem delimitadores de vírgula que corrompam o parser CSV do libass, destacando a palavra ativa com cores de alta retenção (`#FFD700` ou `#00E5FF`).
+- [x] **Gerenciamento de Disco Efêmero:** Arquivos temporários de renderização gerados em `pipeline/scratch/` e `pipeline/output/` devem ser ignorados pelo `.gitignore` para evitar inchaço do repositório Git.
+- [x] **Configuração Baseada em Perfis de Canais:** Toda parametrização de nicho, voz, estilo visual e monetização deve ser 100% declarativa em `pipeline/config/channels/{canal}.json`.
+
 ---
 
 ## 3. Checklist Rápido de Pré-Merge / Pré-Deploy
@@ -68,5 +75,6 @@ Nenhuma tarefa é considerada "Pronta" (*Done*) se violar:
 [x] O consumo de memória foi mantido via InputStream direto?
 [x] O campo `selfDeclaredMadeForKids: false` está garantido?
 [x] O status é devidamente registrado no Sheets tanto em caso de SUCESSO quanto de FALHA?
+[x] Vídeos gerados pelo pipeline de IA atingem duração >= 60s com áudio e legendas sincronizadas?
 [x] A documentação ou ADR correspondente foi atualizada?
 ```

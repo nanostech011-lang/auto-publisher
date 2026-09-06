@@ -1,90 +1,174 @@
 # AutoPublisher Pro 🚀
 
-> Microsserviço backend serverless em **Java 21** e **Spring Boot 3** para automação e orquestração de postagens de vídeos em redes sociais (YouTube Shorts, Instagram Reels, TikTok), com foco em **canais automatizados/dark**, **monetização** e **custo operacional R$ 0,00**.
+> Plataforma completa de automação de conteúdo e orquestração de postagens em redes sociais (**YouTube Shorts**, **Instagram Reels**, **TikTok**), combinando uma **esteira de geração de vídeos por IA (Upstream)** com um **microsserviço serverless de publicação (Downstream)** em **Java 21** e **Spring Boot 3**. Foco em **canais automatizados/dark**, **monetização máxima** e **custo operacional R$ 0,00**.
 
 ---
 
-## 🎯 Visão Geral
+## 🏗️ Arquitetura do Sistema End-to-End
 
-O **AutoPublisher Pro** elimina todo o trabalho manual de upload e agendamento de vídeos para criadores de conteúdo e canais dark focados em monetização:
-* **Interface Zero-Code:** O criador usa o **Google Sheets** como painel de controle e banco de dados.
-* **Armazenamento:** Os vídeos e miniaturas residem no seu próprio **Google Drive**.
-* **Distribuição Otimizada:** Upload no **YouTube** via *Resumable Upload*, com injeção automática de miniaturas personalizadas, tags SEO, hashtags e links de afiliados na descrição.
-* **Custo Zero Real:** Roda 100% dentro das cotas gratuitas (*Always Free*) do Google Cloud (Cloud Run + Cloud Scheduler).
+O AutoPublisher Pro opera em duas camadas totalmente integradas e complementares:
+
+```
+ ┌─────────────────────────────────────────────────────────────────────────────┐
+ │                 UPSTREAM: PIPELINE DE GERAÇÃO POR IA (Node.js)              │
+ │                                                                             │
+ │  Tema / Perfil ──► Roteiro 4 Blocos ──► Edge-TTS Neural ──► Legendas ASS   │
+ │                         (150 palavras)    (pt-BR-Antonio)      (Karaokê)    │
+ │                                                  │                 │         │
+ │  Assets 9:16 ──► Ken Burns Zoompan ──────────────┴─────────────────┼─────────┤
+ │                                                                    ▼         │
+ │                           FFmpeg Compositor ──► MP4 9:16 (60s TikTok Ready) │
+ └──────────────────────────────────────┬──────────────────────────────────────┘
+                                        │ (Upload de Mídia & Metadados)
+                                        ▼
+ ┌─────────────────────────────────────────────────────────────────────────────┐
+ │                  GOOGLE DRIVE & GOOGLE SHEETS (ou REST API)                 │
+ │     - Google Drive: Armazena o MP4 e a Thumbnail personalizada              │
+ │     - Google Sheets: Registra linha na aba 'Cronograma' com status PENDENTE │
+ └──────────────────────────────────────┬──────────────────────────────────────┘
+                                        │
+                                        ▼ (Disparo Cloud Scheduler / REST)
+ ┌─────────────────────────────────────────────────────────────────────────────┐
+ │            DOWNSTREAM: AUTOPUBLISHER PRO (Java 21 / Spring Boot 3)          │
+ │                                                                             │
+ │   - Leitura de agendamentos pendentes no Sheets                             │
+ │   - Streaming Zero-Copy de vídeo e capa do Drive via InputStream            │
+ │   - Upload no YouTube Data API v3 (Resumable Chunks de 5MB)                 │
+ │   - Publicação no Instagram Reels (Meta Graph) e TikTok Direct Post         │
+ │   - Fixação do Primeiro Comentário de Afiliados com rastreamento UTM        │
+ │   - Quota Guard (10.000 unidades diárias da API do YouTube)                 │
+ │   - Atualização cirúrgica de status (PUBLICADO) e URLs na Planilha          │
+ └─────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## 📂 Documentação Completa
+## 🌟 Principais Recursos
 
-Toda a documentação técnica, decisões de engenharia e regras operacionais estão organizadas no diretório [`docs/`](docs/):
+### 1. Upstream AI Video Engine (`pipeline/`)
+* **Duração TikTok Creator Rewards Ready ($\ge 60$s):** Roteiros estruturados em 4 blocos de retenção (Gancho, Foco Científico, Hack Prático e CTA) calibrados para 145 a 165 palavras a uma taxa de locução de -4%, gerando vídeos com 60 a 65 segundos de retenção máxima.
+* **Locução Neural Gratuita (R$ 0,00):** Síntese com `msedge-tts` (`pt-BR-AntonioNeural`), capturando *word boundaries* em microssegundos via WebSocket.
+* **Legendas Dinâmicas em Karaokê:** Renderização de arquivos `.ass` com destaque de palavra ativa em Amarelo Ouro (`#FFD700`) e Ciano (`#00E5FF`), sem bibliotecas pagas de transcrição.
+* **Composição Cinematográfica FFmpeg:** Efeito de movimento de câmera Ken Burns (*zoompan*), formatação estrita 9:16 (1080x1920) e mapeamento explícito de streams de áudio e vídeo (`-map [v_out]`, `-map 1:a`).
+* **Arquitetura Orientada a Perfis Multi-Nicho:** Suporte a qualquer tema adicionando um arquivo JSON declarativo em `pipeline/config/channels/{canal}.json`.
 
-* 🌐 [**Manual Interativo do Usuário (HTML)**](docs/manual/index.html): Guia visual completo com diagramas interativos, contratos de dados, passo a passo do Google Drive, OAuth permanente e comandos de deploy.
-* 📋 [**Product Requirements Document (PRD v2.0)**](docs/PRD_AutoPublisher_Completo.md): Escopo detalhado, regras de negócio, quotas da API e modelo da planilha.
-* 💰 [**Detalhes Operacionais & Custos**](docs/Detalhes_Operacional.md): Como rodar com R$ 0,00 e o modelo de receita para canais automatizados.
-* ✅ [**Definition of Done (DoD)**](docs/DoD.md): Critérios de qualidade, cobertura de testes (mín. 80%), boas práticas e conformidade de monetização.
-* 🏛️ [**Architectural Decision Records (ADRs)**](docs/adr/README.md):
-  * [ADR 0001: Autenticação OAuth 2.0 com Refresh Token no YouTube](docs/adr/0001-autenticacao-oauth2-refresh-token-youtube.md)
-  * [ADR 0002: Disparo Serverless com Cloud Scheduler e Cloud Run (Scale-to-Zero)](docs/adr/0002-gatilho-serverless-cloud-scheduler-cloud-run.md)
-  * [ADR 0003: Streaming Zero-Copy de Mídia via InputStream e Chunks](docs/adr/0003-streaming-zero-copy-inputstream-otimizacao-memoria.md)
-  * [ADR 0004: Arquitetura Hexagonal (Ports and Adapters)](docs/adr/0004-arquitetura-hexagonal-ports-and-adapters.md)
-  * [ADR 0005: Google Sheets como Banco de Dados e Painel Operacional](docs/adr/0005-google-sheets-como-banco-de-dados-e-painel-operacional.md)
-* 📊 [**Product Backlog (Épicos e Histórias)**](docs/backlog/README.md): 6 Épicos detalhados com histórias de usuário no padrão ágil e critérios de aceitação.
-
----
-
-## 🛠️ Stack Tecnológico
-
-* **Linguagem:** Java 21 LTS (Virtual Threads habilitadas)
-* **Framework:** Spring Boot 3.3.3
-* **Padrões:** Clean Architecture / Hexagonal (Ports & Adapters), SOLID
-* **APIs Externas:** Google Sheets API v4, Google Drive API v3, YouTube Data API v3
-* **Infraestrutura:** Docker (multi-stage JRE Alpine) e Google Cloud Run
+### 2. Downstream Serverless Publisher (`com.autopublisher`)
+* **Streaming Zero-Copy:** Tráfego direto do Google Drive para o YouTube via `InputStreamContent`, operando estavelmente com menos de **256MB de RAM** mesmo com arquivos de mídia grandes.
+* **Autenticação Headless Permanente:** Renovação de `access_token` em memória via OAuth 2.0 com `refresh_token` offline permanente (resolvendo a limitação de Service Accounts no YouTube).
+* **Conformidade COPPA & Monetização:** Flag `selfDeclaredMadeForKids: false` mandatória, injeção de `#Shorts` e primeiro comentário com links de afiliados fixado automaticamente.
+* **Interface Híbrida:** Opere pelo **Google Sheets** (celular ou desktop) ou pelo **Web Dashboard** interativo em `http://localhost:8080/dashboard`.
+* **Custo Zero Real (R$ 0,00):** Escala a zero no Google Cloud Run (`min-instances: 0`), acionado pontualmente pelo Google Cloud Scheduler.
 
 ---
 
-## ⚡ Como Executar Localmente
+## 📂 Estrutura do Repositório
+
+```
+auto-publisher/
+├── pipeline/                         # Upstream: Motor de Criação de Vídeos por IA
+│   ├── config/channels/              # Perfis de canais (psicosegredo.json, channel_template.json)
+│   ├── assets/scenes/                # Assets visuais 9:16 por canal
+│   ├── src/                          # Código-fonte da esteira Node.js
+│   │   ├── run_pipeline.js           # CLI Master Runner
+│   │   ├── script_generator.js       # Roteirização em 4 blocos e metadados SEO
+│   │   ├── voice_synthesizer.js      # Locução neural Edge-TTS + word boundaries
+│   │   ├── subtitle_generator.js     # Compilação de legendas dinâmicas (.ass / .srt)
+│   │   ├── visuals_harvester.js      # Seleção de b-roll e gerador de thumbnails
+│   │   ├── video_compositor.js       # Composição de vídeo e áudio com FFmpeg
+│   │   └── publisher_ingestor.js     # Ingestão na API REST do AutoPublisher
+│   └── package.json                  # Dependências do pipeline (gerenciado via pnpm)
+│
+├── src/main/java/com/autopublisher/  # Downstream: Microsserviço Java 21 Spring Boot
+│   ├── domain/                       # Entidades e regras puras (Zero dependências externas)
+│   ├── application/                  # Portas (in/out) e Casos de Uso
+│   └── infrastructure/               # Adaptadores (Sheets, Drive, YouTube, Reels, TikTok)
+│
+├── src/main/resources/static/        # Dashboard Web e Central de Credenciais
+├── docs/                             # Documentação técnica e operacional completa
+├── Dockerfile                        # Multi-stage build otimizado (JRE Alpine ~150MB)
+└── pom.xml                           # Build Maven do backend Java
+```
+
+---
+
+## 🚀 Como Executar
 
 ### 1. Pré-requisitos
-* JDK 21 LTS instalado
-* Arquivo `.env` na raiz com as credenciais preenchidas
+* **Java 21 LTS** e **Maven**
+* **Node.js 20+** e **pnpm** (`npm install -g pnpm`)
+* **FFmpeg** instalado no PATH (ou via pacotes `@ffmpeg-installer/ffmpeg`)
+* Arquivo `.env` configurado na raiz (utilize o modelo do dashboard ou `.env.example`)
 
-### 2. Execução da Suíte de Testes Automatizados
+---
+
+### 2. Geração de Vídeos por IA (Upstream)
+
+Instale as dependências da esteira de vídeo com `pnpm`:
 ```bash
-# Executa todos os 24 testes unitários com relatório de cobertura JaCoCo
+# Na raiz do projeto ou dentro de pipeline/
+pnpm --prefix pipeline install
+```
+
+Execute o pipeline para criar um vídeo completo (áudio, legendas, cortes 9:16 e thumbnail):
+```bash
+# Executa o roteiro 1 do canal piloto (@psicosegredo)
+pnpm --prefix pipeline pipeline --channel psicosegredo --script 0
+
+# Ou criar vídeo a partir de um tema dinâmico
+pnpm --prefix pipeline pipeline --channel psicosegredo --topic "Como desarmar uma discussão em 5 segundos"
+```
+
+O vídeo final será gerado em `pipeline/output/run_{timestamp}/video_final_9x16.mp4` e o manifesto de publicação em `POST-AUTO-*_manifest.json`.
+
+---
+
+### 3. Backend e Agendador Serverless (Downstream)
+
+#### Executar Testes Automatizados com JaCoCo:
+```bash
 ./mvnw clean test
-
-# Visualizar o relatório interativo de cobertura de código
-# Abra: target/site/jacoco/index.html no seu navegador
+# Relatório de cobertura: target/site/jacoco/index.html (Cobertura > 92%)
 ```
 
-### 3. Empacotamento do JAR Executável
+#### Iniciar a Aplicação Localmente:
 ```bash
-./mvnw clean package -DskipTests
-# Gera o arquivo otimizado: target/autopublisher-pro-1.0.0-SNAPSHOT.jar (~29.5MB)
+./mvnw spring-boot:run
 ```
-
-### 4. Construção da Imagem Docker Otimizada
-```bash
-docker build -t autopublisher-pro:latest .
-```
-
-### 5. Disparo Manual do Microsserviço
+* **Dashboard Web:** Abra `http://localhost:8080/dashboard` para visualizar métricas, tabela de agendamento e central de chaves.
+* **Disparo Manual da Fila:**
 ```bash
 curl -X POST http://localhost:8080/api/v1/publisher/run \
   -H "X-API-KEY: sua-chave-configurada"
 ```
 
+#### Build do Contêiner Docker Otimizado:
+```bash
+docker build -t autopublisher-pro:latest .
+```
+
 ---
 
-## 📊 Métricas de Qualidade e Cobertura (DoD)
+## 📚 Central de Documentação
 
-| Métrica / Dimensão | Meta DoD | Atingido | Status |
+* 🌐 [**Manual Interativo do Usuário (HTML)**](docs/manual/index.html): Guia visual completo com passo a passo ilustrado, configuração de credenciais e FAQ.
+* 📋 [**Product Requirements Document (PRD v2.0 Pro)**](docs/PRD_AutoPublisher_Completo.md): Visão completa do produto, regras de negócio e requisitos funcionais.
+* 🎬 [**PRD do Pipeline de Geração de Vídeos por IA**](docs/PRD_Pipeline_Automacao_Conteudo.md): Especificação arquitetural do motor upstream desacoplado.
+* 💰 [**Detalhes Operacionais & Custo Zero**](docs/Detalhes_Operacional.md): Análise minuciosa de custo R$ 0,00 e cálculo de rentabilidade (TikTok Creator Rewards e YouTube Shorts).
+* ✅ [**Definition of Done (DoD)**](docs/DoD.md): Critérios de qualidade, testes unitários (mín. 80%), boas práticas e conformidade de monetização.
+* 🏛️ [**Architectural Decision Records (ADRs)**](docs/adr/README.md): Histórico de decisões técnicas fundamentadas.
+* 📊 [**Product Backlog (Épicos 01 a 09)**](docs/backlog/README.md): Todas as histórias de usuário implementadas com rastreabilidade total.
+
+---
+
+## 📊 Métricas de Qualidade e Conformidade
+
+| Dimensão / Regra | Critério | Atingido | Status |
 | :--- | :---: | :---: | :---: |
-| **Total de Testes Unitários** | - | **24 testes** | ✅ Aprovado |
-| **Cobertura de Casos de Uso (Service)** | >= 80% | **92.8%** | ✅ Superado |
-| **Cobertura de Modelos de Domínio** | >= 80% | **94.7%** | ✅ Superado |
-| **Cobertura Inbound Controller** | >= 80% | **100%** | ✅ Superado |
-| **Alocação de Heap em Mídia (byte[])** | 0 bytes | **0 bytes (Zero-Copy)** | ✅ Aprovado |
-| **Conformidade COPPA (`madeForKids`)** | Mandatório false | **`false` explícito** | ✅ Aprovado |
-| **Quota Guard YouTube (10k units)** | Interrupção em 403 | **QuotaExceededException** | ✅ Aprovado |
+| **Cobertura de Casos de Uso (Service)** | $\ge 80\%$ | **92.8%** | ✅ Superado |
+| **Cobertura de Domínio e Entidades** | $\ge 80\%$ | **94.7%** | ✅ Superado |
+| **Uso de Memória Heap no Upload** | Zero-Copy | **0 bytes alocados (InputStream)** | ✅ Aprovado |
+| **Duração do Vídeo IA (TikTok Rewards)** | $\ge 60$s | **60.0 segundos** | ✅ Aprovado |
+| **Conformidade COPPA** | `madeForKids: false` | **Garantido em código** | ✅ Aprovado |
+| **Quota Guard YouTube** | Max 6 posts/dia (10k units) | **QuotaExceededException** | ✅ Aprovado |
+| **Custo Mensal de Infraestrutura** | R$ 0,00 | **100% Free Tier (Cloud Run + Sheets + Edge-TTS)** | ✅ Aprovado |
 

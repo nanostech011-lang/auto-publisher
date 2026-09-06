@@ -72,13 +72,13 @@ O backlog está organizado para viabilizar um MVP funcional focado em **monetiza
 | US-08.2 | Isolamento de Planilhas e Recursos por Tenant | Could | Média | Planejado | [epico-08](epico-08-saas-multi-tenant.md#us-082) |
 | US-08.3 | Gestão Descentralizada de Cotas OAuth 2.0 por Cliente | Could | Alta | Planejado | [epico-08](epico-08-saas-multi-tenant.md#us-083) |
 | US-08.4 | Painel Administrativo de Gestão de Clientes | Could | Média | Planejado | [epico-08](epico-08-saas-multi-tenant.md#us-084) |
-| **EP-09** | **Pipeline de Geração de Vídeos Dark por IA** | **Should** | **Alta** | **Planejado** | [epico-09-pipeline-geracao-conteudo-ia.md](epico-09-pipeline-geracao-conteudo-ia.md) |
-| US-09.1 | Motor de Roteirização Estruturada & SEO (Script Engine) | Should | Média | Planejado | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-091) |
-| US-09.2 | Síntese de Voz Neural e Legendas Dinâmicas (Edge-TTS) | Should | Média | Planejado | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-092) |
-| US-09.3 | Curadoria de B-Roll Vertical e Thumbnails (Pexels API) | Should | Média | Planejado | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-093) |
-| US-09.4 | Renderizador Headless de Vídeo (FFmpeg Compositor) | Should | Alta | Planejado | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-094) |
-| US-09.5 | Ingestor Automático no Google Drive e Google Sheets | Should | Média | Planejado | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-095) |
-| US-09.6 | Conjunto de Ferramentas MCP para Agentes Autônomos | Could | Média | Planejado | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-096) |
+| **EP-09** | **Pipeline de Geração de Vídeos Dark por IA** | **Should** | **Alta** | **Concluído** | [epico-09-pipeline-geracao-conteudo-ia.md](epico-09-pipeline-geracao-conteudo-ia.md) |
+| US-09.1 | Motor de Roteirização Estruturada & SEO (Script Engine) | Should | Média | Concluído | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-091) |
+| US-09.2 | Síntese de Voz Neural e Legendas Dinâmicas (Edge-TTS) | Should | Média | Concluído | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-092) |
+| US-09.3 | Curadoria de B-Roll Vertical e Thumbnails (Pexels API) | Should | Média | Concluído | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-093) |
+| US-09.4 | Renderizador Headless de Vídeo (FFmpeg Compositor) | Should | Alta | Concluído | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-094) |
+| US-09.5 | Ingestor Automático no Google Drive e Google Sheets | Should | Média | Concluído | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-095) |
+| US-09.6 | Runner e Orquestração por Agentes Autônomos | Could | Média | Concluído | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-096) |
 
 ---
 
