@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">Etapa 1: projeto e regiao do Cloud Run</title>
+  <desc id="desc">Ilustracao da escolha do projeto Google Cloud e da regiao southamerica-east1.</desc>
+  <rect width="1200" height="620" fill="#0b0f19"/>
+  <rect x="40" y="35" width="1120" height="550" rx="18" fill="#111827" stroke="#374151"/>
+  <rect x="40" y="35" width="1120" height="64" rx="18" fill="#172033"/>
+  <circle cx="78" cy="67" r="10" fill="#60a5fa"/><text x="105" y="75" fill="#f8fafc" font-family="Arial, sans-serif" font-size="23" font-weight="700">Google Cloud Console</text>
+  <text x="82" y="145" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="20" font-weight="700">1. Selecione o projeto</text>
+  <rect x="82" y="170" width="1036" height="70" rx="8" fill="#0f172a" stroke="#60a5fa" stroke-width="3"/>
+  <text x="108" y="213" fill="#f8fafc" font-family="monospace" font-size="20">SEU_PROJECT_ID</text><text x="1000" y="213" fill="#60a5fa" font-family="Arial, sans-serif" font-size="24">v</text>
+  <text x="82" y="295" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="20" font-weight="700">2. Escolha a regiao</text>
+  <rect x="82" y="320" width="1036" height="70" rx="8" fill="#0f172a" stroke="#34d399" stroke-width="3"/>
+  <text x="108" y="363" fill="#34d399" font-family="monospace" font-size="20">southamerica-east1 (Sao Paulo)</text><text x="1000" y="363" fill="#34d399" font-family="Arial, sans-serif" font-size="24">v</text>
+  <rect x="82" y="450" width="230" height="58" rx="8" fill="#2563eb"/><text x="136" y="487" fill="white" font-family="Arial, sans-serif" font-size="19" font-weight="700">Continuar</text>
+  <text x="82" y="550" fill="#94a3b8" font-family="Arial, sans-serif" font-size="17">Use o mesmo projeto onde as APIs do Google foram ativadas.</text>
+</svg>

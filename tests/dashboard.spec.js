@@ -37,6 +37,8 @@ test.describe('Validação da Interface de Usuário (Dashboard Web) do AutoPubli
 
         // Preenche chave de segurança
         await page.fill('#inputApiKey', 'test-user-api-key-999');
+        await expect(page.locator('#securityKeyScript')).toContainText('RandomNumberGenerator');
+        await expect(page.locator('button[title="Copiar script"]')).toBeVisible();
 
         // Navega para aba Google Sheets
         await page.click('#btnTabSheets');
@@ -62,9 +64,9 @@ test.describe('Validação da Interface de Usuário (Dashboard Web) do AutoPubli
         await page.fill('#inputIgAccountId', '17841400000000000');
         await page.fill('#inputMetaToken', 'EAA...longlivedtoken');
 
-        // Navega para aba Gerar .env
-        await page.click('#btnTabEnv');
-        await expect(page.locator('#envPreview')).toBeVisible();
+        // A Central não expõe mais o gerador de .env
+        await expect(page.locator('#btnTabEnv')).toHaveCount(0);
+        await expect(page.locator('#envPreview')).toHaveCount(0);
 
         // Captura screenshot da Central de Credenciais aberta
         const credScreenshotPath = path.resolve(__dirname, '../docs/manual/dashboard_credentials_screenshot.png');

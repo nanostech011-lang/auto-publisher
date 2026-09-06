@@ -1,0 +1,4 @@
+allowBuilds:
+  msedge-tts: true
+onlyBuiltDependencies:
+  - msedge-tts

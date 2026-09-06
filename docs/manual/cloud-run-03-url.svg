@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">Etapa 3: URL do servico Cloud Run</title>
+  <desc id="desc">Ilustracao da URL publica do servico implantado e do endpoint de publicacao.</desc>
+  <rect width="1200" height="620" fill="#0b0f19"/>
+  <rect x="40" y="35" width="1120" height="550" rx="18" fill="#111827" stroke="#374151"/>
+  <text x="82" y="92" fill="#f8fafc" font-family="Arial, sans-serif" font-size="24" font-weight="700">Cloud Run / autopublisher-pro / Detalhes</text>
+  <rect x="82" y="135" width="1036" height="100" rx="10" fill="#052e16" stroke="#34d399" stroke-width="3"/>
+  <circle cx="120" cy="185" r="14" fill="#34d399"/><text x="155" y="193" fill="#d1fae5" font-family="Arial, sans-serif" font-size="21" font-weight="700">Implantacao concluida</text>
+  <text x="82" y="290" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="19">URL do servico</text>
+  <rect x="82" y="315" width="1036" height="66" rx="8" fill="#0f172a" stroke="#60a5fa" stroke-width="3"/>
+  <text x="108" y="356" fill="#93c5fd" font-family="monospace" font-size="19">https://autopublisher-pro-xxxxx.a.run.app</text>
+  <text x="82" y="433" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="19">Endpoint usado pelo Scheduler</text>
+  <rect x="82" y="455" width="1036" height="66" rx="8" fill="#0f172a" stroke="#a78bfa"/>
+  <text x="108" y="496" fill="#c4b5fd" font-family="monospace" font-size="18">https://autopublisher-pro-xxxxx.a.run.app/api/v1/publisher/run</text>
+  <text x="82" y="558" fill="#94a3b8" font-family="Arial, sans-serif" font-size="17">Copie a URL base para abrir o Dashboard e configurar o Scheduler.</text>
+</svg>

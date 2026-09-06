@@ -1,0 +1,85 @@
+{
+  "channel_id": "psicosegredo",
+  "name": "@psicosegredo",
+  "niche": "Neurociência Prática, Inteligência Emocional e Psicologia Comportamental",
+  "target_audience": "Jovens e adultos interessados em desenvolvimento pessoal, autodomínio, foco e comportamento humano",
+  "format": {
+    "aspect_ratio": "9:16",
+    "resolution": "1080x1920",
+    "target_fps": 30,
+    "target_duration_seconds": 68,
+    "cuts_interval_seconds": "2-4"
+  },
+  "script_profile": {
+    "target_words_min": 145,
+    "target_words_max": 165,
+    "words_per_minute": 135,
+    "hook_formula": "Pattern Interrupt provocativo nos primeiros 3 segundos + Afirmação contraintuitiva de neurociência",
+    "tone": "Analítico, misterioso, confiante, direto e baseado em neurobiologia prática",
+    "structure": [
+      {"section": "hook", "time": "00:00 - 00:03", "description": "Quebra de padrão verbal e visual"},
+      {"section": "scientific_core", "time": "00:03 - 00:45", "description": "Mecanismo neurobiológico simplificado (amígdala, dopamina, córtex pré-frontal)"},
+      {"section": "practical_hack", "time": "00:45 - 00:58", "description": "Ação imediata aplicável na rotina"},
+      {"section": "cta", "time": "00:58 - 01:05", "description": "Chamada para seguir e acessar link no perfil/comentário"}
+    ]
+  },
+  "voice_profile": {
+    "provider": "edge_tts",
+    "voice_id": "pt-BR-AntonioNeural",
+    "rate": "-4%",
+    "pitch": "-2Hz",
+    "volume": "+0%"
+  },
+  "visual_profile": {
+    "aesthetic": "Dark Minimalist Chiaroscuro",
+    "lighting": "Dramatic chiaroscuro with subtle cyan and gold edge light",
+    "prompt_prefix": "Cinematic dark aesthetic, chiaroscuro dramatic lighting, volumetric atmospheric smoke, 8k resolution, photorealistic, vertical 9:16",
+    "broll_keywords": [
+      "human brain glowing 3D",
+      "dark aesthetic silhouette",
+      "intense eyes close up cinematic",
+      "clock time passing shadow",
+      "person thinking dark room",
+      "golden key glowing"
+    ],
+    "subtitles_style": {
+      "font_name": "Montserrat-Black",
+      "font_size": 65,
+      "primary_color": "&H00FFFFFF",
+      "active_word_color": "&H0000D7FF",
+      "secondary_accent_color": "&H00FFE500",
+      "outline_color": "&H00000000",
+      "outline_width": 4,
+      "alignment": 2,
+      "margin_v": 160
+    }
+  },
+  "audio_profile": {
+    "voice_volume": 1.0,
+    "bg_music_track": "assets/music/dark_ambient_tension_01.mp3",
+    "bg_music_volume": 0.10,
+    "fade_out_seconds": 2.0,
+    "target_lufs": -14.0
+  },
+  "publishing_profile": {
+    "platforms": ["YOUTUBE_SHORTS", "TIKTOK", "INSTAGRAM_REELS"],
+    "youtube_category_id": 28,
+    "made_for_kids": false,
+    "privacy": "PUBLIC",
+    "default_tags": [
+      "neurociencia",
+      "psicologia comportamental",
+      "autodominio",
+      "dopamina",
+      "inteligencia emocional",
+      "shorts",
+      "tiktok"
+    ],
+    "affiliate_cta": {
+      "description_template": "🧠 Domine sua mente e reprograme sua química cerebral antes que usem isso contra você.\n\n🔗 Protocolo de Reprogramação Mental & Foco: https://meulink.com/psicosegredo?utm_source={platform}&utm_medium=shorts\n\nInscreva-se no canal para hacks diários de neurociência prática.",
+      "first_comment": "♟️ Quer aprender a controlar sua dopamina e eliminar a procrastinação em 21 dias? O método completo está no link fixado: https://meulink.com/psicosegredo"
+    },
+    "drive_folder_videos": "DRIVE_FOLDER_ID_VIDEOS",
+    "drive_folder_thumbnails": "DRIVE_FOLDER_ID_THUMBS"
+  }
+}

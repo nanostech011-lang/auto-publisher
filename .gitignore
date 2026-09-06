@@ -9,6 +9,7 @@
 !skills.json
 !plugins.json
 !mcp_config.json
+!pipeline/**/*.json
 credentials.json
 client_secret*.json
 service-account*.json
@@ -49,3 +50,9 @@ blob-report/
 playwright/.cache/
 !package.json
 !package-lock.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+
+# Pipeline temporarios
+pipeline/scratch/
+pipeline/output/

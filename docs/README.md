@@ -40,23 +40,39 @@ Gestão ágil de demandas dividida em 6 épicos detalhados com critérios de ace
 *   [**Épico 04:** Orquestração, Monetização e Quota Guard](backlog/epico-04-orquestracao-e-monetizacao.md)
 *   [**Épico 05:** Gatilho Serverless e Deploy em Produção (Cloud Run + Scheduler)](backlog/epico-05-trigger-serverless-e-deploy.md)
 *   [**Épico 06:** Expansão Multiplataforma (Instagram Reels e TikTok)](backlog/epico-06-expansao-multiplataforma.md)
+*   [**Épico 07:** Interface Web do Usuário e Central de Credenciais](backlog/epico-07-interface-do-usuario.md)
+*   [**Épico 08:** SaaS Multi-Tenant e Gestão de Usuários](backlog/epico-08-saas-multi-tenant.md)
+*   [**Épico 09:** Pipeline de Geração de Vídeos Dark por IA](backlog/epico-09-pipeline-geracao-conteudo-ia.md)
+
+### 6. [Pipeline de Automação de Conteúdo por IA](PRD_Pipeline_Automacao_Conteudo.md)
+*   **PRD de Geração Upstream:** Especificação completa da esteira autônoma que transforma temas em vídeos verticais prontos (áudio TTS Edge-TTS, legendas dinâmicas karaokê, b-roll dark 9:16, FFmpeg compositor e injeção automática no Google Drive/Sheets).
+*   **Contexto do Canal Piloto:** Especificação da identidade, estética dark chiaroscuro e roteiros validados do canal piloto em [docs/automacao.md](automacao.md).
 
 ---
 
-## 🚀 Fluxo Operacional Rápido
+## 🚀 Fluxo Operacional End-to-End (Upstream + Downstream)
 
 ```
-  [Criador / IA] ────► [Google Drive] (Vídeo & Thumbnail)
-          │
-          ▼
-   [Google Sheets] (Preenche linha na aba "Cronograma")
-          │
-          ▼ (A cada 30 min)
-  [Cloud Scheduler] ──HTTP POST──► [Cloud Run: AutoPublisher]
-                                          │
-                                          ├─ Lê linhas pendentes no Sheets
-                                          ├─ Baixa Stream do Drive (Zero RAM)
-                                          ├─ Sobe no YouTube via Resumable Upload
-                                          ├─ Configura Thumbnail personalizada
-                                          └─ Atualiza Sheets (PUBLICADO + Link)
+ ┌────────────────────────────────────────────────────────────┐
+ │        UPSTREAM: PIPELINE DE CRIAÇÃO POR IA (EP-09)        │
+ │  Tema Neurociência ──► LLM Roteiro ──► Edge-TTS Locução    │
+ │           ──► B-Roll Pexels ──► FFmpeg Render (MP4 9:16)   │
+ └─────────────────────────────┬──────────────────────────────┘
+                               │ (Upload Automático de Assets & Metadados)
+                               ▼
+ ┌────────────────────────────────────────────────────────────┐
+ │                 GOOGLE DRIVE & GOOGLE SHEETS               │
+ │    - Google Drive: Salva MP4 e Thumbnail                   │
+ │    - Google Sheets: Cria linha com status PENDENTE         │
+ └─────────────────────────────┬──────────────────────────────┘
+                               │
+                               ▼ (Trigger Periódico)
+ ┌────────────────────────────────────────────────────────────┐
+ │      DOWNSTREAM: AUTOPUBLISHER PRO (Java 21 / Cloud Run)   │
+ │   - Leitura de agendamentos pendentes                      │
+ │   - Streaming Zero-Copy de mídia do Drive                  │
+ │   - Publicação YouTube Shorts + Instagram Reels + TikTok   │
+ │   - Fixação do Primeiro Comentário de Afiliados            │
+ │   - Atualização cirúrgica de status e URLs no Sheets       │
+ └────────────────────────────────────────────────────────────┘
 ```

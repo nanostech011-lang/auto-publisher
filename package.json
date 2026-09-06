@@ -1,13 +1,15 @@
 {
   "name": "autopublisher",
   "version": "1.0.0",
+  "type": "module",
   "description": "> Microsserviço backend serverless em **Java 21** e **Spring Boot 3** para automação e orquestração de postagens de vídeos em redes sociais (YouTube Shorts, Instagram Reels, TikTok), com foco em **canais automatizados/dark**, **monetização** e **custo operacional R$ 0,00**.",
   "main": "index.js",
   "directories": {
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "pipeline": "node pipeline/src/run_pipeline.js"
   },
   "repository": {
     "type": "git",
@@ -21,7 +23,14 @@
   },
   "homepage": "https://github.com/andreyvdecarvalho/auto-publisher#readme",
   "devDependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffprobe-installer/ffprobe": "^2.1.2",
     "@playwright/test": "^1.62.1",
+    "dotenv": "^17.4.2",
+    "fluent-ffmpeg": "^2.1.3",
     "playwright": "^1.62.1"
+  },
+  "dependencies": {
+    "msedge-tts": "^2.0.7"
   }
 }

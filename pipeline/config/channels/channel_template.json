@@ -1,0 +1,65 @@
+{
+  "$schema_description": "Template canônico para criação de novos canais e nichos no AutoPublisher Pro",
+  "channel_id": "nome_do_canal",
+  "name": "@seucanal",
+  "niche": "Nome do Nicho (Ex: Finanças Pessoais, Filosofia Estoica, Curiosidades)",
+  "target_audience": "Descrição do público-alvo",
+  "format": {
+    "aspect_ratio": "9:16",
+    "resolution": "1080x1920",
+    "target_fps": 30,
+    "target_duration_seconds": 68,
+    "cuts_interval_seconds": "2-4"
+  },
+  "script_profile": {
+    "target_words_min": 145,
+    "target_words_max": 165,
+    "words_per_minute": 135,
+    "hook_formula": "Estrutura do gancho dos primeiros 3 segundos",
+    "tone": "Tom da comunicação (Ex: Sério, Inspirador, Didático, Enérgico)"
+  },
+  "voice_profile": {
+    "provider": "edge_tts",
+    "voice_id": "pt-BR-AntonioNeural",
+    "rate": "+0%",
+    "pitch": "+0Hz",
+    "volume": "+0%"
+  },
+  "visual_profile": {
+    "aesthetic": "Nome da Estética (Ex: Clean Minimalist, Dark Neon, Vintage)",
+    "lighting": "Tipo de iluminação",
+    "prompt_prefix": "Prompt base para geração de imagem/vídeo, 8k, vertical 9:16",
+    "broll_keywords": ["termo 1", "termo 2", "termo 3"],
+    "subtitles_style": {
+      "font_name": "Montserrat-Black",
+      "font_size": 65,
+      "primary_color": "&H00FFFFFF",
+      "active_word_color": "&H0000D7FF",
+      "secondary_accent_color": "&H00FFE500",
+      "outline_color": "&H00000000",
+      "outline_width": 4,
+      "alignment": 2,
+      "margin_v": 160
+    }
+  },
+  "audio_profile": {
+    "voice_volume": 1.0,
+    "bg_music_track": "assets/music/sua_trilha.mp3",
+    "bg_music_volume": 0.10,
+    "fade_out_seconds": 2.0,
+    "target_lufs": -14.0
+  },
+  "publishing_profile": {
+    "platforms": ["YOUTUBE_SHORTS", "TIKTOK", "INSTAGRAM_REELS"],
+    "youtube_category_id": 24,
+    "made_for_kids": false,
+    "privacy": "PUBLIC",
+    "default_tags": ["tag1", "tag2", "tag3", "shorts"],
+    "affiliate_cta": {
+      "description_template": "Copy da descrição com link https://meulink.com/afiliado?utm_source={platform}",
+      "first_comment": "Texto do primeiro comentário fixado com chamada para ação"
+    },
+    "drive_folder_videos": "ID_PASTA_DRIVE_VIDEOS",
+    "drive_folder_thumbnails": "ID_PASTA_DRIVE_THUMBNAILS"
+  }
+}

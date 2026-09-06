@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">Etapa 2: variaveis de ambiente do Cloud Run</title>
+  <desc id="desc">Ilustracao do campo de variaveis de ambiente com AUTO_PUBLISHER_API_KEY.</desc>
+  <rect width="1200" height="620" fill="#0b0f19"/>
+  <rect x="40" y="35" width="1120" height="550" rx="18" fill="#111827" stroke="#374151"/>
+  <text x="82" y="92" fill="#f8fafc" font-family="Arial, sans-serif" font-size="24" font-weight="700">Cloud Run / Editar servico / Variaveis e segredos</text>
+  <text x="82" y="145" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="19">Nome</text>
+  <rect x="82" y="165" width="480" height="60" rx="8" fill="#0f172a" stroke="#475569"/>
+  <text x="105" y="203" fill="#94a3b8" font-family="monospace" font-size="18">AUTO_PUBLISHER_API_KEY</text>
+  <text x="610" y="145" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="19">Valor</text>
+  <rect x="610" y="165" width="508" height="60" rx="8" fill="#0f172a" stroke="#f59e0b" stroke-width="3"/>
+  <text x="635" y="203" fill="#fbbf24" font-family="monospace" font-size="18">mesma-chave-do-dashboard</text>
+  <rect x="82" y="270" width="180" height="52" rx="8" fill="#1e293b" stroke="#64748b"/><text x="119" y="303" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="17">+ Adicionar</text>
+  <rect x="82" y="380" width="1036" height="82" rx="10" fill="#451a03" stroke="#f59e0b"/>
+  <text x="108" y="413" fill="#fde68a" font-family="Arial, sans-serif" font-size="18" font-weight="700">Importante</text>
+  <text x="108" y="442" fill="#fef3c7" font-family="Arial, sans-serif" font-size="17">Use exatamente o mesmo valor da Central de Chaves. Nao coloque a chave no codigo.</text>
+  <rect x="82" y="500" width="230" height="58" rx="8" fill="#2563eb"/><text x="128" y="537" fill="white" font-family="Arial, sans-serif" font-size="19" font-weight="700">Implantar</text>
+</svg>

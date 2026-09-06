@@ -185,40 +185,36 @@
             <section id="arquitetura" class="space-y-6 pt-6 border-t border-slate-800">
                 <div class="flex items-center gap-3">
                     <span class="px-3 py-1 bg-purple-950 text-purple-400 rounded-lg text-sm font-bold font-mono">02</span>
-                    <h2 class="text-2xl md:text-3xl font-bold text-white">Arquitetura Hexagonal & Fluxo de Dados</h2>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Como o Sistema Funciona</h2>
                 </div>
                 <p class="text-slate-300 leading-relaxed">
-                    O projeto segue os princípios rigorosos de <strong>Clean Architecture (Ports & Adapters)</strong>: o núcleo de regras de agendamento e monetização é totalmente desacoplado dos provedores externos de rede.
+                    Você só precisa organizar a planilha e os vídeos. O AutoPublisher faz o restante automaticamente.
                 </p>
 
-                <!-- Box de Arquitetura em ASCII/Diagrama -->
-                <div class="bg-slate-900/90 rounded-2xl border border-slate-800 p-5 font-mono text-xs text-slate-300 overflow-x-auto leading-relaxed">
-                    <pre class="text-purple-300">
-┌───────────────────────────┐          ┌───────────────────────────┐
-│   Google Sheets (Entrada) │          │    Google Drive (Mídia)   │
-│   Aba: "Cronograma"       │          │    Vídeos & Miniaturas    │
-└─────────────┬─────────────┘          └─────────────┬─────────────┘
-              │ Leitura cirúrgica                    │ Streaming (InputStream)
-              ▼                                      ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                   AutoPublisher Pro (Cloud Run)                  │
-│  ┌────────────────────────────────────────────────────────────┐  │
-│  │ Use Case: PublishScheduledPostsService                     │  │
-│  │ - Filtra posts vencidos                                    │  │
-│  │ - Quota Guard (Trava de segurança 10k unidades YouTube)    │  │
-│  │ - Conformidade COPPA (madeForKids = false)                 │  │
-│  │ - SEO e Hashtag #Shorts / #fyp                             │  │
-│  └────────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────┬────────────────────────────────┘
-                                  │ Resumable Upload
-        ┌─────────────────────────┼─────────────────────────┐
-        ▼                         ▼                         ▼
-┌───────────────┐         ┌───────────────┐         ┌───────────────┐
-│ YouTube API   │         │ Meta Graph    │         │ TikTok API    │
-│ (Shorts/Long) │         │ (Insta Reels) │         │ (Content API) │
-└───────────────┘         └───────────────┘         └───────────────┘
-                    </pre>
+                <div class="space-y-3">
+                    <div class="flex gap-4 items-start bg-slate-900/70 p-4 rounded-xl border border-slate-800">
+                        <span class="w-8 h-8 shrink-0 rounded-full bg-purple-900 text-purple-300 flex items-center justify-center font-bold">1</span>
+                        <div>
+                            <h3 class="font-bold text-white">Você prepara os dados</h3>
+                            <p class="text-sm text-slate-400 mt-1">Coloque o agendamento na aba <code class="text-purple-300">Cronograma</code> do Google Sheets e deixe o vídeo no Google Drive.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-start bg-slate-900/70 p-4 rounded-xl border border-slate-800">
+                        <span class="w-8 h-8 shrink-0 rounded-full bg-sky-900 text-sky-300 flex items-center justify-center font-bold">2</span>
+                        <div>
+                            <h3 class="font-bold text-white">O AutoPublisher verifica a planilha</h3>
+                            <p class="text-sm text-slate-400 mt-1">No horário programado, ele encontra os posts pendentes, lê o vídeo e aplica as regras de segurança e publicação.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-start bg-slate-900/70 p-4 rounded-xl border border-slate-800">
+                        <span class="w-8 h-8 shrink-0 rounded-full bg-emerald-900 text-emerald-300 flex items-center justify-center font-bold">3</span>
+                        <div>
+                            <h3 class="font-bold text-white">O vídeo é publicado e o resultado volta para a planilha</h3>
+                            <p class="text-sm text-slate-400 mt-1">O conteúdo é enviado para YouTube, Instagram ou TikTok. Depois, o status e o link publicado são registrados automaticamente.</p>
+                        </div>
+                    </div>
                 </div>
+                <p class="text-xs text-slate-500">Detalhe técnico: a arquitetura separa as regras do sistema das APIs externas. Isso facilita trocar ou adicionar plataformas sem alterar o fluxo principal.</p>
             </section>
 
             <!-- 3. Google Sheets -->
@@ -431,12 +427,12 @@
                 <div class="rounded-2xl border border-slate-800 overflow-hidden shadow-2xl bg-slate-900">
                     <div class="px-4 py-2 bg-slate-950 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400">
                         <span class="font-mono text-[11px] text-purple-300">Central de Chaves & Credenciais (All-in-One)</span>
-                        <span class="text-emerald-400 font-mono text-[11px]">Gerador e Exportador .env Automático</span>
+                        <span class="text-emerald-400 font-mono text-[11px]">Links oficiais para obter credenciais</span>
                     </div>
                     <img src="dashboard_credentials_screenshot.png" alt="Central de Chaves do Dashboard" class="w-full h-auto">
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
                         <div class="font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-eye text-purple-400"></i> Ocultar / Ver Chaves</div>
                         <p class="text-slate-400 mt-1">Alterne a visibilidade de tokens confidenciais com um clique sem expor na tela.</p>
@@ -445,41 +441,54 @@
                         <div class="font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-arrows-rotate text-emerald-400"></i> Status do Servidor</div>
                         <p class="text-slate-400 mt-1">Verifique instantaneamente se o microsserviço já detectou cada chave no ambiente.</p>
                     </div>
-                    <div class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800">
-                        <div class="font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-download text-sky-400"></i> Baixar Arquivo .env</div>
-                        <p class="text-slate-400 mt-1">Baixe o arquivo <code class="text-purple-300">.env</code> formatado para a raiz do projeto ou Cloud Run.</p>
+                </div>
+
+                <div class="space-y-3">
+                    <h3 class="text-lg font-bold text-white">Onde obter cada credencial</h3>
+                    <p class="text-sm text-slate-400">Abra o portal oficial do serviço correspondente. Os links abrem em uma nova aba; mantenha os tokens secretos e configure-os somente no ambiente da aplicação.</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <a href="https://console.cloud.google.com/projectselector/apis/library/sheets.googleapis.com" target="_blank" rel="noopener noreferrer" class="p-4 bg-slate-900/60 rounded-xl border border-slate-800 hover:border-emerald-500/60 transition-colors">
+                            <div class="font-bold text-white flex items-center justify-between"><span><i class="fa-solid fa-table-cells text-emerald-400 mr-1.5"></i> Google Sheets API</span><i class="fa-solid fa-arrow-up-right-from-square text-slate-500"></i></div>
+                            <p class="text-slate-400 mt-1">Ative a API no projeto do Google Cloud e obtenha o ID da planilha.</p>
+                        </a>
+                        <a href="https://console.cloud.google.com/projectselector/apis/library/drive.googleapis.com" target="_blank" rel="noopener noreferrer" class="p-4 bg-slate-900/60 rounded-xl border border-slate-800 hover:border-emerald-500/60 transition-colors">
+                            <div class="font-bold text-white flex items-center justify-between"><span><i class="fa-brands fa-google-drive text-emerald-400 mr-1.5"></i> Google Drive API</span><i class="fa-solid fa-arrow-up-right-from-square text-slate-500"></i></div>
+                            <p class="text-slate-400 mt-1">Ative o acesso aos vídeos e miniaturas armazenados no Drive.</p>
+                        </a>
+                        <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" class="p-4 bg-slate-900/60 rounded-xl border border-slate-800 hover:border-red-500/60 transition-colors">
+                            <div class="font-bold text-white flex items-center justify-between"><span><i class="fa-brands fa-youtube text-red-400 mr-1.5"></i> YouTube OAuth 2.0</span><i class="fa-solid fa-arrow-up-right-from-square text-slate-500"></i></div>
+                            <p class="text-slate-400 mt-1">Crie o Client ID e o Client Secret para gerar o Refresh Token.</p>
+                        </a>
+                        <a href="https://developers.facebook.com/apps/" target="_blank" rel="noopener noreferrer" class="p-4 bg-slate-900/60 rounded-xl border border-slate-800 hover:border-pink-500/60 transition-colors">
+                            <div class="font-bold text-white flex items-center justify-between"><span><i class="fa-brands fa-meta text-pink-400 mr-1.5"></i> Meta for Developers</span><i class="fa-solid fa-arrow-up-right-from-square text-slate-500"></i></div>
+                            <p class="text-slate-400 mt-1">Crie o app Meta e configure o Instagram Business para Reels.</p>
+                        </a>
+                        <a href="https://developers.tiktok.com/" target="_blank" rel="noopener noreferrer" class="p-4 bg-slate-900/60 rounded-xl border border-slate-800 hover:border-sky-500/60 transition-colors">
+                            <div class="font-bold text-white flex items-center justify-between"><span><i class="fa-brands fa-tiktok text-sky-400 mr-1.5"></i> TikTok for Developers</span><i class="fa-solid fa-arrow-up-right-from-square text-slate-500"></i></div>
+                            <p class="text-slate-400 mt-1">Crie o app e solicite acesso à Content Posting API.</p>
+                        </a>
                     </div>
                 </div>
 
-                <div class="bg-slate-900 rounded-xl border border-slate-800 p-5 space-y-3 font-mono text-xs text-slate-300 overflow-x-auto">
-                    <p class="text-slate-500 font-sans text-xs mb-2">Estrutura padrão do arquivo .env gerado:</p>
-                    <pre class="text-emerald-300">
-# ==============================================================================
-# AutoPublisher Pro - Variaveis de Ambiente
-# ==============================================================================
-
-# Seguranca do Gatilho HTTP
-AUTO_PUBLISHER_API_KEY=sua-chave-ultra-secreta-de-disparo-12345
-
-# Google Sheets
-GOOGLE_SHEETS_SPREADSHEET_ID=1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms
-GOOGLE_SHEETS_TAB_NAME=Cronograma
-
-# YouTube Data API v3 (OAuth 2.0 Headless)
-YOUTUBE_CLIENT_ID=seu-client-id.apps.googleusercontent.com
-YOUTUBE_CLIENT_SECRET=GOCSPX-seu-client-secret
-YOUTUBE_REFRESH_TOKEN=1//04seu-refresh-token-permanente
-
-# Meta Graph API (Instagram Reels - Opcional)
-INSTAGRAM_ENABLED=true
-INSTAGRAM_BUSINESS_ACCOUNT_ID=17841400000000000
-META_ACCESS_TOKEN=EAA...seu-long-lived-token
-META_GRAPH_API_VERSION=v20.0
-
-# TikTok Content Posting API (Opcional)
-TIKTOK_ENABLED=true
-TIKTOK_ACCESS_TOKEN=act.seu-token-tiktok
-                    </pre>
+                <div class="p-4 rounded-xl bg-amber-950/30 border border-amber-800/50 text-amber-200 text-xs space-y-3">
+                    <div class="flex gap-3 items-start">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-400 text-base mt-0.5"></i>
+                        <div>
+                            <strong class="text-white text-sm">Configure a chave também no backend</strong>
+                            <p class="mt-1 leading-relaxed">O campo da Central é usado pelo Dashboard. Para proteger o endpoint, o backend precisa receber o mesmo valor na variável de ambiente <code class="text-amber-300">AUTO_PUBLISHER_API_KEY</code>.</p>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="mb-1">No PowerShell local, execute antes de iniciar a aplicação:</p>
+                        <pre class="bg-slate-950 rounded-lg p-3 text-emerald-300 font-mono overflow-x-auto">$env:AUTO_PUBLISHER_API_KEY = "cole-a-chave-gerada-aqui"
+./mvnw spring-boot:run</pre>
+                    </div>
+                    <div>
+                        <p class="mb-1">No Cloud Run, configure a variável no serviço:</p>
+                        <pre class="bg-slate-950 rounded-lg p-3 text-emerald-300 font-mono overflow-x-auto">gcloud run services update NOME_DO_SERVICO `
+  --set-env-vars="AUTO_PUBLISHER_API_KEY=cole-a-chave-gerada-aqui"</pre>
+                    </div>
+                    <p class="text-[11px]">Use exatamente a mesma chave na Central e no backend. Nunca publique esse valor no código ou no Git.</p>
                 </div>
 
                 <!-- Alerta Anti-Expiração 7 Dias -->
@@ -572,8 +581,51 @@ TIKTOK_ACCESS_TOKEN=act.seu-token-tiktok
                     <h2 class="text-2xl md:text-3xl font-bold text-white">Deploy Serverless no Google Cloud (Custo R$ 0,00)</h2>
                 </div>
                 <p class="text-slate-300 leading-relaxed text-sm">
-                    Para colocar em produção sem gastar nada, criamos scripts prontos que configuram o <strong>Cloud Run</strong> com escala para zero e o <strong>Cloud Scheduler</strong> para acionamento a cada 30 minutos:
+                    O deploy coloca o AutoPublisher no <strong>Cloud Run</strong>. Siga as três etapas abaixo: escolha o projeto, configure a chave de segurança e copie a URL gerada.
                 </p>
+
+                <div class="space-y-5">
+                    <div class="bg-slate-900/60 rounded-xl border border-slate-800 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-slate-800 flex items-center gap-3">
+                            <span class="w-7 h-7 rounded-full bg-purple-900 text-purple-300 flex items-center justify-center text-sm font-bold">1</span>
+                            <div>
+                                <h3 class="font-bold text-white">Prepare o projeto</h3>
+                                <p class="text-xs text-slate-400">Use o projeto Google Cloud onde suas APIs estão ativadas.</p>
+                            </div>
+                        </div>
+                        <img src="cloud-run-01-projeto.svg" alt="Ilustração da escolha do projeto e da região no Cloud Run" class="w-full h-auto">
+                    </div>
+
+                    <div class="bg-slate-900/60 rounded-xl border border-slate-800 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-slate-800 flex items-center gap-3">
+                            <span class="w-7 h-7 rounded-full bg-amber-900 text-amber-300 flex items-center justify-center text-sm font-bold">2</span>
+                            <div>
+                                <h3 class="font-bold text-white">Configure a variável de segurança</h3>
+                                <p class="text-xs text-slate-400">No Cloud Run, adicione <code class="text-amber-300">AUTO_PUBLISHER_API_KEY</code> com a mesma chave usada no Dashboard.</p>
+                            </div>
+                        </div>
+                        <img src="cloud-run-02-variaveis.svg" alt="Ilustração da configuração da variável AUTO_PUBLISHER_API_KEY no Cloud Run" class="w-full h-auto">
+                    </div>
+
+                    <div class="bg-slate-900/60 rounded-xl border border-slate-800 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-slate-800 flex items-center gap-3">
+                            <span class="w-7 h-7 rounded-full bg-emerald-900 text-emerald-300 flex items-center justify-center text-sm font-bold">3</span>
+                            <div>
+                                <h3 class="font-bold text-white">Copie a URL do serviço</h3>
+                                <p class="text-xs text-slate-400">Use a URL base no navegador e a URL do endpoint para o Scheduler.</p>
+                            </div>
+                        </div>
+                        <img src="cloud-run-03-url.svg" alt="Ilustração da URL do serviço implantado no Cloud Run" class="w-full h-auto">
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-xl bg-amber-950/30 border border-amber-800/50 text-amber-200 text-xs space-y-3">
+                    <strong class="text-white text-sm">Importante: a chave precisa estar no backend</strong>
+                    <p>A Central de Chaves guarda o valor no navegador para o Dashboard. Configure o mesmo valor no Cloud Run antes de testar o serviço.</p>
+                    <pre class="bg-slate-950 rounded-lg p-3 text-emerald-300 font-mono overflow-x-auto">gcloud run services update autopublisher-pro `
+  --region southamerica-east1 `
+  --set-env-vars="AUTO_PUBLISHER_API_KEY=cole-a-chave-gerada-aqui"</pre>
+                </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
                     <!-- Windows PowerShell -->
@@ -581,10 +633,12 @@ TIKTOK_ACCESS_TOKEN=act.seu-token-tiktok
                         <div class="flex items-center gap-2 text-sky-400 font-bold font-sans">
                             <i class="fa-brands fa-windows"></i> Windows (PowerShell)
                         </div>
-                        <p class="text-slate-400 font-sans">Passo 1: Deploy no Cloud Run:</p>
+                        <p class="text-slate-400 font-sans">Deploy no Cloud Run:</p>
                         <div class="bg-slate-950 p-2 rounded text-slate-300 select-all">.\scripts\deploy-cloudrun.ps1 -ProjectId "seu-projeto-gcp"</div>
                         
-                        <p class="text-slate-400 font-sans">Passo 2: Configurar Cloud Scheduler:</p>
+                        <p class="text-slate-400 font-sans">Depois, configure a chave no serviço:</p>
+                        <div class="bg-slate-950 p-2 rounded text-slate-300 select-all">gcloud run services update autopublisher-pro --region southamerica-east1 --set-env-vars="AUTO_PUBLISHER_API_KEY=sua-chave"</div>
+                        <p class="text-slate-400 font-sans">Por fim, configure o Cloud Scheduler:</p>
                         <div class="bg-slate-950 p-2 rounded text-slate-300 select-all">.\scripts\setup-scheduler.ps1 -ServiceUrl "https://sua-url.a.run.app"</div>
                     </div>
 
@@ -593,10 +647,12 @@ TIKTOK_ACCESS_TOKEN=act.seu-token-tiktok
                         <div class="flex items-center gap-2 text-emerald-400 font-bold font-sans">
                             <i class="fa-brands fa-linux"></i> Linux / Mac / Cloud Shell
                         </div>
-                        <p class="text-slate-400 font-sans">Passo 1: Deploy no Cloud Run:</p>
+                        <p class="text-slate-400 font-sans">Deploy no Cloud Run:</p>
                         <div class="bg-slate-950 p-2 rounded text-slate-300 select-all">./scripts/deploy-cloudrun.sh "seu-projeto-gcp"</div>
                         
-                        <p class="text-slate-400 font-sans">Passo 2: Configurar Cloud Scheduler:</p>
+                        <p class="text-slate-400 font-sans">Depois, configure a chave no serviço:</p>
+                        <div class="bg-slate-950 p-2 rounded text-slate-300 select-all">gcloud run services update autopublisher-pro --region southamerica-east1 --set-env-vars="AUTO_PUBLISHER_API_KEY=sua-chave"</div>
+                        <p class="text-slate-400 font-sans">Por fim, configure o Cloud Scheduler:</p>
                         <div class="bg-slate-950 p-2 rounded text-slate-300 select-all">./scripts/setup-scheduler.sh "https://sua-url.a.run.app"</div>
                     </div>
                 </div>

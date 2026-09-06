@@ -277,9 +277,6 @@
                 <button onclick="switchCredTab('tab-social')" id="btnTabSocial" class="px-3.5 py-2 text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
                     <i class="fa-brands fa-instagram text-pink-400"></i> Instagram & TikTok
                 </button>
-                <button onclick="switchCredTab('tab-env')" id="btnTabEnv" class="px-3.5 py-2 text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
-                    <i class="fa-solid fa-file-code text-emerald-400"></i> Gerar .env
-                </button>
             </div>
 
             <!-- Conteúdo das Abas -->
@@ -297,10 +294,45 @@
                         </div>
                         <p class="text-[11px] text-slate-400 mt-1">Essa chave protege o endpoint de disparo e autoriza o Dashboard a se comunicar com o backend.</p>
                     </div>
+                    <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <p class="font-semibold text-slate-300">Ainda não tem uma chave?</p>
+                                <p class="text-[11px] text-slate-400 mt-1">Execute este script no PowerShell, copie o valor exibido e cole no campo acima.</p>
+                            </div>
+                            <button type="button" onclick="copySecurityKeyScript()" class="shrink-0 p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg" title="Copiar script">
+                                <i class="fa-solid fa-copy"></i>
+                            </button>
+                        </div>
+                        <pre id="securityKeyScript" class="bg-slate-900 border border-slate-800 rounded-lg p-3 text-emerald-300 font-mono text-[11px] leading-relaxed overflow-x-auto">$bytes = New-Object byte[] 32
+$rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+try {
+    $rng.GetBytes($bytes)
+    [Convert]::ToBase64String($bytes)
+} finally {
+    $rng.Dispose()
+}</pre>
+                        <div class="p-3 bg-amber-950/30 border border-amber-800/50 rounded-lg text-[11px] text-amber-200 space-y-1.5">
+                            <p><strong>Importante:</strong> o backend também precisa receber essa mesma chave como variável de ambiente.</p>
+                            <p>No PowerShell, antes de iniciar a aplicação, execute:</p>
+                            <code class="block bg-slate-900 rounded p-2 text-emerald-300 font-mono">$env:AUTO_PUBLISHER_API_KEY = "cole-a-chave-gerada-aqui"</code>
+                            <p>Depois, inicie o backend na mesma janela. No Cloud Run, configure <code class="text-amber-300">AUTO_PUBLISHER_API_KEY</code> nas variáveis de ambiente do serviço.</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ABA 2: Google Sheets & Drive -->
                 <div id="tab-sheets" class="space-y-3 hidden">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <a href="https://console.cloud.google.com/projectselector/apis/library/sheets.googleapis.com" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between gap-3 p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 hover:border-emerald-500/60 hover:text-white transition-colors">
+                            <span class="flex items-center gap-2"><i class="fa-solid fa-table-cells text-emerald-400"></i> Google Sheets API</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-slate-500"></i>
+                        </a>
+                        <a href="https://console.cloud.google.com/projectselector/apis/library/drive.googleapis.com" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between gap-3 p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 hover:border-emerald-500/60 hover:text-white transition-colors">
+                            <span class="flex items-center gap-2"><i class="fa-brands fa-google-drive text-emerald-400"></i> Google Drive API</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-slate-500"></i>
+                        </a>
+                    </div>
                     <div>
                         <label class="block font-semibold text-slate-300 mb-1">ID da Planilha (GOOGLE_SHEETS_SPREADSHEET_ID)</label>
                         <input type="text" id="inputSpreadsheetId" placeholder="Ex: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
@@ -315,6 +347,16 @@
 
                 <!-- ABA 3: YouTube OAuth 2.0 -->
                 <div id="tab-youtube" class="space-y-3 hidden">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <a href="https://console.cloud.google.com/projectselector/apis/library/youtube.googleapis.com" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between gap-3 p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 hover:border-red-500/60 hover:text-white transition-colors">
+                            <span class="flex items-center gap-2"><i class="fa-brands fa-youtube text-red-400"></i> Ativar YouTube Data API</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-slate-500"></i>
+                        </a>
+                        <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between gap-3 p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 hover:border-red-500/60 hover:text-white transition-colors">
+                            <span class="flex items-center gap-2"><i class="fa-solid fa-key text-red-400"></i> Criar credenciais OAuth</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-slate-500"></i>
+                        </a>
+                    </div>
                     <div class="p-3 bg-purple-950/30 border border-purple-800/40 rounded-xl text-purple-200 text-[11px] flex gap-2.5 items-start">
                         <i class="fa-solid fa-lightbulb text-purple-400 text-sm mt-0.5"></i>
                         <div>
@@ -347,6 +389,16 @@
 
                 <!-- ABA 4: Instagram & TikTok -->
                 <div id="tab-social" class="space-y-4 hidden">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <a href="https://developers.facebook.com/apps/" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between gap-3 p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 hover:border-pink-500/60 hover:text-white transition-colors">
+                            <span class="flex items-center gap-2"><i class="fa-brands fa-meta text-pink-400"></i> Meta for Developers</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-slate-500"></i>
+                        </a>
+                        <a href="https://developers.tiktok.com/" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between gap-3 p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 hover:border-sky-500/60 hover:text-white transition-colors">
+                            <span class="flex items-center gap-2"><i class="fa-brands fa-tiktok text-sky-400"></i> TikTok for Developers</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-slate-500"></i>
+                        </a>
+                    </div>
                     <!-- Instagram -->
                     <div class="p-3.5 bg-slate-950 rounded-xl border border-slate-800 space-y-2.5">
                         <div class="flex items-center justify-between">
@@ -389,20 +441,6 @@
                                 </button>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <!-- ABA 5: Exportar .env -->
-                <div id="tab-env" class="space-y-3 hidden">
-                    <p class="text-slate-400">Conteúdo pronto do seu arquivo <code class="text-purple-300">.env</code> gerado com as configurações preenchidas acima:</p>
-                    <textarea id="envPreview" readonly rows="10" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-emerald-400 font-mono text-[11px] focus:outline-none"></textarea>
-                    <div class="flex items-center gap-2">
-                        <button type="button" onclick="copyEnvToClipboard()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-semibold flex items-center gap-1.5">
-                            <i class="fa-solid fa-copy"></i> Copiar Conteúdo
-                        </button>
-                        <button type="button" onclick="downloadEnvFile()" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg font-semibold flex items-center gap-1.5">
-                            <i class="fa-solid fa-download"></i> Baixar Arquivo .env
-                        </button>
                     </div>
                 </div>
 
@@ -587,7 +625,6 @@
         function openCredentialsModal() {
             loadStoredCredentials();
             loadServerCredentials();
-            updateEnvPreview();
             document.getElementById('modalCredentials').classList.remove('hidden');
             document.getElementById('modalCredentials').classList.add('flex');
         }
@@ -598,8 +635,8 @@
         }
 
         function switchCredTab(tabId) {
-            const tabs = ['tab-security', 'tab-sheets', 'tab-youtube', 'tab-social', 'tab-env'];
-            const btns = ['btnTabSecurity', 'btnTabSheets', 'btnTabYoutube', 'btnTabSocial', 'btnTabEnv'];
+            const tabs = ['tab-security', 'tab-sheets', 'tab-youtube', 'tab-social'];
+            const btns = ['btnTabSecurity', 'btnTabSheets', 'btnTabYoutube', 'btnTabSocial'];
             
             tabs.forEach(t => {
                 const el = document.getElementById(t);
@@ -618,9 +655,6 @@
                 }
             });
 
-            if (tabId === 'tab-env') {
-                updateEnvPreview();
-            }
         }
 
         function toggleVisibility(inputId, eyeIconId) {
@@ -634,6 +668,15 @@
                 input.type = 'password';
                 icon.className = 'fa-solid fa-eye';
             }
+        }
+
+        function copySecurityKeyScript() {
+            const script = document.getElementById('securityKeyScript').textContent;
+            navigator.clipboard.writeText(script).then(() => {
+                showToast('Script copiado para a área de transferência!', 'success');
+            }).catch(() => {
+                showToast('Falha ao copiar. Selecione o script manualmente.', 'error');
+            });
         }
 
         function loadStoredCredentials() {
@@ -702,7 +745,6 @@
             localStorage.setItem('TIKTOK_ACCESS_TOKEN', ttToken);
 
             initApiKey();
-            updateEnvPreview();
             closeCredentialsModal();
             showToast('Todas as chaves e credenciais foram salvas!', 'success');
             loadDashboardData();
@@ -722,72 +764,6 @@
                 tiktokEnabled: document.getElementById('inputTtEnabled').checked,
                 tiktokAccessToken: document.getElementById('inputTtToken').value.trim()
             };
-        }
-
-        async function updateEnvPreview() {
-            const payload = getCredentialsPayload();
-            const headers = { 'Content-Type': 'application/json' };
-            const key = getApiKey();
-            if (key) headers['X-API-KEY'] = key;
-
-            try {
-                const res = await fetch('/api/v1/dashboard/credentials/generate-env', {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(payload)
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    document.getElementById('envPreview').value = data.envContent;
-                    return;
-                }
-            } catch (e) {
-                // Fallback client-side se offline
-            }
-
-            // Fallback direto
-            const envStr = 
-`# AutoPublisher Pro - Variaveis de Ambiente
-AUTO_PUBLISHER_API_KEY=${payload.apiKey}
-
-GOOGLE_SHEETS_SPREADSHEET_ID=${payload.spreadsheetId}
-GOOGLE_SHEETS_TAB_NAME=${payload.tabName}
-
-YOUTUBE_CLIENT_ID=${payload.youtubeClientId}
-YOUTUBE_CLIENT_SECRET=${payload.youtubeClientSecret}
-YOUTUBE_REFRESH_TOKEN=${payload.youtubeRefreshToken}
-
-INSTAGRAM_ENABLED=${payload.instagramEnabled}
-INSTAGRAM_BUSINESS_ACCOUNT_ID=${payload.instagramAccountId}
-META_ACCESS_TOKEN=${payload.metaAccessToken}
-
-TIKTOK_ENABLED=${payload.tiktokEnabled}
-TIKTOK_ACCESS_TOKEN=${payload.tiktokAccessToken}
-`;
-            document.getElementById('envPreview').value = envStr;
-        }
-
-        function copyEnvToClipboard() {
-            const text = document.getElementById('envPreview').value;
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('Conteúdo do .env copiado para a área de transferência!', 'success');
-            }).catch(() => {
-                showToast('Falha ao copiar. Selecione o texto manualmente.', 'error');
-            });
-        }
-
-        function downloadEnvFile() {
-            const text = document.getElementById('envPreview').value;
-            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = '.env';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showToast('Arquivo .env baixado com sucesso!', 'success');
         }
 
         // Carrega dados da API
