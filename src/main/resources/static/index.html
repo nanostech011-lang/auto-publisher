@@ -663,346 +663,352 @@ try {
 
     <!-- Modal: Studio IA - Criador Autônomo de Vídeos Verticais -->
     <div id="modalStudioAi" onclick="if(event.target===this) closeStudioModal()" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm hidden items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-5xl w-full flex flex-col max-h-[92vh] shadow-2xl overflow-hidden animate-modal">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-6xl w-full flex flex-col max-h-[92vh] shadow-2xl overflow-hidden animate-modal">
             
             <!-- Modal Header (Fixed) -->
-            <div class="p-5 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-900">
+            <div class="p-4 px-6 border-b border-slate-800 flex items-center justify-between shrink-0 bg-slate-900">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-600/30">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-600/30 shrink-0">
                         <i class="fa-solid fa-wand-magic-sparkles text-white text-sm"></i>
                     </div>
                     <div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 flex-wrap">
                             <h3 class="text-base font-bold text-white">Studio IA • Pipeline Upstream de Criação</h3>
                             <span class="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded-full font-mono font-bold">TikTok Rewards Ready (&ge; 60s)</span>
+                            <span class="text-[10px] bg-purple-950 text-purple-300 border border-purple-800/80 px-2 py-0.5 rounded-full font-mono font-bold hidden sm:inline">Streaming Zero-Copy</span>
                         </div>
-                        <p class="text-xs text-slate-400 mt-0.5">Produza vídeos verticais autônomos prontos para monetização com locução neural e legendas em karaokê.</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Extraia e repurpose vídeos do YouTube ou crie roteiros virais do zero com locução neural e legendas em karaokê.</p>
                     </div>
                 </div>
-                <button onclick="closeStudioModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="closeStudioModal()" class="text-slate-400 hover:text-white text-lg p-1 transition-colors"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Barra de Plataforma Social & Estilo (Full Width Subheader) -->
+            <div class="px-6 py-2.5 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between flex-wrap gap-3 shrink-0 text-xs">
+                <!-- Seletor de Plataforma Destino -->
+                <div class="flex items-center gap-2.5 flex-wrap">
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-share-nodes text-pink-400"></i> Destino:
+                    </span>
+                    <div class="flex items-center gap-1.5 p-1 bg-slate-900 rounded-xl border border-slate-800">
+                        <label class="flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer transition-all hover:bg-slate-800/80 text-[11px] font-semibold has-[:checked]:bg-red-950/70 has-[:checked]:text-white has-[:checked]:border has-[:checked]:border-red-600/80 border border-transparent">
+                            <input type="radio" name="studioPlatformRadio" value="YOUTUBE_SHORTS" checked onchange="updateStudioFooterSummary()" class="hidden">
+                            <i class="fa-brands fa-youtube text-red-500 text-sm"></i>
+                            <span>YouTube Shorts</span>
+                            <span class="text-[9px] text-slate-400 font-mono hidden md:inline">#Shorts</span>
+                        </label>
+                        <label class="flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer transition-all hover:bg-slate-800/80 text-[11px] font-semibold has-[:checked]:bg-sky-950/70 has-[:checked]:text-white has-[:checked]:border has-[:checked]:border-sky-500/80 border border-transparent">
+                            <input type="radio" name="studioPlatformRadio" value="TIKTOK" onchange="updateStudioFooterSummary()" class="hidden">
+                            <i class="fa-brands fa-tiktok text-sky-400 text-sm"></i>
+                            <span>TikTok</span>
+                            <span class="text-[9px] text-emerald-400 font-mono bg-emerald-950 px-1.5 py-0.2 rounded border border-emerald-800/80 hidden md:inline">&ge; 60s Rewards</span>
+                        </label>
+                        <label class="flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer transition-all hover:bg-slate-800/80 text-[11px] font-semibold has-[:checked]:bg-pink-950/70 has-[:checked]:text-white has-[:checked]:border has-[:checked]:border-pink-500/80 border border-transparent">
+                            <input type="radio" name="studioPlatformRadio" value="INSTAGRAM_REELS" onchange="updateStudioFooterSummary()" class="hidden">
+                            <i class="fa-brands fa-instagram text-pink-400 text-sm"></i>
+                            <span>Instagram Reels</span>
+                            <span class="text-[9px] text-slate-400 font-mono hidden md:inline">9:16</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Estilo das Legendas Karaokê Animadas -->
+                <div class="flex items-center gap-2.5">
+                    <span class="text-[11px] text-slate-400 flex items-center gap-1.5 font-medium">
+                        <i class="fa-solid fa-closed-captioning text-amber-400"></i>
+                        <span>Legenda Karaokê:</span>
+                    </span>
+                    <div class="flex items-center gap-1 p-0.5 bg-slate-900 rounded-lg border border-slate-800 text-[11px]">
+                        <label class="flex items-center gap-1.5 px-2 py-1 rounded cursor-pointer text-slate-300 hover:text-white has-[:checked]:bg-amber-950/60 has-[:checked]:text-amber-300 has-[:checked]:font-bold transition-all">
+                            <input type="radio" name="studioKaraokeColor" value="#FFD700" checked class="hidden">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block shadow-sm shadow-amber-400/50"></span>
+                            <span class="text-[10px]">Ouro</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 px-2 py-1 rounded cursor-pointer text-slate-300 hover:text-white has-[:checked]:bg-cyan-950/60 has-[:checked]:text-cyan-300 has-[:checked]:font-bold transition-all">
+                            <input type="radio" name="studioKaraokeColor" value="#00E5FF" class="hidden">
+                            <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 inline-block shadow-sm shadow-cyan-400/50"></span>
+                            <span class="text-[10px]">Ciano</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 px-2 py-1 rounded cursor-pointer text-slate-300 hover:text-white has-[:checked]:bg-emerald-950/60 has-[:checked]:text-emerald-300 has-[:checked]:font-bold transition-all">
+                            <input type="radio" name="studioKaraokeColor" value="#00FF66" class="hidden">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block shadow-sm shadow-emerald-400/50"></span>
+                            <span class="text-[10px]">Lima</span>
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <!-- Scrollable Body with custom-scrollbar -->
-            <div class="p-6 overflow-y-auto space-y-5 text-xs custom-scrollbar flex-1">
+            <div class="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs custom-scrollbar flex-1">
                 <!-- Studio Grid (Configurações à Esquerda, Preview/Console à Direita) -->
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 text-xs">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 text-xs">
                 
-                <!-- Coluna Esquerda: Configurações (5 colunas) -->
-                <div class="lg:col-span-5 space-y-4">
-                    
-                    <!-- 1. Perfil de Canal Genérico & Nichos -->
-                    <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
-                        <div class="flex items-center justify-between">
-                            <label class="font-bold text-slate-300 flex items-center gap-1.5">
-                                <i class="fa-solid fa-tv text-purple-400"></i>
-                                <span>Perfil / Nicho do Canal</span>
-                            </label>
-                            <span class="text-[10px] text-slate-500 font-mono">100% Genérico</span>
-                        </div>
-                        <select id="studioChannelSelect" onchange="onStudioChannelChange()" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-purple-500 font-semibold text-xs cursor-pointer">
-                            <option value="psicosegredo">🧠 @psicosegredo (Neurociência & Psicologia)</option>
-                            <option value="estoicismo">🏛️ @filosofia.estoica (Filosofia & Disciplina)</option>
-                            <option value="financas">💰 @mente.milionaria (Finanças & Investimentos)</option>
-                            <option value="curiosidades">🔍 @fatos.ocultos (Mistérios & Fatos)</option>
-                            <option value="custom">⚙️ + Configurar Perfil Customizado...</option>
-                        </select>
+                    <!-- Coluna Esquerda: Configurações em 2 Etapas Estruturadas (5 colunas) -->
+                    <div class="lg:col-span-5 space-y-3">
                         
-                        <!-- Box para Perfil Customizado (abre quando custom selecionado) -->
-                        <div id="studioCustomProfileBox" class="p-2.5 bg-slate-900/90 rounded-lg border border-purple-900/50 space-y-2 hidden">
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="text-[10px] text-slate-400 font-bold block mb-0.5">Nome do Perfil (@)</label>
-                                    <input type="text" id="customChannelName" placeholder="@meucanal" value="@meucanal" class="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-[11px] text-slate-200 focus:border-purple-500 outline-none">
+                        <!-- ETAPA 1: Origem do Conteúdo & Roteirização (Link YouTube, Tema Livre ou Catálogo) -->
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2.5">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-5 h-5 rounded-full bg-purple-900/80 text-purple-300 font-mono font-bold text-[10px] flex items-center justify-center border border-purple-700/60">1</span>
+                                    <label class="font-bold text-white flex items-center gap-1.5">
+                                        <i class="fa-solid fa-film text-purple-400"></i>
+                                        <span>Origem do Conteúdo</span>
+                                    </label>
                                 </div>
-                                <div>
-                                    <label class="text-[10px] text-slate-400 font-bold block mb-0.5">Nicho / Tema</label>
-                                    <input type="text" id="customChannelNiche" placeholder="Ex: Produtividade" value="Produtividade" class="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-[11px] text-slate-200 focus:border-purple-500 outline-none">
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label class="text-[10px] text-slate-400 font-bold block mb-0.5">Voz Neural</label>
-                                    <select id="customChannelVoice" onchange="onCustomVoiceChange()" class="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-[11px] text-slate-200 focus:border-purple-500 outline-none">
-                                        <option value="pt-BR-AntonioNeural">pt-BR-AntonioNeural (Grave)</option>
-                                        <option value="pt-BR-FranciscaNeural">pt-BR-FranciscaNeural (Clara)</option>
-                                        <option value="pt-BR-ThalitaNeural">pt-BR-ThalitaNeural (Jovem)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="text-[10px] text-slate-400 font-bold block mb-0.5">Link de Afiliado (CTA)</label>
-                                    <input type="text" id="customChannelAffiliate" placeholder="https://meulink.com" value="https://meulink.com/vip" class="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-[11px] text-slate-200 focus:border-purple-500 outline-none">
+                                <!-- Abas de Modo de Criação -->
+                                <div class="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-[10px]">
+                                    <button type="button" id="btnModeYoutube" onclick="setStudioMode('youtube')" class="px-2 py-1 rounded-md font-semibold bg-purple-600 text-white transition-all flex items-center gap-1"><i class="fa-brands fa-youtube text-red-400"></i> Link YouTube</button>
+                                    <button type="button" id="btnModeTopic" onclick="setStudioMode('topic')" class="px-2 py-1 rounded-md font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1">Tema Livre</button>
+                                    <button type="button" id="btnModeCatalog" onclick="setStudioMode('catalog')" class="px-2 py-1 rounded-md font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1">Catálogo</button>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="grid grid-cols-2 gap-2 text-[10px] text-slate-400 pt-1 font-mono">
-                            <div class="bg-slate-900/80 p-1.5 rounded border border-slate-800">
-                                <span class="text-slate-500 block">Voz Neural:</span>
-                                <span id="studioVoiceLabel" class="text-sky-300 font-semibold truncate block">pt-BR-AntonioNeural</span>
-                            </div>
-                            <div class="bg-slate-900/80 p-1.5 rounded border border-slate-800">
-                                <span class="text-slate-500 block">Formato / Resolução:</span>
-                                <span class="text-purple-300 font-semibold block">9:16 • 1080x1920 (30fps)</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 2. Modo de Criação: Link YouTube, Tema Livre ou Catálogo -->
-                    <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-3">
-                        <div class="flex items-center justify-between">
-                            <label class="font-bold text-slate-300 flex items-center gap-1.5">
-                                <i class="fa-solid fa-file-pen text-amber-400"></i>
-                                <span>Conteúdo & Roteirização</span>
-                            </label>
-                            <!-- Abas de Modo -->
-                            <div class="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-[10px]">
-                                <button type="button" id="btnModeYoutube" onclick="setStudioMode('youtube')" class="px-2 py-1 rounded-md font-semibold bg-purple-600 text-white transition-all flex items-center gap-1"><i class="fa-brands fa-youtube text-red-400"></i> Link YouTube</button>
-                                <button type="button" id="btnModeTopic" onclick="setStudioMode('topic')" class="px-2 py-1 rounded-md font-semibold text-slate-400 hover:text-white transition-all">Tema Livre</button>
-                                <button type="button" id="btnModeCatalog" onclick="setStudioMode('catalog')" class="px-2 py-1 rounded-md font-semibold text-slate-400 hover:text-white transition-all">Catálogo</button>
-                            </div>
-                        </div>
-
-                        <!-- Opção 1: Link do YouTube (Modelagem / Repurposing) -->
-                        <div id="studioModeYoutubeBlock" class="space-y-2">
-                            <label class="text-[11px] text-slate-400 flex items-center justify-between">
-                                <span>Cole a URL do vídeo do YouTube para analisar:</span>
-                                <span class="text-[10px] text-purple-400"><i class="fa-solid fa-sparkles"></i> Extração & Análise IA</span>
-                            </label>
-                            <div class="flex gap-2">
-                                <input type="text" id="studioYoutubeUrlInput" placeholder="Ex: https://www.youtube.com/watch?v=... ou https://youtu.be/..." class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-purple-500 font-mono text-xs">
-                                <button type="button" id="btnAnalyzeYoutube" onclick="analyzeCurrentYouTubeUrl()" class="px-3 bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-500 hover:to-purple-500 text-white rounded-lg font-bold text-xs shrink-0 flex items-center gap-1.5 shadow-md shadow-red-950/40 transition-all" title="Analisar Vídeo do YouTube e Gerar Roteiro">
-                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
-                                    <span>Analisar</span>
-                                </button>
-                            </div>
-                            <!-- Card de Status do Vídeo Original (mostrado após analisar) -->
-                            <div id="studioYoutubeOriginalCard" class="p-2.5 bg-slate-900/90 rounded-lg border border-slate-800 hidden items-center gap-3">
-                                <img id="studioYtThumb" src="" alt="Thumbnail Original" class="w-14 h-10 rounded object-cover border border-slate-800 bg-black shrink-0">
-                                <div class="overflow-hidden flex-1">
-                                    <div class="flex items-center gap-1.5 mb-0.5">
-                                        <span id="studioYtChannel" class="text-[10px] text-purple-300 font-semibold truncate block">Canal Original</span>
-                                        <span id="studioYtBadgeTranscript" class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono">Transcrição OK</span>
+                            <!-- Modo 1: Link do YouTube (Modelagem / Repurposing) -->
+                            <div id="studioModeYoutubeBlock" class="space-y-2">
+                                <p class="text-[11px] text-slate-400">Cole o link de um vídeo do YouTube para transcrever e converter em um Shorts viral estruturado em 4 blocos:</p>
+                                <div class="flex gap-2">
+                                    <div class="relative flex-1">
+                                        <i class="fa-brands fa-youtube absolute left-2.5 top-1/2 -translate-y-1/2 text-red-500 text-xs"></i>
+                                        <input type="text" id="studioYoutubeUrlInput" placeholder="https://www.youtube.com/watch?v=... ou https://youtu.be/..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-7 pr-2 py-1.5 text-slate-200 focus:outline-none focus:border-purple-500 font-mono text-[11px]">
                                     </div>
-                                    <div id="studioYtTitle" class="text-[11px] text-white font-bold truncate">Título do Vídeo</div>
+                                    <button type="button" id="btnAnalyzeYoutube" onclick="analyzeCurrentYouTubeUrl()" class="px-3 bg-gradient-to-r from-red-600 via-rose-600 to-purple-600 hover:from-red-500 hover:to-purple-500 text-white rounded-lg font-bold text-xs shrink-0 flex items-center gap-1.5 shadow-md shadow-red-950/40 transition-all active:scale-95" title="Analisar Vídeo do YouTube e Gerar Roteiro">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                        <span>Analisar</span>
+                                    </button>
                                 </div>
+                                <!-- Card de Status do Vídeo Original (mostrado após analisar) -->
+                                <div id="studioYoutubeOriginalCard" class="p-2 bg-slate-900/90 rounded-lg border border-purple-900/40 hidden items-center gap-2.5">
+                                    <img id="studioYtThumb" src="" alt="Thumbnail Original" class="w-14 h-10 rounded object-cover border border-slate-800 bg-black shrink-0">
+                                    <div class="overflow-hidden flex-1 min-w-0">
+                                        <div class="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                                            <span id="studioYtChannel" class="text-[10px] text-purple-300 font-semibold truncate block">Canal Original</span>
+                                            <span id="studioYtBadgeTranscript" class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono">Transcrição OK</span>
+                                        </div>
+                                        <div id="studioYtTitle" class="text-[11px] text-white font-bold truncate">Título do Vídeo</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modo 2: Tema Livre -->
+                            <div id="studioModeTopicBlock" class="space-y-2 hidden">
+                                <label class="text-[11px] text-slate-400">Digite o tema ou gancho desejado:</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="studioCustomTopicInput" placeholder="Ex: O Efeito Priming e Decisões Inconscientes" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-1.5 text-slate-200 focus:outline-none focus:border-purple-500 text-[11px]">
+                                    <button type="button" onclick="loadStudioScriptPreview()" class="px-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-semibold shrink-0" title="Recarregar Roteiro">
+                                        <i class="fa-solid fa-arrows-rotate"></i>
+                                    </button>
+                                </div>
+                                <!-- Chips com sugestões virais de alto engajamento -->
+                                <div class="space-y-1 pt-1">
+                                    <span class="text-[10px] text-slate-500 font-semibold block uppercase">Ideias Rápidas do Nicho:</span>
+                                    <div class="flex flex-wrap gap-1.5" id="studioTopicChipsContainer">
+                                        <button type="button" onclick="setViralTopic('O Efeito Priming e Decisões Inconscientes')" class="text-[10px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 hover:border-purple-600/50 px-2 py-0.5 rounded-md transition-colors">🧠 Priming</button>
+                                        <button type="button" onclick="setViralTopic('A Mentira da Dopamina Rápida e Vício em Telas')" class="text-[10px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 hover:border-purple-600/50 px-2 py-0.5 rounded-md transition-colors">⚡ Dopamina</button>
+                                        <button type="button" onclick="setViralTopic('Linguagem Corporal: 3 Microexpressões de Mentira')" class="text-[10px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 hover:border-purple-600/50 px-2 py-0.5 rounded-md transition-colors">👁️ Microexpressões</button>
+                                        <button type="button" onclick="setViralTopic('A Armadilha do Custo Afundado nos Negócios')" class="text-[10px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 hover:border-purple-600/50 px-2 py-0.5 rounded-md transition-colors">♟️ Custo Afundado</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modo 3: Catálogo -->
+                            <div id="studioModeCatalogBlock" class="space-y-2 hidden">
+                                <label class="text-[11px] text-slate-400">Selecione um roteiro calibrado do canal:</label>
+                                <select id="studioCatalogSelect" onchange="onStudioCatalogSelectChange()" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-1.5 text-slate-200 focus:outline-none focus:border-purple-500 text-[11px] cursor-pointer">
+                                    <option value="0">Roteiro 1: O Truque do Silêncio e a Dopamina da Dúvida #Shorts (~66s)</option>
+                                    <option value="1">Roteiro 2: A Mentira da Falta de Motivação #Shorts (~68s)</option>
+                                </select>
                             </div>
                         </div>
 
-                        <!-- Opção 2: Tema Livre -->
-                        <div id="studioModeTopicBlock" class="space-y-2 hidden">
-                            <label class="text-[11px] text-slate-400">Digite o tema ou gancho desejado:</label>
-                            <div class="flex gap-2">
-                                <input type="text" id="studioCustomTopicInput" placeholder="Ex: O Efeito Priming e Decisões Inconscientes" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-purple-500">
-                                <button type="button" onclick="loadStudioScriptPreview()" class="px-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-semibold shrink-0" title="Carregar Roteiro">
-                                    <i class="fa-solid fa-arrows-rotate"></i>
-                                </button>
-                            </div>
-                            <!-- Chips com sugestões virais de alto engajamento -->
-                            <div class="space-y-1 pt-1">
-                                <span class="text-[10px] text-slate-500 font-semibold block uppercase">Ideias Rápidas do Nicho:</span>
-                                <div class="flex flex-wrap gap-1.5" id="studioTopicChipsContainer">
-                                    <button type="button" onclick="setViralTopic('O Efeito Priming e Decisões Inconscientes')" class="text-[10px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 hover:border-purple-600/50 px-2 py-0.5 rounded-md transition-colors">🧠 Priming</button>
-                                    <button type="button" onclick="setViralTopic('A Mentira da Dopamina Rápida e Vício em Telas')" class="text-[10px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 hover:border-purple-600/50 px-2 py-0.5 rounded-md transition-colors">⚡ Dopamina</button>
-                                    <button type="button" onclick="setViralTopic('Linguagem Corporal: 3 Microexpressões de Mentira')" class="text-[10px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 hover:border-purple-600/50 px-2 py-0.5 rounded-md transition-colors">👁️ Microexpressões</button>
-                                    <button type="button" onclick="setViralTopic('A Armadilha do Custo Afundado nos Negócios')" class="text-[10px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 hover:border-purple-600/50 px-2 py-0.5 rounded-md transition-colors">♟️ Custo Afundado</button>
+                        <!-- ETAPA 2: Perfil do Canal & Voz Neural (Genérico & Customizável) -->
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-5 h-5 rounded-full bg-indigo-900/80 text-indigo-300 font-mono font-bold text-[10px] flex items-center justify-center border border-indigo-700/60">2</span>
+                                    <label class="font-bold text-white flex items-center gap-1.5">
+                                        <i class="fa-solid fa-tv text-indigo-400"></i>
+                                        <span>Perfil do Canal & Voz</span>
+                                    </label>
                                 </div>
+                                <span class="text-[10px] text-slate-500 font-mono">100% Genérico</span>
                             </div>
-                        </div>
-
-                        <!-- Opção 3: Catálogo -->
-                        <div id="studioModeCatalogBlock" class="space-y-2 hidden">
-                            <label class="text-[11px] text-slate-400">Selecione um roteiro calibrado do canal:</label>
-                            <select id="studioCatalogSelect" onchange="onStudioCatalogSelectChange()" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-purple-500">
-                                <option value="0">Roteiro 1: O Truque do Silêncio e a Dopamina da Dúvida #Shorts (~66s)</option>
-                                <option value="1">Roteiro 2: A Mentira da Falta de Motivação #Shorts (~68s)</option>
+                            <select id="studioChannelSelect" onchange="onStudioChannelChange()" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-1.5 text-slate-200 focus:outline-none focus:border-purple-500 font-semibold text-xs cursor-pointer">
+                                <option value="psicosegredo">🧠 @psicosegredo (Neurociência & Psicologia)</option>
+                                <option value="estoicismo">🏛️ @filosofia.estoica (Filosofia & Disciplina)</option>
+                                <option value="financas">💰 @mente.milionaria (Finanças & Investimentos)</option>
+                                <option value="curiosidades">🔍 @fatos.ocultos (Mistérios & Fatos)</option>
+                                <option value="custom">⚙️ + Configurar Perfil Customizado...</option>
                             </select>
-                        </div>
-                    </div>
-
-                    <!-- 3. Plataforma Social Alvo (Seleção Interativa pelo Usuário) -->
-                    <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
-                        <div class="flex items-center justify-between">
-                            <label class="font-bold text-slate-300 flex items-center gap-1.5">
-                                <i class="fa-solid fa-share-nodes text-pink-400"></i>
-                                <span>Plataforma Social Alvo</span>
-                            </label>
-                            <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800/80">TikTok Rewards &ge; 60s</span>
-                        </div>
-                        <div class="grid grid-cols-3 gap-2 text-[11px]">
-                            <label class="flex flex-col items-center gap-1 p-2 bg-slate-900 border border-red-500/80 bg-red-950/30 rounded-lg cursor-pointer transition-all has-[:checked]:border-red-500 has-[:checked]:bg-red-950/40">
-                                <input type="radio" name="studioPlatformRadio" value="YOUTUBE_SHORTS" checked class="hidden">
-                                <i class="fa-brands fa-youtube text-red-500 text-base"></i>
-                                <span class="font-semibold text-white">Shorts</span>
-                            </label>
-                            <label class="flex flex-col items-center gap-1 p-2 bg-slate-900 border border-slate-800 rounded-lg cursor-pointer transition-all hover:border-sky-500/60 has-[:checked]:border-sky-500 has-[:checked]:bg-sky-950/30">
-                                <input type="radio" name="studioPlatformRadio" value="TIKTOK" class="hidden">
-                                <i class="fa-brands fa-tiktok text-sky-400 text-base"></i>
-                                <span class="font-semibold text-slate-200">TikTok</span>
-                            </label>
-                            <label class="flex flex-col items-center gap-1 p-2 bg-slate-900 border border-slate-800 rounded-lg cursor-pointer transition-all hover:border-pink-500/60 has-[:checked]:border-pink-500 has-[:checked]:bg-pink-950/30">
-                                <input type="radio" name="studioPlatformRadio" value="INSTAGRAM_REELS" class="hidden">
-                                <i class="fa-brands fa-instagram text-pink-400 text-base"></i>
-                                <span class="font-semibold text-slate-200">Reels</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- 4. Estilo de Legendas Animadas Karaokê -->
-                    <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
-                        <label class="block font-bold text-slate-300 flex items-center gap-1.5">
-                            <i class="fa-solid fa-closed-captioning text-amber-400"></i>
-                            <span>Destaque das Legendas (Karaokê)</span>
-                        </label>
-                        <div class="flex items-center gap-3">
-                            <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer">
-                                <input type="radio" name="studioKaraokeColor" value="#FFD700" checked class="accent-amber-400">
-                                <span class="w-3 h-3 rounded-full bg-amber-400 inline-block"></span>
-                                <span>Amarelo Ouro</span>
-                            </label>
-                            <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer">
-                                <input type="radio" name="studioKaraokeColor" value="#00E5FF" class="accent-cyan-400">
-                                <span class="w-3 h-3 rounded-full bg-cyan-400 inline-block"></span>
-                                <span>Ciano Néon</span>
-                            </label>
-                            <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer">
-                                <input type="radio" name="studioKaraokeColor" value="#00FF66" class="accent-emerald-400">
-                                <span class="w-3 h-3 rounded-full bg-emerald-400 inline-block"></span>
-                                <span>Verde Lima</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Botão Disparar Geração -->
-                    <button type="button" id="btnExecuteStudioPipeline" onclick="executeStudioPipeline()" class="w-full py-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-xl shadow-purple-600/30 transition-all active:scale-95 text-sm">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
-                        <span>Gerar Vídeo Agora com IA</span>
-                    </button>
-                </div>
-
-                <!-- Coluna Direita: Abas de Preview do Roteiro e Console/Player (7 colunas) -->
-                <div class="lg:col-span-7 bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col justify-between space-y-4 min-h-[460px]">
-                    
-                    <!-- Abas da Coluna Direita -->
-                    <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
-                        <div class="flex gap-2">
-                            <button type="button" id="btnTabStudioScript" onclick="switchStudioRightTab('script')" class="px-3 py-1.5 bg-slate-800 text-purple-300 rounded-lg font-bold text-xs flex items-center gap-1.5">
-                                <i class="fa-solid fa-brain"></i> Roteiro & Estrutura
-                            </button>
-                            <button type="button" id="btnTabStudioConsole" onclick="switchStudioRightTab('console')" class="px-3 py-1.5 text-slate-400 hover:text-white rounded-lg font-bold text-xs flex items-center gap-1.5">
-                                <i class="fa-solid fa-terminal"></i> Console & Player
-                            </button>
-                        </div>
-                        <span id="studioWordCountBadge" class="text-[11px] font-mono text-emerald-400 bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-800">
-                            152 palavras • ~68s
-                        </span>
-                    </div>
-
-                    <!-- Conteúdo: Aba 1 - Roteiro Estruturado (4 Blocos) -->
-                    <div id="studioRightTabScript" class="space-y-3.5 overflow-y-auto max-h-[420px] pr-1 custom-scrollbar">
-                        <div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Título com SEO</span>
-                                <button type="button" onclick="copyStudioScriptText()" class="text-purple-400 hover:text-purple-300 text-[11px] font-semibold flex items-center gap-1 transition-colors">
-                                    <i class="fa-regular fa-copy"></i> Copiar Locução
-                                </button>
-                            </div>
-                            <h4 id="studioPreviewTitle" class="text-sm font-black text-white mt-0.5">O Truque do Silêncio e a Dopamina da Dúvida #Shorts</h4>
-                        </div>
-
-                        <!-- Barra Segmentada de Retenção Algorítmica -->
-                        <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800/80 space-y-1.5">
-                            <div class="flex items-center justify-between text-[10px] text-slate-400 font-semibold">
-                                <span>Curva Algorítmica de Retenção (Shorts / TikTok)</span>
-                                <span class="text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-bolt"></i> Retenção Projetada: &gt; 85%</span>
-                            </div>
-                            <div class="w-full h-2 rounded-full flex overflow-hidden gap-0.5 bg-slate-950 p-0.5">
-                                <div class="h-full bg-amber-400 rounded-l" style="width: 5%" title="Gancho Magnético (0-3s)"></div>
-                                <div class="h-full bg-sky-400" style="width: 63%" title="Foco Científico (3-45s)"></div>
-                                <div class="h-full bg-emerald-400" style="width: 19%" title="Hack Prático (45-58s)"></div>
-                                <div class="h-full bg-purple-400 rounded-r" style="width: 13%" title="CTA & Loop (58-65s)"></div>
-                            </div>
-                            <div class="grid grid-cols-4 text-[9px] font-mono text-slate-400 pt-0.5">
-                                <span class="text-amber-400 font-bold">⚡ Gancho (3s)</span>
-                                <span class="text-sky-400 font-bold text-center">🔬 Ciência (42s)</span>
-                                <span class="text-emerald-400 font-bold text-center">🛠️ Hack (13s)</span>
-                                <span class="text-purple-400 font-bold text-right">🔁 CTA (7s)</span>
-                            </div>
-                        </div>
-
-                        <!-- 4 Blocos de Retenção Grid -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80">
-                                <span class="font-bold text-amber-400 flex items-center gap-1"><i class="fa-solid fa-bolt"></i> Bloco 1: Gancho (0-3s)</span>
-                                <p id="studioBlockHook" class="text-slate-300 mt-1">Nunca confronte quem mente: use este truque de neurociência.</p>
-                            </div>
-                            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80">
-                                <span class="font-bold text-sky-400 flex items-center gap-1"><i class="fa-solid fa-atom"></i> Bloco 2: Foco Científico (3-45s)</span>
-                                <p id="studioBlockScience" class="text-slate-300 mt-1">Vácuo de informação ativa a amígdala gerando pico de ansiedade.</p>
-                            </div>
-                            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80">
-                                <span class="font-bold text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-wrench"></i> Bloco 3: Hack Prático (45-58s)</span>
-                                <p id="studioBlockHack" class="text-slate-300 mt-1">Pausa e contato visual forçam a pessoa a entregar a verdade.</p>
-                            </div>
-                            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80">
-                                <span class="font-bold text-purple-400 flex items-center gap-1"><i class="fa-solid fa-bullhorn"></i> Bloco 4: CTA & Retenção (58-65s)</span>
-                                <p id="studioBlockCta" class="text-slate-300 mt-1">Siga o Psicosegredo para dominar sua mente antes que usem contra você.</p>
-                            </div>
-                        </div>
-
-                        <!-- Narração Completa -->
-                        <div>
-                            <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Locução Neural TTS Completa</span>
-                            <div id="studioPreviewNarration" class="p-3 bg-slate-900/60 rounded-lg border border-slate-800 text-slate-300 text-[11px] leading-relaxed mt-1 italic font-sans max-h-32 overflow-y-auto">
-                                Se você desconfia que alguém está mentindo...
-                            </div>
-                        </div>
-
-                        <!-- Primeiro Comentário & Afiliado -->
-                        <div class="bg-slate-900/60 p-2.5 rounded-lg border border-purple-900/40 space-y-1">
-                            <span class="text-[10px] uppercase font-bold text-yellow-400 flex items-center gap-1"><i class="fa-solid fa-comment-dots"></i> Primeiro Comentário Fixado (Monetização)</span>
-                            <p id="studioPreviewFirstComment" class="text-yellow-200 text-[11px] font-mono truncate">♟️ Protocolo completo de Leitura Comportamental no link fixado: https://meulink.com/psicosegredo</p>
-                        </div>
-                    </div>
-
-                    <!-- Conteúdo: Aba 2 - Console de Execução & Player Final -->
-                    <div id="studioRightTabConsole" class="space-y-3.5 hidden flex-1 flex flex-col justify-between">
-                        
-                        <!-- Timeline de Progresso (6 Etapas) -->
-                        <div>
-                            <div class="flex items-center justify-between text-[11px] font-mono mb-1.5">
-                                <span id="studioProgressStepText" class="text-purple-300 font-bold">Aguardando disparo...</span>
-                                <span id="studioProgressPercentText" class="text-slate-400">0%</span>
-                            </div>
-                            <div class="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-800">
-                                <div id="studioProgressBar" class="h-2.5 bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500 w-0 transition-all duration-300"></div>
-                            </div>
-                        </div>
-
-                        <!-- Console Terminal de Logs -->
-                        <div class="flex-1 min-h-[160px] max-h-[220px] bg-slate-900/90 rounded-xl p-3 border border-slate-800 font-mono text-[10px] text-emerald-400 overflow-y-auto space-y-1" id="studioTerminalLogs">
-                            <div class="text-slate-500">> Pronto para execução. Clique em "Gerar Vídeo Agora com IA" para iniciar.</div>
-                        </div>
-
-                        <!-- Área de Resultado (Vídeo Renderizado / Thumbnail) -->
-                        <div id="studioVideoResultBlock" class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl space-y-3 hidden">
-                            <div class="flex items-center justify-between">
-                                <span class="font-bold text-white flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-400"></i> Vídeo Final Renderizado</span>
-                                <span id="studioFinalDurationBadge" class="text-[10px] font-mono bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800">68s • 1080x1920 (H.264 / AAC)</span>
-                            </div>
-                            <div class="grid grid-cols-2 gap-3 items-center">
-                                <video id="studioVideoPlayer" controls class="w-full h-44 rounded-lg bg-black object-contain border border-slate-800 shadow-md"></video>
-                                <div class="space-y-2 text-center">
-                                    <img id="studioThumbPreview" src="" alt="Thumbnail" class="w-full h-28 rounded-lg bg-slate-950 object-cover border border-slate-800 shadow-md">
-                                    <div class="flex gap-2">
-                                        <a id="btnDownloadVideo" href="#" download="video_vertical_ia.mp4" class="flex-1 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded font-semibold text-[11px] text-center block">
-                                            <i class="fa-solid fa-download"></i> MP4
-                                        </a>
-                                        <button type="button" onclick="closeStudioModal(); loadDashboardData();" class="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-semibold text-[11px]">
-                                            <i class="fa-solid fa-table"></i> Cronograma
-                                        </button>
+                            
+                            <!-- Box para Perfil Customizado (abre quando custom selecionado) -->
+                            <div id="studioCustomProfileBox" class="p-2 bg-slate-900/90 rounded-lg border border-purple-900/50 space-y-1.5 hidden">
+                                <div class="grid grid-cols-2 gap-1.5">
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 font-bold block mb-0.5">Nome do Perfil (@)</label>
+                                        <input type="text" id="customChannelName" oninput="updateStudioFooterSummary()" placeholder="@meucanal" value="@meucanal" class="w-full bg-slate-950 border border-slate-800 rounded p-1 px-1.5 text-[11px] text-slate-200 focus:border-purple-500 outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 font-bold block mb-0.5">Nicho / Tema</label>
+                                        <input type="text" id="customChannelNiche" placeholder="Ex: Produtividade" value="Produtividade" class="w-full bg-slate-950 border border-slate-800 rounded p-1 px-1.5 text-[11px] text-slate-200 focus:border-purple-500 outline-none">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-1.5">
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 font-bold block mb-0.5">Voz Neural</label>
+                                        <select id="customChannelVoice" onchange="onCustomVoiceChange()" class="w-full bg-slate-950 border border-slate-800 rounded p-1 px-1 text-[11px] text-slate-200 focus:border-purple-500 outline-none cursor-pointer">
+                                            <option value="pt-BR-AntonioNeural">pt-BR-AntonioNeural (Grave)</option>
+                                            <option value="pt-BR-FranciscaNeural">pt-BR-FranciscaNeural (Clara)</option>
+                                            <option value="pt-BR-ThalitaNeural">pt-BR-ThalitaNeural (Jovem)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] text-slate-400 font-bold block mb-0.5">Link de Afiliado (CTA)</label>
+                                        <input type="text" id="customChannelAffiliate" placeholder="https://meulink.com" value="https://meulink.com/vip" class="w-full bg-slate-950 border border-slate-800 rounded p-1 px-1.5 text-[11px] text-slate-200 focus:border-purple-500 outline-none">
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="grid grid-cols-2 gap-2 text-[10px] text-slate-400 pt-0.5 font-mono">
+                                <div class="bg-slate-900/80 p-1.5 rounded border border-slate-800 flex items-center justify-between">
+                                    <span class="text-slate-500">Voz:</span>
+                                    <span id="studioVoiceLabel" class="text-sky-300 font-semibold truncate ml-1">pt-BR-AntonioNeural</span>
+                                </div>
+                                <div class="bg-slate-900/80 p-1.5 rounded border border-slate-800 flex items-center justify-between">
+                                    <span class="text-slate-500">Formato:</span>
+                                    <span class="text-purple-300 font-semibold ml-1">9:16 • 1080x1920</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Coluna Direita: Abas de Preview do Roteiro e Console/Player (7 colunas) -->
+                    <div class="lg:col-span-7 bg-slate-950 p-3.5 sm:p-4 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3">
+                        
+                        <!-- Abas da Coluna Direita -->
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                            <div class="flex gap-2">
+                                <button type="button" id="btnTabStudioScript" onclick="switchStudioRightTab('script')" class="px-3 py-1.5 bg-slate-800 text-purple-300 rounded-lg font-bold text-xs flex items-center gap-1.5">
+                                    <i class="fa-solid fa-brain"></i> Roteiro & Estrutura
+                                </button>
+                                <button type="button" id="btnTabStudioConsole" onclick="switchStudioRightTab('console')" class="px-3 py-1.5 text-slate-400 hover:text-white rounded-lg font-bold text-xs flex items-center gap-1.5">
+                                    <i class="fa-solid fa-terminal"></i> Console & Player
+                                </button>
+                            </div>
+                            <span id="studioWordCountBadge" class="text-[11px] font-mono text-emerald-400 bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-800">
+                                152 palavras • ~68s
+                            </span>
+                        </div>
+
+                        <!-- Conteúdo: Aba 1 - Roteiro Estruturado (4 Blocos) -->
+                        <div id="studioRightTabScript" class="space-y-3 overflow-y-auto max-h-[400px] pr-1 custom-scrollbar">
+                            <div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Título com SEO</span>
+                                    <button type="button" onclick="copyStudioScriptText()" class="text-purple-400 hover:text-purple-300 text-[11px] font-semibold flex items-center gap-1 transition-colors">
+                                        <i class="fa-regular fa-copy"></i> Copiar Locução
+                                    </button>
+                                </div>
+                                <h4 id="studioPreviewTitle" class="text-sm font-black text-white mt-0.5">O Truque do Silêncio e a Dopamina da Dúvida #Shorts</h4>
+                            </div>
+
+                            <!-- Barra Segmentada de Retenção Algorítmica -->
+                            <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800/80 space-y-1.5">
+                                <div class="flex items-center justify-between text-[10px] text-slate-400 font-semibold">
+                                    <span>Curva Algorítmica de Retenção (Shorts / TikTok)</span>
+                                    <span class="text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-bolt"></i> Retenção Projetada: &gt; 85%</span>
+                                </div>
+                                <div class="w-full h-2 rounded-full flex overflow-hidden gap-0.5 bg-slate-950 p-0.5">
+                                    <div class="h-full bg-amber-400 rounded-l" style="width: 5%" title="Gancho Magnético (0-3s)"></div>
+                                    <div class="h-full bg-sky-400" style="width: 63%" title="Foco Científico (3-45s)"></div>
+                                    <div class="h-full bg-emerald-400" style="width: 19%" title="Hack Prático (45-58s)"></div>
+                                    <div class="h-full bg-purple-400 rounded-r" style="width: 13%" title="CTA & Loop (58-65s)"></div>
+                                </div>
+                                <div class="grid grid-cols-4 text-[9px] font-mono text-slate-400 pt-0.5">
+                                    <span class="text-amber-400 font-bold">⚡ Gancho (3s)</span>
+                                    <span class="text-sky-400 font-bold text-center">🔬 Ciência (42s)</span>
+                                    <span class="text-emerald-400 font-bold text-center">🛠️ Hack (13s)</span>
+                                    <span class="text-purple-400 font-bold text-right">🔁 CTA (7s)</span>
+                                </div>
+                            </div>
+
+                            <!-- 4 Blocos de Retenção Grid -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                                <div class="bg-slate-900/80 p-2.5 rounded-lg border border-amber-500/20 hover:border-amber-500/40 transition-colors">
+                                    <span class="font-bold text-amber-400 flex items-center gap-1"><i class="fa-solid fa-bolt"></i> Bloco 1: Gancho (0-3s)</span>
+                                    <p id="studioBlockHook" class="text-slate-300 mt-1">Nunca confronte quem mente: use este truque de neurociência.</p>
+                                </div>
+                                <div class="bg-slate-900/80 p-2.5 rounded-lg border border-sky-500/20 hover:border-sky-500/40 transition-colors">
+                                    <span class="font-bold text-sky-400 flex items-center gap-1"><i class="fa-solid fa-atom"></i> Bloco 2: Foco Central (3-45s)</span>
+                                    <p id="studioBlockScience" class="text-slate-300 mt-1">Vácuo de informação ativa a amígdala gerando pico de ansiedade.</p>
+                                </div>
+                                <div class="bg-slate-900/80 p-2.5 rounded-lg border border-emerald-500/20 hover:border-emerald-500/40 transition-colors">
+                                    <span class="font-bold text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-wrench"></i> Bloco 3: Hack Prático (45-58s)</span>
+                                    <p id="studioBlockHack" class="text-slate-300 mt-1">Pausa e contato visual forçam a pessoa a entregar a verdade.</p>
+                                </div>
+                                <div class="bg-slate-900/80 p-2.5 rounded-lg border border-purple-500/20 hover:border-purple-500/40 transition-colors">
+                                    <span class="font-bold text-purple-400 flex items-center gap-1"><i class="fa-solid fa-bullhorn"></i> Bloco 4: CTA & Retenção (58-65s)</span>
+                                    <p id="studioBlockCta" class="text-slate-300 mt-1">Siga o Psicosegredo para dominar sua mente antes que usem contra você.</p>
+                                </div>
+                            </div>
+
+                            <!-- Narração Completa -->
+                            <div>
+                                <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Locução Neural TTS Completa</span>
+                                <div id="studioPreviewNarration" class="p-3 bg-slate-900/60 rounded-lg border border-slate-800 text-slate-300 text-[11px] leading-relaxed mt-1 italic font-sans max-h-32 overflow-y-auto">
+                                    Se você desconfia que alguém está mentindo...
+                                </div>
+                            </div>
+
+                            <!-- Primeiro Comentário & Afiliado -->
+                            <div class="bg-slate-900/60 p-2.5 rounded-lg border border-purple-900/40 space-y-1">
+                                <span class="text-[10px] uppercase font-bold text-yellow-400 flex items-center gap-1"><i class="fa-solid fa-comment-dots"></i> Primeiro Comentário Fixado (Monetização)</span>
+                                <p id="studioPreviewFirstComment" class="text-yellow-200 text-[11px] font-mono truncate">♟️ Protocolo completo de Leitura Comportamental no link fixado: https://meulink.com/psicosegredo</p>
+                            </div>
+                        </div>
+
+                        <!-- Conteúdo: Aba 2 - Console de Execução & Player Final -->
+                        <div id="studioRightTabConsole" class="space-y-3.5 hidden flex-1 flex flex-col justify-between">
+                            
+                            <!-- Timeline de Progresso (6 Etapas) -->
+                            <div>
+                                <div class="flex items-center justify-between text-[11px] font-mono mb-1.5">
+                                    <span id="studioProgressStepText" class="text-purple-300 font-bold">Aguardando disparo...</span>
+                                    <span id="studioProgressPercentText" class="text-slate-400">0%</span>
+                                </div>
+                                <div class="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-800">
+                                    <div id="studioProgressBar" class="h-2.5 bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500 w-0 transition-all duration-300"></div>
+                                </div>
+                            </div>
+
+                            <!-- Console Terminal de Logs -->
+                            <div class="flex-1 min-h-[160px] max-h-[220px] bg-slate-900/90 rounded-xl p-3 border border-slate-800 font-mono text-[10px] text-emerald-400 overflow-y-auto space-y-1" id="studioTerminalLogs">
+                                <div class="text-slate-500">> Pronto para execução. Clique em "Gerar Vídeo Agora com IA" para iniciar.</div>
+                            </div>
+
+                            <!-- Área de Resultado (Vídeo Renderizado / Thumbnail) -->
+                            <div id="studioVideoResultBlock" class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl space-y-3 hidden">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-bold text-white flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-400"></i> Vídeo Final Renderizado</span>
+                                    <span id="studioFinalDurationBadge" class="text-[10px] font-mono bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800">68s • 1080x1920 (H.264 / AAC)</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3 items-center">
+                                    <video id="studioVideoPlayer" controls class="w-full h-44 rounded-lg bg-black object-contain border border-slate-800 shadow-md"></video>
+                                    <div class="space-y-2 text-center">
+                                        <img id="studioThumbPreview" src="" alt="Thumbnail" class="w-full h-28 rounded-lg bg-slate-950 object-cover border border-slate-800 shadow-md">
+                                        <div class="flex gap-2">
+                                            <a id="btnDownloadVideo" href="#" download="video_vertical_ia.mp4" class="flex-1 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded font-semibold text-[11px] text-center block">
+                                                <i class="fa-solid fa-download"></i> MP4
+                                            </a>
+                                            <button type="button" onclick="closeStudioModal(); loadDashboardData();" class="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-semibold text-[11px]">
+                                                <i class="fa-solid fa-table"></i> Cronograma
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
 
                     </div>
@@ -1011,15 +1017,30 @@ try {
 
             </div>
 
-        </div>
-
-            <!-- Modal Footer (Fixed) -->
-            <div class="p-3.5 px-6 border-t border-slate-800 flex items-center justify-between shrink-0 bg-slate-900/95 text-[11px] text-slate-400">
-                <div class="flex items-center gap-2">
-                    <i class="fa-solid fa-circle-info text-purple-400"></i>
-                    <span>Vídeos gerados com duração &ge; 60s são elegíveis à monetização do TikTok Rewards e Shorts.</span>
+            <!-- Modal Footer (Sticky Action Bar - Sempre Visível) -->
+            <div class="p-3.5 px-6 border-t border-slate-800 flex items-center justify-between shrink-0 bg-slate-950/90 text-xs">
+                <!-- Resumo Dinâmico em Tempo Real -->
+                <div class="flex items-center gap-3 text-slate-300">
+                    <span class="flex h-2.5 w-2.5 relative">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                    </span>
+                    <div class="text-[11px]">
+                        <span>Gerar para <strong id="studioFooterPlatformSummary" class="text-white font-semibold">Shorts</strong> no perfil <strong id="studioFooterChannelSummary" class="text-purple-300 font-semibold">@psicosegredo</strong></span>
+                        <span id="studioFooterPlatformBadge" class="text-[10px] font-mono text-red-400 bg-red-950/80 px-2 py-0.5 rounded border border-red-800/80 ml-2 hidden sm:inline">#Shorts • 9:16 Vertical</span>
+                    </div>
                 </div>
-                <button type="button" onclick="closeStudioModal()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium transition-colors">Fechar</button>
+
+                <!-- Botões de Ação -->
+                <div class="flex items-center gap-2.5">
+                    <button type="button" onclick="closeStudioModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium transition-colors text-xs">
+                        Fechar
+                    </button>
+                    <button type="button" id="btnExecuteStudioPipeline" onclick="executeStudioPipeline()" class="px-5 py-2.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-purple-600/30 transition-all active:scale-95 text-xs">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+                        <span>Gerar Vídeo Agora com IA</span>
+                    </button>
+                </div>
             </div>
 
         </div>
@@ -1116,8 +1137,8 @@ try {
     </div>
 
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-5 right-5 z-50 bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-xl shadow-2xl text-xs flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <!-- Toast Notification (Top Right) -->
+    <div id="toast" class="fixed top-6 right-6 z-[9999] bg-slate-900/95 backdrop-blur border border-slate-700 text-white px-4 py-3 rounded-xl shadow-2xl text-xs flex items-center gap-3 transform -translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
         <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
         <span id="toastMessage">Notificação</span>
     </div>
@@ -2025,6 +2046,7 @@ try {
         function openStudioModal() {
             document.getElementById('modalStudioAi').classList.remove('hidden');
             document.getElementById('modalStudioAi').classList.add('flex');
+            updateStudioFooterSummary();
             loadStudioScriptPreview();
         }
 
@@ -2034,6 +2056,41 @@ try {
             if (studioJobPollInterval) {
                 clearInterval(studioJobPollInterval);
                 studioJobPollInterval = null;
+            }
+        }
+
+        function updateStudioFooterSummary() {
+            const ch = document.getElementById('studioChannelSelect')?.value || 'psicosegredo';
+            let channelName = '@' + ch;
+            if (ch === 'custom') {
+                channelName = document.getElementById('customChannelName')?.value.trim() || '@meucanal';
+            } else if (CHANNEL_CONFIGS[ch]) {
+                channelName = CHANNEL_CONFIGS[ch].name;
+            }
+
+            const plat = document.querySelector('input[name="studioPlatformRadio"]:checked')?.value || 'YOUTUBE_SHORTS';
+            let platLabel = 'Shorts';
+            if (plat === 'TIKTOK') platLabel = 'TikTok';
+            if (plat === 'INSTAGRAM_REELS') platLabel = 'Reels';
+
+            const footerPlat = document.getElementById('studioFooterPlatformSummary');
+            const footerChan = document.getElementById('studioFooterChannelSummary');
+            const footerBadge = document.getElementById('studioFooterPlatformBadge');
+
+            if (footerPlat) footerPlat.innerText = platLabel;
+            if (footerChan) footerChan.innerText = channelName;
+
+            if (footerBadge) {
+                if (plat === 'TIKTOK') {
+                    footerBadge.innerText = '≥ 60s TikTok Rewards (Monetizado)';
+                    footerBadge.className = 'text-[10px] font-mono text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800/80 ml-2 hidden sm:inline';
+                } else if (plat === 'INSTAGRAM_REELS') {
+                    footerBadge.innerText = 'Reels • 9:16 Vertical';
+                    footerBadge.className = 'text-[10px] font-mono text-pink-400 bg-pink-950/80 px-2 py-0.5 rounded border border-pink-800/80 ml-2 hidden sm:inline';
+                } else {
+                    footerBadge.innerText = '#Shorts • 9:16 Vertical';
+                    footerBadge.className = 'text-[10px] font-mono text-red-400 bg-red-950/80 px-2 py-0.5 rounded border border-red-800/80 ml-2 hidden sm:inline';
+                }
             }
         }
 
@@ -2078,6 +2135,7 @@ try {
 
             updateStudioTopicChips(ch);
             updateStudioCatalogOptions(ch);
+            updateStudioFooterSummary();
             loadStudioScriptPreview();
         }
 
@@ -2085,6 +2143,7 @@ try {
             const customVoice = document.getElementById('customChannelVoice')?.value || 'pt-BR-AntonioNeural';
             const voiceLabel = document.getElementById('studioVoiceLabel');
             if (voiceLabel) voiceLabel.innerText = customVoice;
+            updateStudioFooterSummary();
         }
 
         function updateStudioTopicChips(channelKey) {
@@ -2654,9 +2713,9 @@ try {
                 icon.className = 'fa-solid fa-circle-info text-sky-400 text-base';
             }
 
-            toast.classList.remove('opacity-0', 'translate-y-20');
+            toast.classList.remove('opacity-0', '-translate-y-20');
             setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-20');
+                toast.classList.add('opacity-0', '-translate-y-20');
             }, 3500);
         }
     </script>
