@@ -103,6 +103,48 @@ test.describe('Validação da Interface de Usuário (Dashboard Web) do AutoPubli
         await expect(page.locator('#studioPreviewTitle')).toContainText('Shorts');
         await expect(page.locator('#studioWordCountBadge')).toBeVisible();
 
+        // 7.1 Teste do Modo Link do YouTube & Extração de Vídeo
+        await expect(page.locator('#btnModeYoutube')).toBeVisible();
+        await expect(page.locator('#studioYoutubeUrlInput')).toBeVisible();
+        await page.fill('#studioYoutubeUrlInput', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+        await page.click('#btnAnalyzeYoutube');
+        await expect(page.locator('#studioYoutubeOriginalCard')).toBeVisible();
+        await expect(page.locator('#studioYtTitle')).toBeVisible();
+        await expect(page.locator('#studioYtBadgeTranscript')).toBeVisible();
+
+        // 7.2 Teste de Alternância de Modos (Tema Livre e Catálogo)
+        await page.click('#btnModeTopic');
+        await expect(page.locator('#studioModeTopicBlock')).toBeVisible();
+        await expect(page.locator('#studioModeYoutubeBlock')).toBeHidden();
+        await expect(page.locator('#studioTopicChipsContainer button').first()).toBeVisible();
+        await page.locator('#studioTopicChipsContainer button').first().click();
+        await expect(page.locator('#studioCustomTopicInput')).not.toBeEmpty();
+
+        await page.click('#btnModeCatalog');
+        await expect(page.locator('#studioModeCatalogBlock')).toBeVisible();
+        await expect(page.locator('#studioCatalogSelect')).toBeVisible();
+
+        // Retorna ao modo YouTube
+        await page.click('#btnModeYoutube');
+        await expect(page.locator('#studioModeYoutubeBlock')).toBeVisible();
+
+        // 7.3 Teste de Troca de Perfis de Canal Genéricos
+        await page.selectOption('#studioChannelSelect', 'financas');
+        await expect(page.locator('#studioVoiceLabel')).toHaveText('pt-BR-FranciscaNeural');
+
+        await page.selectOption('#studioChannelSelect', 'curiosidades');
+        await expect(page.locator('#studioVoiceLabel')).toHaveText('pt-BR-ThalitaNeural');
+
+        // Teste de Perfil Customizado
+        await page.selectOption('#studioChannelSelect', 'custom');
+        await expect(page.locator('#studioCustomProfileBox')).toBeVisible();
+        await page.fill('#customChannelName', '@inovacao.ia');
+        await page.fill('#customChannelNiche', 'Inteligência Artificial');
+
+        // 7.4 Teste de Seleção de Plataforma Alvo (TikTok / Reels / Shorts)
+        await page.locator('#modalStudioAi label').filter({ hasText: 'TikTok' }).click();
+        await expect(page.locator('input[name="studioPlatformRadio"][value="TIKTOK"]')).toBeChecked();
+
         // Testa alternância de abas no Studio IA (Roteiro vs Console)
         await page.click('#btnTabStudioConsole');
         await expect(page.locator('#studioRightTabConsole')).toBeVisible();
@@ -112,7 +154,7 @@ test.describe('Validação da Interface de Usuário (Dashboard Web) do AutoPubli
         await page.click('#btnTabStudioScript');
         await expect(page.locator('#studioRightTabScript')).toBeVisible();
 
-        // Captura screenshot com o Studio IA aberto
+        // Captura screenshot com o Studio IA aberto com análise do YouTube e personalizações
         const studioScreenshotPath = path.resolve(__dirname, '../docs/manual/dashboard_studio_screenshot.png');
         await page.screenshot({ path: studioScreenshotPath, fullPage: true });
         console.log(`Screenshot do Studio IA capturada com sucesso em: ${studioScreenshotPath}`);

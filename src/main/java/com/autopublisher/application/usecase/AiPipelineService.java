@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -63,10 +64,29 @@ public class AiPipelineService {
         return channels;
     }
 
+    private Map<String, Object> scriptMap(Object... kvs) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        for (int i = 0; i < kvs.length; i += 2) {
+            map.put((String) kvs[i], kvs[i + 1]);
+        }
+        return map;
+    }
+
     /**
      * Gera ou recupera a pre-visualizacao do roteiro estruturado com base no catalogo e perfil do canal.
      */
     public Map<String, Object> previewScript(String channelId, String topic, Integer scriptIndex) {
+        return previewScript(channelId, topic, scriptIndex, null);
+    }
+
+    /**
+     * Gera ou recupera a pre-visualizacao do roteiro estruturado (com suporte a analise de video do YouTube).
+     */
+    public Map<String, Object> previewScript(String channelId, String topic, Integer scriptIndex, String sourceUrl) {
+        if (sourceUrl != null && !sourceUrl.isBlank()) {
+            return analyzeYouTubeVideo(sourceUrl, channelId);
+        }
+
         String finalChannel = (channelId != null && !channelId.isBlank()) ? channelId.trim() : "psicosegredo";
         int index = (scriptIndex != null) ? scriptIndex : 0;
 
@@ -77,7 +97,7 @@ public class AiPipelineService {
             }
 
             if (index == 1) {
-                return Map.of(
+                return scriptMap(
                         "channelId", "psicosegredo",
                         "channelName", "@psicosegredo",
                         "scriptId", "script-02",
@@ -99,7 +119,7 @@ public class AiPipelineService {
             }
 
             // Roteiro 1 (Default)
-            return Map.of(
+            return scriptMap(
                     "channelId", "psicosegredo",
                     "channelName", "@psicosegredo",
                     "scriptId", "script-01",
@@ -122,7 +142,7 @@ public class AiPipelineService {
 
         // Generic fallback para outros canais
         String finalTopic = (topic != null && !topic.isBlank()) ? topic.trim() : "Alta Performance e Foco";
-        return Map.of(
+        return scriptMap(
                 "channelId", finalChannel,
                 "channelName", "@" + finalChannel,
                 "scriptId", "script-auto",
@@ -131,15 +151,77 @@ public class AiPipelineService {
                 "wordCount", 150,
                 "estimatedDurationSeconds", 65,
                 "rewardsEligible", true,
-                "narrationText", "Roteiro dinâmico estruturado para o canal " + finalChannel + " abordando: " + finalTopic + ". A neurobiologia aplicada transforma foco em resultados exponenciais. Siga para mais conteúdos.",
+                "narrationText", "Roteiro dinâmico estruturado para o canal " + finalChannel + " abordando: " + finalTopic + ". A mecânica prática transforma consistência em resultados exponenciais. Siga para mais conteúdos.",
                 "blocks", List.of(
                         Map.of("title", "Gancho (0-3s)", "text", "Quebra de padrão provocativa."),
-                        Map.of("title", "Foco Científico (3-45s)", "text", "Mecanismo biológico simplificado."),
+                        Map.of("title", "Foco Central (3-45s)", "text", "Mecanismo prático simplificado."),
                         Map.of("title", "Hack Prático (45-58s)", "text", "Ação prática imediata."),
                         Map.of("title", "CTA (58-65s)", "text", "Chamada de conversão e link no comentário fixado.")
                 ),
                 "firstComment", "Link com conteúdo exclusivo nos comentários.",
                 "tags", "shorts, foco, alta performance"
+        );
+    }
+
+    /**
+     * Analisa o conteudo de um video do YouTube e gera um roteiro adaptado nos 4 blocos de retencao.
+     */
+    public Map<String, Object> analyzeYouTubeVideo(String sourceUrl, String channelId) {
+        String finalChannel = (channelId != null && !channelId.isBlank()) ? channelId.trim() : "psicosegredo";
+        try {
+            List<String> command = List.of(
+                    "node",
+                    "-e",
+                    "import('./pipeline/src/script_generator.js').then(m => m.generateScript({ channelId: process.argv[1], sourceUrl: process.argv[2] })).then(r => console.log('JSON_START' + JSON.stringify(r) + 'JSON_END')).catch(e => { console.error(e); process.exit(1); });",
+                    finalChannel,
+                    sourceUrl
+            );
+
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.directory(new File("."));
+            Process process = pb.start();
+
+            StringBuilder out = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    out.append(line).append("\n");
+                }
+            }
+
+            process.waitFor();
+            String fullOutput = out.toString();
+            int startIdx = fullOutput.indexOf("JSON_START");
+            int endIdx = fullOutput.indexOf("JSON_END");
+            if (startIdx != -1 && endIdx > startIdx) {
+                String json = fullOutput.substring(startIdx + "JSON_START".length(), endIdx).trim();
+                return objectMapper.readValue(json, new TypeReference<>() {});
+            }
+        } catch (Exception e) {
+            log.error("Erro ao analisar vídeo do YouTube via Node: {}", e.getMessage());
+        }
+
+        // Fallback analítico se offline ou sem Node
+        return scriptMap(
+                "source", "youtube",
+                "sourceUrl", sourceUrl,
+                "channelId", finalChannel,
+                "channelName", "@" + finalChannel,
+                "scriptId", "yt_fallback",
+                "topic", "Análise de Conteúdo Viral",
+                "title", "A Verdade Oculta que Quase Ninguém Percebeu #Shorts",
+                "wordCount", 154,
+                "estimatedDurationSeconds", 68,
+                "rewardsEligible", true,
+                "narrationText", "Se você assistiu ao vídeo sobre este tema, pare tudo agora: existe um detalhe crucial que quase ninguém percebeu. A mecânica real por trás desse assunto revela que quando observamos o comportamento humano em profundidade, nosso cérebro reage de forma imediata à expectativa e à pressão do ambiente. Não se trata de sorte, mas de método. A regra prática: em vez de reagir no calor do momento, dê um passo para trás e filtre as reais intenções. Siga o canal para mais análises estratégicas diárias.",
+                "blocks", List.of(
+                        Map.of("title", "Gancho (0-3s)", "text", "Se você assistiu a esse vídeo, pare tudo agora: existe um detalhe crucial oculto."),
+                        Map.of("title", "Foco Central (3-45s)", "text", "A mecânica real revela como a mente humana responde à pressão do ambiente."),
+                        Map.of("title", "Hack Prático (45-58s)", "text", "Dê um passo para trás antes de reagir e filtre as reais intenções."),
+                        Map.of("title", "CTA & Retenção (58-65s)", "text", "Siga o canal para mais análises estratégicas.")
+                ),
+                "firstComment", "♟️ Qual foi sua maior percepção sobre esse vídeo? Veja o link fixado!",
+                "tags", "shorts, viral, youtube, analise, estrategias"
         );
     }
 
@@ -151,6 +233,7 @@ public class AiPipelineService {
         String channel = request.getChannelIdOrDefault();
         String platform = request.getPlatformOrDefault();
         String topic = request.topic();
+        String sourceUrl = request.getSourceUrl();
         int scriptIndex = request.getScriptIndexOrDefault();
 
         List<String> logs = Collections.synchronizedList(new ArrayList<>());
@@ -163,7 +246,7 @@ public class AiPipelineService {
                 "Iniciando Esteira de IA...",
                 channel,
                 platform,
-                topic,
+                topic != null ? topic : (sourceUrl != null ? "YouTube Repurpose" : "Catálogo"),
                 LocalDateTime.now(),
                 null,
                 logs,
@@ -177,13 +260,13 @@ public class AiPipelineService {
 
         // Execucao assincrona em thread do sistema
         Thread.ofVirtual().name("ai-pipeline-" + jobId).start(() -> {
-            runProcess(jobId, channel, platform, topic, scriptIndex, logs);
+            runProcess(jobId, channel, platform, topic, scriptIndex, sourceUrl, logs);
         });
 
         return initialStatus;
     }
 
-    private void runProcess(String jobId, String channel, String platform, String topic, int scriptIndex, List<String> logs) {
+    private void runProcess(String jobId, String channel, String platform, String topic, int scriptIndex, String sourceUrl, List<String> logs) {
         log.info("Iniciando processo do pipeline para Job ID: {} (Canal: {})", jobId, channel);
         logs.add("[" + LocalDateTime.now().toString().substring(11, 19) + "] [INFO] Iniciando pipeline de geracao automatizada...");
 
@@ -201,6 +284,11 @@ public class AiPipelineService {
             if (topic != null && !topic.isBlank()) {
                 command.add("--topic");
                 command.add(topic.trim());
+            }
+
+            if (sourceUrl != null && !sourceUrl.isBlank()) {
+                command.add("--url");
+                command.add(sourceUrl.trim());
             }
 
             ProcessBuilder pb = new ProcessBuilder(command);

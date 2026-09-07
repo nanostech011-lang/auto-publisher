@@ -92,18 +92,16 @@ public class DashboardService {
                 scheduleRepositoryPort.updateStatus(post.rowIndex(), PublishStatus.PENDENTE, null, "Reprocessamento agendado via Dashboard Web", 0);
                 log.info("Post {} na linha {} redefinido para PENDENTE com tentativas zeradas.", post.id(), post.rowIndex());
                 return new PostSchedule(
-                        post.rowIndex(),
                         post.id(),
+                        post.rowIndex(),
                         post.scheduledTime(),
                         post.platform(),
                         post.videoDriveId(),
                         post.thumbnailDriveId(),
                         post.metadata(),
                         PublishStatus.PENDENTE,
-                        null,
-                        null,
-                        "Reprocessamento agendado via Dashboard Web",
-                        0
+                        0,
+                        post.firstComment()
                 );
             }
         }

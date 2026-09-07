@@ -1,0 +1,63 @@
+{
+  "$schema_description": "Perfil genérico para canais de Filosofia Prática, Disciplina e Estoicismo",
+  "channel_id": "estoicismo",
+  "name": "@filosofia.estoica",
+  "niche": "Filosofia Prática, Autodomínio & Disciplina",
+  "target_audience": "Pessoas buscando resiliência emocional, foco e superação de adversidades",
+  "format": {
+    "aspect_ratio": "9:16",
+    "resolution": "1080x1920",
+    "target_fps": 30,
+    "target_duration_seconds": 68,
+    "cuts_interval_seconds": "2-4"
+  },
+  "script_profile": {
+    "target_words_min": 145,
+    "target_words_max": 165,
+    "words_per_minute": 135,
+    "hook_formula": "Seja forte em silêncio: o princípio que Marco Aurélio usou",
+    "tone": "Sério, Reflexivo, Firme e Inspirador"
+  },
+  "voice_profile": {
+    "provider": "edge_tts",
+    "voice_id": "pt-BR-AntonioNeural",
+    "rate": "+2%",
+    "pitch": "+0Hz",
+    "volume": "+0%"
+  },
+  "visual_profile": {
+    "aesthetic": "Ancient Roman Minimalist Dark",
+    "lighting": "Dramatic chiaroscuro and marble statue highlights",
+    "prompt_prefix": "Cinematic statue of Marcus Aurelius in deep shadows, chiaroscuro lighting, vertical 9:16, 8k",
+    "broll_keywords": ["ancient statue", "stoic philosopher", "marble bust dark", "man meditating silhouette"],
+    "subtitles_style": {
+      "font_name": "Montserrat-Black",
+      "font_size": 65,
+      "primary_color": "&H00FFFFFF",
+      "active_word_color": "&H0000D7FF",
+      "secondary_accent_color": "&H00FFE500",
+      "outline_color": "&H00000000",
+      "outline_width": 4,
+      "alignment": 2,
+      "margin_v": 160
+    }
+  },
+  "audio_profile": {
+    "voice_volume": 1.0,
+    "bg_music_track": "pipeline/assets/music/dark_ambient_loop.mp3",
+    "bg_music_volume": 0.08,
+    "fade_out_seconds": 2.0,
+    "target_lufs": -14.0
+  },
+  "publishing_profile": {
+    "platforms": ["YOUTUBE_SHORTS", "TIKTOK", "INSTAGRAM_REELS"],
+    "youtube_category_id": 27,
+    "made_for_kids": false,
+    "privacy": "PUBLIC",
+    "default_tags": ["estoicismo", "filosofia", "disciplina", "mindset", "shorts"],
+    "affiliate_cta": {
+      "description_template": "🏛️ Domine sua mente antes que o mundo a domine.\n👉 Acesse o Diário Estoico no link oficial: https://meulink.com/estoicismo?utm_source={platform}",
+      "first_comment": "🏛️ Protocolo dos 4 Princípios do Autodomínio no link fixado: https://meulink.com/estoicismo"
+    }
+  }
+}

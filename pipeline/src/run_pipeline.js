@@ -30,6 +30,9 @@ function parseArgs() {
     } else if (args[i] === '--platform' && args[i + 1]) {
       options.platform = args[i + 1];
       i++;
+    } else if ((args[i] === '--url' || args[i] === '--source-url') && args[i + 1]) {
+      options.sourceUrl = args[i + 1];
+      i++;
     }
   }
 
@@ -59,7 +62,8 @@ async function main() {
   const scriptData = await generateScript({
     channelId: options.channel,
     topic: options.topic,
-    scriptIndex: options.scriptIndex
+    scriptIndex: options.scriptIndex,
+    sourceUrl: options.sourceUrl
   });
 
   console.log(`Titulo: "${scriptData.title}"`);

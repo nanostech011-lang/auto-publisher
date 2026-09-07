@@ -50,6 +50,9 @@ class DashboardApiControllerTest {
     @MockBean
     private PublishScheduledPostsUseCase publishUseCase;
 
+    @MockBean
+    private com.autopublisher.application.usecase.AiPipelineService aiPipelineService;
+
     private static final String API_KEY = "test-dashboard-key-12345";
 
     @Test
@@ -166,5 +169,34 @@ class DashboardApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.envContent").value(org.hamcrest.Matchers.containsString("AUTO_PUBLISHER_API_KEY=my-secret-key")))
                 .andExpect(jsonPath("$.envContent").value(org.hamcrest.Matchers.containsString("YOUTUBE_CLIENT_ID=client_123")));
+    }
+
+    @Test
+    @DisplayName("Deve analisar vídeo do YouTube via POST /api/v1/dashboard/pipeline/analyze-youtube")
+    void shouldAnalyzeYouTubeVideoSuccessfully() throws Exception {
+        when(aiPipelineService.analyzeYouTubeVideo(any(), any())).thenReturn(java.util.Map.of(
+                "title", "Análise de Foco Viral #Shorts",
+                "wordCount", 150,
+                "author", "Canal de Referência"
+        ));
+
+        mockMvc.perform(post("/api/v1/dashboard/pipeline/analyze-youtube")
+                        .header("X-API-KEY", API_KEY)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"url\":\"https://www.youtube.com/watch?v=dQw4w9WgXcQ\",\"channelId\":\"psicosegredo\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("Análise de Foco Viral #Shorts"))
+                .andExpect(jsonPath("$.author").value("Canal de Referência"));
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar análise do YouTube sem URL válida (400 Bad Request)")
+    void shouldRejectYouTubeAnalysisWithoutUrl() throws Exception {
+        mockMvc.perform(post("/api/v1/dashboard/pipeline/analyze-youtube")
+                        .header("X-API-KEY", API_KEY)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"channelId\":\"psicosegredo\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Campo 'url' e obrigatorio."));
     }
 }

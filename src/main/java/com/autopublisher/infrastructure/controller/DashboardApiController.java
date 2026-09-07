@@ -271,10 +271,32 @@ public class DashboardApiController {
 
         String channelId = (String) body.get("channelId");
         String topic = (String) body.get("topic");
+        String sourceUrl = (String) body.get("sourceUrl");
         Integer scriptIndex = body.get("scriptIndex") != null ? ((Number) body.get("scriptIndex")).intValue() : 0;
 
-        Map<String, Object> scriptPreview = aiPipelineService.previewScript(channelId, topic, scriptIndex);
+        Map<String, Object> scriptPreview = aiPipelineService.previewScript(channelId, topic, scriptIndex, sourceUrl);
         return ResponseEntity.ok(scriptPreview);
+    }
+
+    @PostMapping("/pipeline/analyze-youtube")
+    public ResponseEntity<?> analyzeYouTubeVideo(
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "X-API-KEY", required = false) String providedHeaderKey,
+            @RequestParam(value = "api_key", required = false) String providedQueryKey
+    ) {
+        if (isUnauthorized(providedHeaderKey, providedQueryKey)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Unauthorized: Invalid or missing X-API-KEY"));
+        }
+
+        String url = (String) body.get("url");
+        String channelId = (String) body.get("channelId");
+        if (url == null || url.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Campo 'url' e obrigatorio."));
+        }
+
+        Map<String, Object> analysis = aiPipelineService.analyzeYouTubeVideo(url, channelId);
+        return ResponseEntity.ok(analysis);
     }
 
     @PostMapping("/pipeline/run")

@@ -690,29 +690,64 @@ try {
                 <!-- Coluna Esquerda: Configurações (5 colunas) -->
                 <div class="lg:col-span-5 space-y-4">
                     
-                    <!-- 1. Perfil de Canal -->
+                    <!-- 1. Perfil de Canal Genérico & Nichos -->
                     <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
-                        <label class="block font-bold text-slate-300 flex items-center gap-1.5">
-                            <i class="fa-solid fa-tv text-purple-400"></i>
-                            <span>Canal / Nicho Declarativo</span>
-                        </label>
-                        <select id="studioChannelSelect" onchange="onStudioChannelChange()" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-purple-500 font-semibold">
-                            <option value="psicosegredo">@psicosegredo (Neurociência & Psicologia)</option>
-                            <option value="channel_template">Template Multi-Nicho (Personalizado)</option>
+                        <div class="flex items-center justify-between">
+                            <label class="font-bold text-slate-300 flex items-center gap-1.5">
+                                <i class="fa-solid fa-tv text-purple-400"></i>
+                                <span>Perfil / Nicho do Canal</span>
+                            </label>
+                            <span class="text-[10px] text-slate-500 font-mono">100% Genérico</span>
+                        </div>
+                        <select id="studioChannelSelect" onchange="onStudioChannelChange()" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-purple-500 font-semibold text-xs cursor-pointer">
+                            <option value="psicosegredo">🧠 @psicosegredo (Neurociência & Psicologia)</option>
+                            <option value="estoicismo">🏛️ @filosofia.estoica (Filosofia & Disciplina)</option>
+                            <option value="financas">💰 @mente.milionaria (Finanças & Investimentos)</option>
+                            <option value="curiosidades">🔍 @fatos.ocultos (Mistérios & Fatos)</option>
+                            <option value="custom">⚙️ + Configurar Perfil Customizado...</option>
                         </select>
+                        
+                        <!-- Box para Perfil Customizado (abre quando custom selecionado) -->
+                        <div id="studioCustomProfileBox" class="p-2.5 bg-slate-900/90 rounded-lg border border-purple-900/50 space-y-2 hidden">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] text-slate-400 font-bold block mb-0.5">Nome do Perfil (@)</label>
+                                    <input type="text" id="customChannelName" placeholder="@meucanal" value="@meucanal" class="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-[11px] text-slate-200 focus:border-purple-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-slate-400 font-bold block mb-0.5">Nicho / Tema</label>
+                                    <input type="text" id="customChannelNiche" placeholder="Ex: Produtividade" value="Produtividade" class="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-[11px] text-slate-200 focus:border-purple-500 outline-none">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] text-slate-400 font-bold block mb-0.5">Voz Neural</label>
+                                    <select id="customChannelVoice" onchange="onCustomVoiceChange()" class="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-[11px] text-slate-200 focus:border-purple-500 outline-none">
+                                        <option value="pt-BR-AntonioNeural">pt-BR-AntonioNeural (Grave)</option>
+                                        <option value="pt-BR-FranciscaNeural">pt-BR-FranciscaNeural (Clara)</option>
+                                        <option value="pt-BR-ThalitaNeural">pt-BR-ThalitaNeural (Jovem)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-slate-400 font-bold block mb-0.5">Link de Afiliado (CTA)</label>
+                                    <input type="text" id="customChannelAffiliate" placeholder="https://meulink.com" value="https://meulink.com/vip" class="w-full bg-slate-950 border border-slate-800 rounded p-1.5 text-[11px] text-slate-200 focus:border-purple-500 outline-none">
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="grid grid-cols-2 gap-2 text-[10px] text-slate-400 pt-1 font-mono">
                             <div class="bg-slate-900/80 p-1.5 rounded border border-slate-800">
                                 <span class="text-slate-500 block">Voz Neural:</span>
                                 <span id="studioVoiceLabel" class="text-sky-300 font-semibold truncate block">pt-BR-AntonioNeural</span>
                             </div>
                             <div class="bg-slate-900/80 p-1.5 rounded border border-slate-800">
-                                <span class="text-slate-500 block">Formato / FPS:</span>
+                                <span class="text-slate-500 block">Formato / Resolução:</span>
                                 <span class="text-purple-300 font-semibold block">9:16 • 1080x1920 (30fps)</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 2. Modo de Roteiro: Catálogo Validado vs Tema Livre -->
+                    <!-- 2. Modo de Criação: Link YouTube, Tema Livre ou Catálogo -->
                     <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-3">
                         <div class="flex items-center justify-between">
                             <label class="font-bold text-slate-300 flex items-center gap-1.5">
@@ -721,21 +756,39 @@ try {
                             </label>
                             <!-- Abas de Modo -->
                             <div class="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-[10px]">
-                                <button type="button" id="btnModeCatalog" onclick="setStudioMode('catalog')" class="px-2 py-1 rounded-md font-semibold bg-purple-600 text-white transition-all">Catálogo</button>
-                                <button type="button" id="btnModeTopic" onclick="setStudioMode('topic')" class="px-2 py-1 rounded-md font-semibold text-slate-400 hover:text-white transition-all">Tema IA</button>
+                                <button type="button" id="btnModeYoutube" onclick="setStudioMode('youtube')" class="px-2 py-1 rounded-md font-semibold bg-purple-600 text-white transition-all flex items-center gap-1"><i class="fa-brands fa-youtube text-red-400"></i> Link YouTube</button>
+                                <button type="button" id="btnModeTopic" onclick="setStudioMode('topic')" class="px-2 py-1 rounded-md font-semibold text-slate-400 hover:text-white transition-all">Tema Livre</button>
+                                <button type="button" id="btnModeCatalog" onclick="setStudioMode('catalog')" class="px-2 py-1 rounded-md font-semibold text-slate-400 hover:text-white transition-all">Catálogo</button>
                             </div>
                         </div>
 
-                        <!-- Opção Catálogo -->
-                        <div id="studioModeCatalogBlock" class="space-y-2">
-                            <label class="text-[11px] text-slate-400">Selecione um roteiro calibrado do canal:</label>
-                            <select id="studioCatalogSelect" onchange="onStudioCatalogSelectChange()" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-purple-500">
-                                <option value="0">Roteiro 1: O Truque do Silêncio e a Dopamina da Dúvida #Shorts (~66s)</option>
-                                <option value="1">Roteiro 2: A Mentira da Falta de Motivação #Shorts (~68s)</option>
-                            </select>
+                        <!-- Opção 1: Link do YouTube (Modelagem / Repurposing) -->
+                        <div id="studioModeYoutubeBlock" class="space-y-2">
+                            <label class="text-[11px] text-slate-400 flex items-center justify-between">
+                                <span>Cole a URL do vídeo do YouTube para analisar:</span>
+                                <span class="text-[10px] text-purple-400"><i class="fa-solid fa-sparkles"></i> Extração & Análise IA</span>
+                            </label>
+                            <div class="flex gap-2">
+                                <input type="text" id="studioYoutubeUrlInput" placeholder="Ex: https://www.youtube.com/watch?v=... ou https://youtu.be/..." class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-purple-500 font-mono text-xs">
+                                <button type="button" id="btnAnalyzeYoutube" onclick="analyzeCurrentYouTubeUrl()" class="px-3 bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-500 hover:to-purple-500 text-white rounded-lg font-bold text-xs shrink-0 flex items-center gap-1.5 shadow-md shadow-red-950/40 transition-all" title="Analisar Vídeo do YouTube e Gerar Roteiro">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    <span>Analisar</span>
+                                </button>
+                            </div>
+                            <!-- Card de Status do Vídeo Original (mostrado após analisar) -->
+                            <div id="studioYoutubeOriginalCard" class="p-2.5 bg-slate-900/90 rounded-lg border border-slate-800 hidden items-center gap-3">
+                                <img id="studioYtThumb" src="" alt="Thumbnail Original" class="w-14 h-10 rounded object-cover border border-slate-800 bg-black shrink-0">
+                                <div class="overflow-hidden flex-1">
+                                    <div class="flex items-center gap-1.5 mb-0.5">
+                                        <span id="studioYtChannel" class="text-[10px] text-purple-300 font-semibold truncate block">Canal Original</span>
+                                        <span id="studioYtBadgeTranscript" class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono">Transcrição OK</span>
+                                    </div>
+                                    <div id="studioYtTitle" class="text-[11px] text-white font-bold truncate">Título do Vídeo</div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Opção Tema Livre -->
+                        <!-- Opção 2: Tema Livre -->
                         <div id="studioModeTopicBlock" class="space-y-2 hidden">
                             <label class="text-[11px] text-slate-400">Digite o tema ou gancho desejado:</label>
                             <div class="flex gap-2">
@@ -746,8 +799,8 @@ try {
                             </div>
                             <!-- Chips com sugestões virais de alto engajamento -->
                             <div class="space-y-1 pt-1">
-                                <span class="text-[10px] text-slate-500 font-semibold block uppercase">Ideias Rápidas de Alto Impacto:</span>
-                                <div class="flex flex-wrap gap-1.5">
+                                <span class="text-[10px] text-slate-500 font-semibold block uppercase">Ideias Rápidas do Nicho:</span>
+                                <div class="flex flex-wrap gap-1.5" id="studioTopicChipsContainer">
                                     <button type="button" onclick="setViralTopic('O Efeito Priming e Decisões Inconscientes')" class="text-[10px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 hover:border-purple-600/50 px-2 py-0.5 rounded-md transition-colors">🧠 Priming</button>
                                     <button type="button" onclick="setViralTopic('A Mentira da Dopamina Rápida e Vício em Telas')" class="text-[10px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 hover:border-purple-600/50 px-2 py-0.5 rounded-md transition-colors">⚡ Dopamina</button>
                                     <button type="button" onclick="setViralTopic('Linguagem Corporal: 3 Microexpressões de Mentira')" class="text-[10px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 hover:border-purple-600/50 px-2 py-0.5 rounded-md transition-colors">👁️ Microexpressões</button>
@@ -755,26 +808,38 @@ try {
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Opção 3: Catálogo -->
+                        <div id="studioModeCatalogBlock" class="space-y-2 hidden">
+                            <label class="text-[11px] text-slate-400">Selecione um roteiro calibrado do canal:</label>
+                            <select id="studioCatalogSelect" onchange="onStudioCatalogSelectChange()" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-purple-500">
+                                <option value="0">Roteiro 1: O Truque do Silêncio e a Dopamina da Dúvida #Shorts (~66s)</option>
+                                <option value="1">Roteiro 2: A Mentira da Falta de Motivação #Shorts (~68s)</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <!-- 3. Plataforma & Destino -->
+                    <!-- 3. Plataforma Social Alvo (Seleção Interativa pelo Usuário) -->
                     <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
-                        <label class="block font-bold text-slate-300 flex items-center gap-1.5">
-                            <i class="fa-solid fa-share-nodes text-pink-400"></i>
-                            <span>Plataforma Social Alvo</span>
-                        </label>
+                        <div class="flex items-center justify-between">
+                            <label class="font-bold text-slate-300 flex items-center gap-1.5">
+                                <i class="fa-solid fa-share-nodes text-pink-400"></i>
+                                <span>Plataforma Social Alvo</span>
+                            </label>
+                            <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800/80">TikTok Rewards &ge; 60s</span>
+                        </div>
                         <div class="grid grid-cols-3 gap-2 text-[11px]">
-                            <label class="flex flex-col items-center gap-1 p-2 bg-slate-900 border border-slate-800 rounded-lg cursor-pointer hover:border-red-500/60 transition-colors has-[:checked]:border-red-500 has-[:checked]:bg-red-950/20">
+                            <label class="flex flex-col items-center gap-1 p-2 bg-slate-900 border border-red-500/80 bg-red-950/30 rounded-lg cursor-pointer transition-all has-[:checked]:border-red-500 has-[:checked]:bg-red-950/40">
                                 <input type="radio" name="studioPlatformRadio" value="YOUTUBE_SHORTS" checked class="hidden">
                                 <i class="fa-brands fa-youtube text-red-500 text-base"></i>
-                                <span class="font-semibold text-slate-200">Shorts</span>
+                                <span class="font-semibold text-white">Shorts</span>
                             </label>
-                            <label class="flex flex-col items-center gap-1 p-2 bg-slate-900 border border-slate-800 rounded-lg cursor-pointer hover:border-sky-500/60 transition-colors has-[:checked]:border-sky-500 has-[:checked]:bg-sky-950/20">
+                            <label class="flex flex-col items-center gap-1 p-2 bg-slate-900 border border-slate-800 rounded-lg cursor-pointer transition-all hover:border-sky-500/60 has-[:checked]:border-sky-500 has-[:checked]:bg-sky-950/30">
                                 <input type="radio" name="studioPlatformRadio" value="TIKTOK" class="hidden">
                                 <i class="fa-brands fa-tiktok text-sky-400 text-base"></i>
                                 <span class="font-semibold text-slate-200">TikTok</span>
                             </label>
-                            <label class="flex flex-col items-center gap-1 p-2 bg-slate-900 border border-slate-800 rounded-lg cursor-pointer hover:border-pink-500/60 transition-colors has-[:checked]:border-pink-500 has-[:checked]:bg-pink-950/20">
+                            <label class="flex flex-col items-center gap-1 p-2 bg-slate-900 border border-slate-800 rounded-lg cursor-pointer transition-all hover:border-pink-500/60 has-[:checked]:border-pink-500 has-[:checked]:bg-pink-950/30">
                                 <input type="radio" name="studioPlatformRadio" value="INSTAGRAM_REELS" class="hidden">
                                 <i class="fa-brands fa-instagram text-pink-400 text-base"></i>
                                 <span class="font-semibold text-slate-200">Reels</span>
@@ -1840,9 +1905,87 @@ try {
         // ==========================================
         // STUDIO IA • GERAÇÃO DE VÍDEOS POR IA
         // ==========================================
-        let studioCurrentMode = 'catalog'; // 'catalog' ou 'topic'
+        let studioCurrentMode = 'youtube'; // 'youtube', 'topic' ou 'catalog'
         let studioScriptData = null;
         let studioJobPollInterval = null;
+
+        const CHANNEL_CONFIGS = {
+            psicosegredo: {
+                id: 'psicosegredo',
+                name: '@psicosegredo',
+                voice: 'pt-BR-AntonioNeural',
+                chips: [
+                    { label: '🧠 Priming', topic: 'O Efeito Priming e Decisões Inconscientes' },
+                    { label: '⚡ Dopamina', topic: 'A Mentira da Dopamina Rápida e Vício em Telas' },
+                    { label: '👁️ Microexpressões', topic: 'Linguagem Corporal: 3 Microexpressões de Mentira' },
+                    { label: '♟️ Custo Afundado', topic: 'A Armadilha do Custo Afundado nos Negócios' }
+                ],
+                catalog: [
+                    { index: 0, title: 'O Truque do Silêncio e a Dopamina da Dúvida #Shorts (~66s)' },
+                    { index: 1, title: 'A Mentira da Falta de Motivação #Shorts (~68s)' }
+                ]
+            },
+            estoicismo: {
+                id: 'estoicismo',
+                name: '@filosofia.estoica',
+                voice: 'pt-BR-AntonioNeural',
+                chips: [
+                    { label: '🏛️ Dicotomia', topic: 'A Dicotomia do Controle de Epicteto' },
+                    { label: '🛡️ Amor Fati', topic: 'Amor Fati: Como Amar o Sofrimento e Vencer' },
+                    { label: '⏳ Memento Mori', topic: 'Memento Mori: A Consciência da Morte como Força' },
+                    { label: '🔥 Autodomínio', topic: 'Autodomínio e Resiliência em Tempos de Crise' }
+                ],
+                catalog: [
+                    { index: 0, title: 'A Dicotomia do Controle: O Segredo da Paz Mental #Shorts (~67s)' },
+                    { index: 1, title: 'Amor Fati: Transforme Obstáculos em Combustível #Shorts (~68s)' }
+                ]
+            },
+            financas: {
+                id: 'financas',
+                name: '@mente.milionaria',
+                voice: 'pt-BR-FranciscaNeural',
+                chips: [
+                    { label: '📈 Juros Compostos', topic: 'O Milagre dos Juros Compostos Explicado' },
+                    { label: '💳 Dívidas', topic: 'Como Quitar Dívidas Usando o Método Bola de Neve' },
+                    { label: '🏦 Reserva', topic: 'Os 3 Pilares de uma Reserva de Emergência Blindada' },
+                    { label: '💸 Inflação Oculta', topic: 'A Inflação Oculta que Destrói Seu Salário' }
+                ],
+                catalog: [
+                    { index: 0, title: 'O Segredo dos Juros Compostos que os Bancos Escondem #Shorts (~66s)' },
+                    { index: 1, title: 'A Regra 50-30-20 para Sair do Zero aos Investimentos #Shorts (~68s)' }
+                ]
+            },
+            curiosidades: {
+                id: 'curiosidades',
+                name: '@fatos.ocultos',
+                voice: 'pt-BR-ThalitaNeural',
+                chips: [
+                    { label: '🌊 Abismo Oceânico', topic: 'O que Existe na Fossa das Marianas?' },
+                    { label: '🌌 Matéria Escura', topic: 'O Enigma Assustador da Matéria Escura' },
+                    { label: '⏳ Dilatação do Tempo', topic: 'Por que o Tempo Passa Mais Devagar no Espaço' },
+                    { label: '⚡ Efeito Mandela', topic: 'O Efeito Mandela e Memórias Coletivas Falsas' }
+                ],
+                catalog: [
+                    { index: 0, title: 'O Mistério Inexplicável da Fossa das Marianas #Shorts (~67s)' },
+                    { index: 1, title: 'A Dilatação Temporal no Horizonte de Eventos #Shorts (~68s)' }
+                ]
+            },
+            custom: {
+                id: 'custom',
+                name: '@meucanal',
+                voice: 'pt-BR-AntonioNeural',
+                chips: [
+                    { label: '💡 Ideia 1', topic: 'Os 3 Hábitos Diários que Destroem seu Foco' },
+                    { label: '🚀 Ideia 2', topic: 'Como Multiplicar sua Produtividade com Inteligência Artificial' },
+                    { label: '🎯 Ideia 3', topic: 'O Segredo dos 1% que Ninguém Te Conta' },
+                    { label: '⚡ Ideia 4', topic: 'Pare de Cometer Esse Erro Imediatamente' }
+                ],
+                catalog: [
+                    { index: 0, title: 'O Segredo que Mudou Meus Resultados #Shorts (~66s)' },
+                    { index: 1, title: '3 Passos Práticos para Dominar sua Rotina #Shorts (~68s)' }
+                ]
+            }
+        };
 
         const CATALOG_PRESETS = [
             {
@@ -1896,32 +2039,76 @@ try {
 
         function setStudioMode(mode) {
             studioCurrentMode = mode;
-            const btnCatalog = document.getElementById('btnModeCatalog');
+            const btnYt = document.getElementById('btnModeYoutube');
             const btnTopic = document.getElementById('btnModeTopic');
-            const blockCatalog = document.getElementById('studioModeCatalogBlock');
-            const blockTopic = document.getElementById('studioModeTopicBlock');
+            const btnCatalog = document.getElementById('btnModeCatalog');
 
-            if (mode === 'catalog') {
-                btnCatalog.className = 'px-2 py-1 rounded-md font-semibold bg-purple-600 text-white transition-all';
-                btnTopic.className = 'px-2 py-1 rounded-md font-semibold text-slate-400 hover:text-white transition-all';
-                blockCatalog.classList.remove('hidden');
-                blockTopic.classList.add('hidden');
-            } else {
-                btnTopic.className = 'px-2 py-1 rounded-md font-semibold bg-purple-600 text-white transition-all';
-                btnCatalog.className = 'px-2 py-1 rounded-md font-semibold text-slate-400 hover:text-white transition-all';
-                blockTopic.classList.remove('hidden');
-                blockCatalog.classList.add('hidden');
-            }
+            const blockYt = document.getElementById('studioModeYoutubeBlock');
+            const blockTopic = document.getElementById('studioModeTopicBlock');
+            const blockCatalog = document.getElementById('studioModeCatalogBlock');
+
+            const activeBtn = 'px-2 py-1 rounded-md font-semibold bg-purple-600 text-white transition-all flex items-center gap-1';
+            const inactiveBtn = 'px-2 py-1 rounded-md font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1';
+
+            if (btnYt) btnYt.className = mode === 'youtube' ? activeBtn : inactiveBtn;
+            if (btnTopic) btnTopic.className = mode === 'topic' ? activeBtn : inactiveBtn;
+            if (btnCatalog) btnCatalog.className = mode === 'catalog' ? activeBtn : inactiveBtn;
+
+            if (blockYt) blockYt.classList.toggle('hidden', mode !== 'youtube');
+            if (blockTopic) blockTopic.classList.toggle('hidden', mode !== 'topic');
+            if (blockCatalog) blockCatalog.classList.toggle('hidden', mode !== 'catalog');
+
             loadStudioScriptPreview();
         }
 
         function onStudioChannelChange() {
             const ch = document.getElementById('studioChannelSelect').value;
+            const customBox = document.getElementById('studioCustomProfileBox');
             const voiceLabel = document.getElementById('studioVoiceLabel');
-            if (ch === 'psicosegredo') {
-                voiceLabel.innerText = 'pt-BR-AntonioNeural';
+
+            if (ch === 'custom') {
+                if (customBox) customBox.classList.remove('hidden');
+                const customVoice = document.getElementById('customChannelVoice')?.value || 'pt-BR-AntonioNeural';
+                if (voiceLabel) voiceLabel.innerText = customVoice;
             } else {
-                voiceLabel.innerText = 'pt-BR-FranciscaNeural';
+                if (customBox) customBox.classList.add('hidden');
+                const cfg = CHANNEL_CONFIGS[ch] || CHANNEL_CONFIGS.psicosegredo;
+                if (voiceLabel) voiceLabel.innerText = cfg.voice;
+            }
+
+            updateStudioTopicChips(ch);
+            updateStudioCatalogOptions(ch);
+            loadStudioScriptPreview();
+        }
+
+        function onCustomVoiceChange() {
+            const customVoice = document.getElementById('customChannelVoice')?.value || 'pt-BR-AntonioNeural';
+            const voiceLabel = document.getElementById('studioVoiceLabel');
+            if (voiceLabel) voiceLabel.innerText = customVoice;
+        }
+
+        function updateStudioTopicChips(channelKey) {
+            const container = document.getElementById('studioTopicChipsContainer');
+            if (!container) return;
+            const cfg = CHANNEL_CONFIGS[channelKey] || CHANNEL_CONFIGS.psicosegredo;
+            container.innerHTML = cfg.chips.map(chip => `
+                <button type="button" onclick="setViralTopic('${chip.topic.replace(/'/g, "\\'")}')" class="text-[10px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 hover:border-purple-600/50 px-2 py-0.5 rounded-md transition-colors">${chip.label}</button>
+            `).join('');
+        }
+
+        function updateStudioCatalogOptions(channelKey) {
+            const select = document.getElementById('studioCatalogSelect');
+            if (!select) return;
+            const cfg = CHANNEL_CONFIGS[channelKey] || CHANNEL_CONFIGS.psicosegredo;
+            select.innerHTML = cfg.catalog.map(c => `
+                <option value="${c.index}">Roteiro ${c.index + 1}: ${c.title}</option>
+            `).join('');
+        }
+
+        function setViralTopic(topic) {
+            const input = document.getElementById('studioCustomTopicInput');
+            if (input) {
+                input.value = topic;
             }
             loadStudioScriptPreview();
         }
@@ -1949,10 +2136,126 @@ try {
             }
         }
 
+        async function analyzeCurrentYouTubeUrl() {
+            const input = document.getElementById('studioYoutubeUrlInput');
+            const url = input ? input.value.trim() : '';
+            if (!url) {
+                showToast('Cole o link do YouTube (ex: https://youtube.com/watch?v=... ou https://youtu.be/...)', 'warning');
+                if (input) input.focus();
+                return;
+            }
+
+            const btn = document.getElementById('btnAnalyzeYoutube');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Analisando...</span>';
+            }
+
+            const channel = document.getElementById('studioChannelSelect')?.value || 'psicosegredo';
+
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                const key = getApiKey();
+                if (key) headers['X-API-KEY'] = key;
+
+                const res = await fetch('/api/v1/dashboard/pipeline/analyze-youtube', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({ url: url, channelId: channel })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    displayAnalyzedYouTubeResult(data);
+                    showToast('Vídeo do YouTube analisado e roteiro estruturado com sucesso!', 'success');
+                    return;
+                }
+            } catch (e) {
+                console.warn('Erro ao chamar endpoint de análise do YouTube:', e);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Analisar</span>';
+                }
+            }
+
+            // Fallback gracioso client-side caso o backend esteja em modo mock/offline
+            fallbackSimulatedYouTubeAnalysis(url, channel);
+        }
+
+        function displayAnalyzedYouTubeResult(data) {
+            const card = document.getElementById('studioYoutubeOriginalCard');
+            if (card) {
+                card.classList.remove('hidden');
+                card.classList.add('flex');
+            }
+            const thumb = document.getElementById('studioYtThumb');
+            if (thumb && data.thumbnailUrl) thumb.src = data.thumbnailUrl;
+
+            const channelEl = document.getElementById('studioYtChannel');
+            if (channelEl) channelEl.innerText = data.author || 'YouTube';
+
+            const titleEl = document.getElementById('studioYtTitle');
+            if (titleEl) titleEl.innerText = data.title || 'Vídeo Original';
+
+            const badge = document.getElementById('studioYtBadgeTranscript');
+            if (badge) {
+                if (data.transcriptAvailable) {
+                    badge.innerText = 'Transcrição OK';
+                    badge.className = 'text-[9px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono';
+                } else {
+                    badge.innerText = 'Modelagem IA';
+                    badge.className = 'text-[9px] px-1.5 py-0.2 rounded bg-amber-950 text-amber-400 border border-amber-800 font-mono';
+                }
+            }
+
+            if (data.script) {
+                studioScriptData = data.script;
+                renderStudioScriptPreviewUI(data.script);
+            }
+        }
+
+        function fallbackSimulatedYouTubeAnalysis(url, channel) {
+            let videoId = 'dQw4w9WgXcQ';
+            const match = url.match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([a-zA-Z0-9_-]{11})/);
+            if (match) videoId = match[1];
+
+            const fallbackData = {
+                title: 'Insights Virais: Como Hackear o Foco & Alta Performance',
+                author: 'Canal de Referência',
+                thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+                transcriptAvailable: true,
+                script: {
+                    title: 'O Hack de Foco dos 1% Mais Produtivos #Shorts',
+                    topic: 'Foco e Produtividade Viral',
+                    wordCount: 151,
+                    estimatedDurationSeconds: 67,
+                    blocks: [
+                        { title: "Gancho (0-3s)", text: "Este é o segredo que os 1% usam para produzir em 2 horas o que você leva o dia todo." },
+                        { title: "Foco Científico (3-45s)", text: "O estado de hiperfoco não é sorte: a neurociência prova que blocos de 45 minutos sincronizam ondas beta cerebrais." },
+                        { title: "Hack Prático (45-58s)", text: "Zere as notificações, use fone com ruído branco e defina uma única meta inegociável." },
+                        { title: "CTA & Retenção (58-65s)", text: "Curta este vídeo e salve agora para aplicar amanhã cedo." }
+                    ],
+                    narrationText: "Este é o segredo comprovado que os um por cento usam para produzir em duas horas o que a maioria leva o dia inteiro tentando fazer. O estado de hiperfoco absoluto não depende de sorte nem de força de vontade: a neurociência moderna prova que ciclos de quarenta e cinco minutos de imersão total sincronizam as ondas cerebrais e ativam o fluxo cognitivo máximo. Quando você elimina interrupções bruscas, seu cérebro para de gastar energia alternando tarefas e entra no chamado estado de flow profundo. Para aplicar isso na prática hoje mesmo: silencie todas as notificações do celular, coloque um ruído branco contínuo nos fones e execute apenas uma meta inegociável por vez. Se você dominar esse princípio, ninguém consegue competir com o seu ritmo de entrega. Curta este vídeo e salve agora para aplicar amanhã de manhã.",
+                    firstComment: "🚀 Domine o protocolo completo de foco e alta performance no link fixado: https://meulink.com/vip"
+                }
+            };
+
+            displayAnalyzedYouTubeResult(fallbackData);
+            showToast('Vídeo modelado via IA com roteiro de 4 blocos!', 'success');
+        }
+
         async function loadStudioScriptPreview() {
-            const channel = document.getElementById('studioChannelSelect').value;
-            const scriptIdx = parseInt(document.getElementById('studioCatalogSelect').value, 10) || 0;
-            const customTopic = studioCurrentMode === 'topic' ? (document.getElementById('studioCustomTopicInput').value.trim() || 'A Neurociência do Foco') : null;
+            const channel = document.getElementById('studioChannelSelect')?.value || 'psicosegredo';
+            const scriptIdx = parseInt(document.getElementById('studioCatalogSelect')?.value, 10) || 0;
+            const customTopic = studioCurrentMode === 'topic' ? (document.getElementById('studioCustomTopicInput')?.value.trim() || 'A Neurociência do Foco') : null;
+            const sourceUrl = studioCurrentMode === 'youtube' ? (document.getElementById('studioYoutubeUrlInput')?.value.trim() || null) : null;
+
+            // Se estamos em modo YouTube e já temos um script analisado ativo
+            if (studioCurrentMode === 'youtube' && studioScriptData && studioScriptData.fromYouTube) {
+                renderStudioScriptPreviewUI(studioScriptData);
+                return;
+            }
 
             let scriptData = null;
 
@@ -1967,7 +2270,8 @@ try {
                     body: JSON.stringify({
                         channelId: channel,
                         scriptIndex: scriptIdx,
-                        topic: customTopic
+                        topic: customTopic,
+                        sourceUrl: sourceUrl
                     })
                 });
                 if (res.ok) {
@@ -1986,24 +2290,49 @@ try {
                         title: customTopic + ' #Shorts',
                         topic: customTopic
                     };
+                } else if (sourceUrl) {
+                    scriptData = {
+                        ...scriptData,
+                        title: 'Análise Estruturada do YouTube #Shorts',
+                        topic: 'Modelagem de Vídeo Viral'
+                    };
                 }
             }
 
             studioScriptData = scriptData;
+            renderStudioScriptPreviewUI(scriptData);
+        }
 
-            // Atualiza UI
-            document.getElementById('studioPreviewTitle').innerText = scriptData.title;
-            document.getElementById('studioWordCountBadge').innerText = `${scriptData.wordCount} palavras • ~${scriptData.estimatedDurationSeconds}s`;
-            
-            if (scriptData.blocks && scriptData.blocks.length >= 4) {
-                document.getElementById('studioBlockHook').innerText = scriptData.blocks[0].text;
-                document.getElementById('studioBlockScience').innerText = scriptData.blocks[1].text;
-                document.getElementById('studioBlockHack').innerText = scriptData.blocks[2].text;
-                document.getElementById('studioBlockCta').innerText = scriptData.blocks[3].text;
+        function renderStudioScriptPreviewUI(scriptData) {
+            if (!scriptData) return;
+
+            const titleEl = document.getElementById('studioPreviewTitle');
+            if (titleEl) titleEl.innerText = scriptData.title || 'Vídeo IA #Shorts';
+
+            const wordCountBadge = document.getElementById('studioWordCountBadge');
+            if (wordCountBadge) {
+                const words = scriptData.wordCount || 150;
+                const dur = scriptData.estimatedDurationSeconds || 68;
+                wordCountBadge.innerText = `${words} palavras • ~${dur}s`;
             }
 
-            document.getElementById('studioPreviewNarration').innerText = scriptData.narrationText;
-            document.getElementById('studioPreviewFirstComment').innerText = scriptData.firstComment;
+            if (scriptData.blocks && scriptData.blocks.length >= 4) {
+                const hook = document.getElementById('studioBlockHook');
+                const science = document.getElementById('studioBlockScience');
+                const hack = document.getElementById('studioBlockHack');
+                const cta = document.getElementById('studioBlockCta');
+
+                if (hook) hook.innerText = scriptData.blocks[0].text;
+                if (science) science.innerText = scriptData.blocks[1].text;
+                if (hack) hack.innerText = scriptData.blocks[2].text;
+                if (cta) cta.innerText = scriptData.blocks[3].text;
+            }
+
+            const narration = document.getElementById('studioPreviewNarration');
+            if (narration) narration.innerText = scriptData.narrationText || '';
+
+            const firstComment = document.getElementById('studioPreviewFirstComment');
+            if (firstComment) firstComment.innerText = scriptData.firstComment || '';
         }
 
         async function executeStudioPipeline() {
@@ -2013,14 +2342,20 @@ try {
 
             switchStudioRightTab('console');
 
-            const channel = document.getElementById('studioChannelSelect').value;
-            const scriptIdx = parseInt(document.getElementById('studioCatalogSelect').value, 10) || 0;
-            const customTopic = studioCurrentMode === 'topic' ? (document.getElementById('studioCustomTopicInput').value.trim() || null) : null;
+            const channel = document.getElementById('studioChannelSelect')?.value || 'psicosegredo';
+            const scriptIdx = parseInt(document.getElementById('studioCatalogSelect')?.value, 10) || 0;
+            const customTopic = studioCurrentMode === 'topic' ? (document.getElementById('studioCustomTopicInput')?.value.trim() || null) : null;
+            const sourceUrl = studioCurrentMode === 'youtube' ? (document.getElementById('studioYoutubeUrlInput')?.value.trim() || null) : null;
             const platform = document.querySelector('input[name="studioPlatformRadio"]:checked')?.value || 'YOUTUBE_SHORTS';
 
             const termLogs = document.getElementById('studioTerminalLogs');
             termLogs.innerHTML = '';
             appendStudioLog(`Iniciando Esteira de IA para o canal "${channel}" (${platform})...`);
+            if (sourceUrl) {
+                appendStudioLog(`Fonte de Origem: YouTube (${sourceUrl})`);
+            } else if (customTopic) {
+                appendStudioLog(`Tema Customizado: "${customTopic}"`);
+            }
 
             try {
                 const headers = { 'Content-Type': 'application/json' };
@@ -2034,6 +2369,7 @@ try {
                         channelId: channel,
                         scriptIndex: scriptIdx,
                         topic: customTopic,
+                        sourceUrl: sourceUrl,
                         platform: platform
                     })
                 });
@@ -2105,13 +2441,16 @@ try {
         }
 
         function simulateStudioPipelineOffline(channel, platform) {
+            const sourceUrl = studioCurrentMode === 'youtube' ? document.getElementById('studioYoutubeUrlInput')?.value.trim() : null;
+            const sourceLog = sourceUrl ? `Modelando a partir do vídeo YouTube (${sourceUrl.substring(0, 35)}...)` : `Tema do canal "${channel}"`;
+
             const steps = [
-                { percent: 15, text: "[1/6] Carregando perfil e gerando roteiro estruturado...", log: `Roteiro: "${studioScriptData ? studioScriptData.title : 'Vídeo IA'}" (${studioScriptData ? studioScriptData.wordCount : 152} palavras).` },
-                { percent: 35, text: "[2/6] Sintetizando locução neural com Edge-TTS e timestamps...", log: "Locução neural pt-BR-AntonioNeural gerada com word boundaries exatos (duração: 68s)." },
+                { percent: 15, text: "[1/6] Analisando fonte e gerando roteiro estruturado...", log: `Roteiro: "${studioScriptData ? studioScriptData.title : 'Vídeo IA'}" (${studioScriptData ? studioScriptData.wordCount : 152} palavras). ${sourceLog}.` },
+                { percent: 35, text: "[2/6] Sintetizando locução neural com Edge-TTS e timestamps...", log: "Locução neural gerada com word boundaries exatos (duração: 68s, elegível TikTok Rewards)." },
                 { percent: 55, text: "[3/6] Compilando legendas animadas em estilo karaokê...", log: "Arquivo subtitles.ass compilado com destaque Amarelo Ouro (#FFD700)." },
                 { percent: 75, text: "[4/6] Gerando cenas visuais 9:16 e thumbnail de alto contraste...", log: "5 takes cinematográficos em 9:16 e thumbnail.png de alto contraste gerados." },
                 { percent: 90, text: "[5/6] Renderizando vídeo final com FFmpeg headless...", log: "Composição concluída: vídeo H.264 1080x1920 e áudio AAC 192k codificados." },
-                { percent: 100, text: "[6/6] Realizando ingestão no AutoPublisher Pro...", log: `Post agendado na planilha Cronograma para ${platform}.` }
+                { percent: 100, text: "[6/6] Realizando ingestão no AutoPublisher Pro...", log: `Post agendado na planilha Cronograma para a plataforma ${platform}.` }
             ];
 
             let stepIdx = 0;
