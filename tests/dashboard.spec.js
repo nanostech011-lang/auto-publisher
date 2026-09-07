@@ -1,5 +1,9 @@
-const { test, expect } = require('@playwright/test');
-const path = require('path');
+import { test, expect } from '@playwright/test';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 test.describe('Validação da Interface de Usuário (Dashboard Web) do AutoPublisher Pro', () => {
 
@@ -92,7 +96,32 @@ test.describe('Validação da Interface de Usuário (Dashboard Web) do AutoPubli
         await page.click('#modalCreate button:has-text("Cancelar")');
         await expect(page.locator('#modalCreate')).toBeHidden();
 
-        // 7. Captura screenshot completa do Dashboard
+        // 7. Teste do Studio IA (Pipeline Upstream de Vídeos por IA)
+        await page.click('#btnStudioAi');
+        await expect(page.locator('#modalStudioAi')).toBeVisible();
+        await expect(page.locator('#studioChannelSelect')).toBeVisible();
+        await expect(page.locator('#studioPreviewTitle')).toContainText('Shorts');
+        await expect(page.locator('#studioWordCountBadge')).toBeVisible();
+
+        // Testa alternância de abas no Studio IA (Roteiro vs Console)
+        await page.click('#btnTabStudioConsole');
+        await expect(page.locator('#studioRightTabConsole')).toBeVisible();
+        await expect(page.locator('#studioTerminalLogs')).toBeVisible();
+
+        // Volta para a aba de Roteiro
+        await page.click('#btnTabStudioScript');
+        await expect(page.locator('#studioRightTabScript')).toBeVisible();
+
+        // Captura screenshot com o Studio IA aberto
+        const studioScreenshotPath = path.resolve(__dirname, '../docs/manual/dashboard_studio_screenshot.png');
+        await page.screenshot({ path: studioScreenshotPath, fullPage: true });
+        console.log(`Screenshot do Studio IA capturada com sucesso em: ${studioScreenshotPath}`);
+
+        // Fecha o Studio IA
+        await page.click('#modalStudioAi button:has-text("✕"), #modalStudioAi button:has(.fa-xmark)');
+        await expect(page.locator('#modalStudioAi')).toBeHidden();
+
+        // 8. Captura screenshot completa do Dashboard
         const screenshotPath = path.resolve(__dirname, '../docs/manual/dashboard_screenshot.png');
         await page.screenshot({ path: screenshotPath, fullPage: true });
         console.log(`Screenshot do Dashboard capturada com sucesso em: ${screenshotPath}`);

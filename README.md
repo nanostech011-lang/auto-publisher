@@ -56,7 +56,8 @@ O AutoPublisher Pro opera em duas camadas totalmente integradas e complementares
 * **Streaming Zero-Copy:** Tráfego direto do Google Drive para o YouTube via `InputStreamContent`, operando estavelmente com menos de **256MB de RAM** mesmo com arquivos de mídia grandes.
 * **Autenticação Headless Permanente:** Renovação de `access_token` em memória via OAuth 2.0 com `refresh_token` offline permanente (resolvendo a limitação de Service Accounts no YouTube).
 * **Conformidade COPPA & Monetização:** Flag `selfDeclaredMadeForKids: false` mandatória, injeção de `#Shorts` e primeiro comentário com links de afiliados fixado automaticamente.
-* **Interface Híbrida:** Opere pelo **Google Sheets** (celular ou desktop) ou pelo **Web Dashboard** interativo em `http://localhost:8080/dashboard`.
+* **Interface Híbrida & Studio IA:** Opere pelo **Google Sheets** ou pelo **Web Dashboard** interativo em `http://localhost:8080/`. O novo **Studio IA Integrado** permite planejar temas, pré-visualizar roteiros de 4 blocos, gerar vídeos verticais de alta retenção com FFmpeg e acompanhar o console em tempo real diretamente pelo navegador.
+* **Gestão e Reprocessamento de Posts:** Modal de detalhes completos, cópia em 1 clique de primeiro comentário de afiliados, links diretos para vídeos publicados e reprocessamento sob demanda de postagens com falha.
 * **Custo Zero Real (R$ 0,00):** Escala a zero no Google Cloud Run (`min-instances: 0`), acionado pontualmente pelo Google Cloud Scheduler.
 
 ---

@@ -3,17 +3,24 @@ package com.autopublisher.infrastructure.controller;
 import com.autopublisher.application.port.in.CreatePostRequest;
 import com.autopublisher.application.port.in.CredentialsSettingsPayload;
 import com.autopublisher.application.port.in.DashboardOverview;
+import com.autopublisher.application.port.in.PipelineJobStatus;
+import com.autopublisher.application.port.in.PipelineRunRequest;
 import com.autopublisher.application.port.in.PublishBatchReport;
 import com.autopublisher.application.port.in.PublishScheduledPostsUseCase;
 import com.autopublisher.application.port.in.SystemCredentialsStatus;
+import com.autopublisher.application.usecase.AiPipelineService;
 import com.autopublisher.application.usecase.DashboardService;
 import com.autopublisher.domain.model.PostSchedule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -21,6 +28,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.File;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,6 +44,7 @@ public class DashboardApiController {
 
     private final DashboardService dashboardService;
     private final PublishScheduledPostsUseCase publishUseCase;
+    private final AiPipelineService aiPipelineService;
     private final String expectedApiKey;
 
     private final String spreadsheetId;
@@ -51,6 +61,7 @@ public class DashboardApiController {
     public DashboardApiController(
             DashboardService dashboardService,
             PublishScheduledPostsUseCase publishUseCase,
+            AiPipelineService aiPipelineService,
             @Value("${autopublisher.security.api-key:}") String expectedApiKey,
             @Value("${autopublisher.sheets.spreadsheet-id:}") String spreadsheetId,
             @Value("${autopublisher.sheets.tab-name:Cronograma}") String tabName,
@@ -65,6 +76,7 @@ public class DashboardApiController {
     ) {
         this.dashboardService = dashboardService;
         this.publishUseCase = publishUseCase;
+        this.aiPipelineService = aiPipelineService;
         this.expectedApiKey = expectedApiKey;
         this.spreadsheetId = spreadsheetId;
         this.tabName = tabName;
@@ -77,6 +89,7 @@ public class DashboardApiController {
         this.tiktokEnabled = tiktokEnabled;
         this.tiktokAccessToken = tiktokAccessToken;
     }
+
 
     private boolean isUnauthorized(String providedHeader, String providedQuery) {
         if (expectedApiKey == null || expectedApiKey.trim().isEmpty()) {
@@ -209,4 +222,135 @@ public class DashboardApiController {
                     .body(Map.of("error", "Erro na execucao do lote: " + e.getMessage()));
         }
     }
+
+    @PostMapping("/posts/{id}/retry")
+    public ResponseEntity<?> retryPost(
+            @PathVariable("id") String id,
+            @RequestHeader(value = "X-API-KEY", required = false) String providedHeaderKey,
+            @RequestParam(value = "api_key", required = false) String providedQueryKey
+    ) {
+        if (isUnauthorized(providedHeaderKey, providedQueryKey)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Unauthorized: Invalid or missing X-API-KEY"));
+        }
+
+        try {
+            PostSchedule post = dashboardService.retryPost(id);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Post redefinido para PENDENTE com sucesso!", "postId", post.id()));
+        } catch (Exception e) {
+            log.error("Erro ao reprocessar post {}: {}", id, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/pipeline/channels")
+    public ResponseEntity<?> getPipelineChannels(
+            @RequestHeader(value = "X-API-KEY", required = false) String providedHeaderKey,
+            @RequestParam(value = "api_key", required = false) String providedQueryKey
+    ) {
+        if (isUnauthorized(providedHeaderKey, providedQueryKey)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Unauthorized: Invalid or missing X-API-KEY"));
+        }
+
+        List<Map<String, Object>> channels = aiPipelineService.listChannels();
+        return ResponseEntity.ok(channels);
+    }
+
+    @PostMapping("/pipeline/preview-script")
+    public ResponseEntity<?> previewPipelineScript(
+            @RequestBody Map<String, Object> body,
+            @RequestHeader(value = "X-API-KEY", required = false) String providedHeaderKey,
+            @RequestParam(value = "api_key", required = false) String providedQueryKey
+    ) {
+        if (isUnauthorized(providedHeaderKey, providedQueryKey)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Unauthorized: Invalid or missing X-API-KEY"));
+        }
+
+        String channelId = (String) body.get("channelId");
+        String topic = (String) body.get("topic");
+        Integer scriptIndex = body.get("scriptIndex") != null ? ((Number) body.get("scriptIndex")).intValue() : 0;
+
+        Map<String, Object> scriptPreview = aiPipelineService.previewScript(channelId, topic, scriptIndex);
+        return ResponseEntity.ok(scriptPreview);
+    }
+
+    @PostMapping("/pipeline/run")
+    public ResponseEntity<?> runPipeline(
+            @RequestBody PipelineRunRequest request,
+            @RequestHeader(value = "X-API-KEY", required = false) String providedHeaderKey,
+            @RequestParam(value = "api_key", required = false) String providedQueryKey
+    ) {
+        if (isUnauthorized(providedHeaderKey, providedQueryKey)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Unauthorized: Invalid or missing X-API-KEY"));
+        }
+
+        PipelineJobStatus job = aiPipelineService.startPipelineJob(request);
+        return ResponseEntity.accepted().body(job);
+    }
+
+    @GetMapping("/pipeline/jobs/{jobId}")
+    public ResponseEntity<?> getPipelineJob(
+            @PathVariable("jobId") String jobId,
+            @RequestHeader(value = "X-API-KEY", required = false) String providedHeaderKey,
+            @RequestParam(value = "api_key", required = false) String providedQueryKey
+    ) {
+        if (isUnauthorized(providedHeaderKey, providedQueryKey)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Unauthorized: Invalid or missing X-API-KEY"));
+        }
+
+        PipelineJobStatus job = aiPipelineService.getJobStatus(jobId);
+        if (job == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("error", "Job " + jobId + " nao encontrado."));
+        }
+        return ResponseEntity.ok(job);
+    }
+
+    @GetMapping("/pipeline/media")
+    public ResponseEntity<Resource> getPipelineMedia(
+            @RequestParam("path") String requestedPath,
+            @RequestHeader(value = "X-API-KEY", required = false) String providedHeaderKey,
+            @RequestParam(value = "api_key", required = false) String providedQueryKey
+    ) {
+        if (isUnauthorized(providedHeaderKey, providedQueryKey)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            File file = new File(requestedPath);
+            String canonical = file.getCanonicalPath();
+            File pipelineDir = new File("pipeline").getCanonicalFile();
+            if (!canonical.startsWith(pipelineDir.getCanonicalPath())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            if (!file.exists() || !file.isFile()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            String contentType = "application/octet-stream";
+            if (canonical.endsWith(".mp4")) {
+                contentType = "video/mp4";
+            } else if (canonical.endsWith(".png")) {
+                contentType = "image/png";
+            } else if (canonical.endsWith(".jpg") || canonical.endsWith(".jpeg")) {
+                contentType = "image/jpeg";
+            }
+
+            Resource resource = new FileSystemResource(file);
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, contentType)
+                    .body(resource);
+
+        } catch (Exception e) {
+            log.error("Erro ao servir arquivo de midia {}: {}", requestedPath, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }
+

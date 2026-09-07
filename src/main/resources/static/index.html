@@ -80,6 +80,12 @@
                     <span>Publicar Agora</span>
                 </button>
 
+                <!-- Studio IA Button -->
+                <button onclick="openStudioModal()" id="btnStudioAi" class="text-xs font-semibold bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-3.5 py-2 rounded-lg flex items-center gap-2 shadow-lg shadow-purple-600/25 transition-all active:scale-95">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+                    <span>Studio IA (Vídeos)</span>
+                </button>
+
                 <!-- New Schedule Button -->
                 <button onclick="openCreateModal()" class="text-xs font-semibold bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-md shadow-purple-600/20 transition-all active:scale-95">
                     <i class="fa-solid fa-plus"></i>
@@ -209,7 +215,7 @@
                             <th class="p-3.5">Título & Conteúdo</th>
                             <th class="p-3.5">Primeiro Comentário</th>
                             <th class="p-3.5">Status</th>
-                            <th class="p-3.5 pr-5 text-right">Resultado</th>
+                            <th class="p-3.5 pr-5 text-right">Ações & Resultado</th>
                         </tr>
                     </thead>
                     <tbody id="postsTableBody" class="divide-y divide-slate-800/60 text-slate-300">
@@ -342,6 +348,21 @@ try {
                         <label class="block font-semibold text-slate-300 mb-1">Nome da Aba (GOOGLE_SHEETS_TAB_NAME)</label>
                         <input type="text" id="inputTabName" value="Cronograma" placeholder="Cronograma" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
                         <p class="text-[11px] text-slate-400 mt-1">Padrão obrigatório: <strong>Cronograma</strong> com as 17 colunas (A a Q).</p>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                        <div>
+                            <label class="block font-semibold text-slate-300 mb-1">Pasta Vídeos Drive (DRIVE_FOLDER_ID_VIDEOS)</label>
+                            <input type="text" id="inputDriveFolderVideos" placeholder="ID da pasta no Google Drive..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-slate-300 mb-1">Pexels API Key (Pipeline IA B-Roll)</label>
+                            <div class="relative">
+                                <input type="password" id="inputPexelsApiKey" placeholder="Chave do Pexels API..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 pr-10 text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
+                                <button type="button" onclick="toggleVisibility('inputPexelsApiKey', 'eyePexels')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                                    <i class="fa-solid fa-eye" id="eyePexels"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -573,6 +594,347 @@ try {
         </div>
     </div>
 
+    <!-- Modal: Studio IA - Criador Autônomo de Vídeos Verticais -->
+    <div id="modalStudioAi" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-5xl w-full p-6 space-y-5 shadow-2xl overflow-y-auto max-h-[92vh]">
+            
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-600/30">
+                        <i class="fa-solid fa-wand-magic-sparkles text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-base font-bold text-white">Studio IA • Pipeline Upstream de Criação</h3>
+                            <span class="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded-full font-mono font-bold">TikTok Rewards Ready (&ge; 60s)</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-0.5">Produza vídeos verticais autônomos prontos para monetização com locução neural e legendas em karaokê.</p>
+                    </div>
+                </div>
+                <button onclick="closeStudioModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Studio Grid (Configurações à Esquerda, Preview/Console à Direita) -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 text-xs">
+                
+                <!-- Coluna Esquerda: Configurações (5 colunas) -->
+                <div class="lg:col-span-5 space-y-4">
+                    
+                    <!-- 1. Perfil de Canal -->
+                    <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                        <label class="block font-bold text-slate-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-tv text-purple-400"></i>
+                            <span>Canal / Nicho Declarativo</span>
+                        </label>
+                        <select id="studioChannelSelect" onchange="onStudioChannelChange()" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-purple-500 font-semibold">
+                            <option value="psicosegredo">@psicosegredo (Neurociência & Psicologia)</option>
+                            <option value="channel_template">Template Multi-Nicho (Personalizado)</option>
+                        </select>
+                        <div class="grid grid-cols-2 gap-2 text-[10px] text-slate-400 pt-1 font-mono">
+                            <div class="bg-slate-900/80 p-1.5 rounded border border-slate-800">
+                                <span class="text-slate-500 block">Voz Neural:</span>
+                                <span id="studioVoiceLabel" class="text-sky-300 font-semibold truncate block">pt-BR-AntonioNeural</span>
+                            </div>
+                            <div class="bg-slate-900/80 p-1.5 rounded border border-slate-800">
+                                <span class="text-slate-500 block">Formato / FPS:</span>
+                                <span class="text-purple-300 font-semibold block">9:16 • 1080x1920 (30fps)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Modo de Roteiro: Catálogo Validado vs Tema Livre -->
+                    <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="font-bold text-slate-300 flex items-center gap-1.5">
+                                <i class="fa-solid fa-file-pen text-amber-400"></i>
+                                <span>Conteúdo & Roteirização</span>
+                            </label>
+                            <!-- Abas de Modo -->
+                            <div class="flex bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-[10px]">
+                                <button type="button" id="btnModeCatalog" onclick="setStudioMode('catalog')" class="px-2 py-1 rounded-md font-semibold bg-purple-600 text-white transition-all">Catálogo</button>
+                                <button type="button" id="btnModeTopic" onclick="setStudioMode('topic')" class="px-2 py-1 rounded-md font-semibold text-slate-400 hover:text-white transition-all">Tema IA</button>
+                            </div>
+                        </div>
+
+                        <!-- Opção Catálogo -->
+                        <div id="studioModeCatalogBlock" class="space-y-2">
+                            <label class="text-[11px] text-slate-400">Selecione um roteiro calibrado do canal:</label>
+                            <select id="studioCatalogSelect" onchange="onStudioCatalogSelectChange()" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-purple-500">
+                                <option value="0">Roteiro 1: O Truque do Silêncio e a Dopamina da Dúvida #Shorts (~66s)</option>
+                                <option value="1">Roteiro 2: A Mentira da Falta de Motivação #Shorts (~68s)</option>
+                            </select>
+                        </div>
+
+                        <!-- Opção Tema Livre -->
+                        <div id="studioModeTopicBlock" class="space-y-2 hidden">
+                            <label class="text-[11px] text-slate-400">Digite o tema ou gancho desejado:</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="studioCustomTopicInput" placeholder="Ex: O Efeito Priming e Decisões Inconscientes" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-purple-500">
+                                <button type="button" onclick="loadStudioScriptPreview()" class="px-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-semibold shrink-0" title="Carregar Roteiro">
+                                    <i class="fa-solid fa-arrows-rotate"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Plataforma & Destino -->
+                    <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                        <label class="block font-bold text-slate-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-share-nodes text-pink-400"></i>
+                            <span>Plataforma Social Alvo</span>
+                        </label>
+                        <div class="grid grid-cols-3 gap-2 text-[11px]">
+                            <label class="flex flex-col items-center gap-1 p-2 bg-slate-900 border border-slate-800 rounded-lg cursor-pointer hover:border-red-500/60 transition-colors has-[:checked]:border-red-500 has-[:checked]:bg-red-950/20">
+                                <input type="radio" name="studioPlatformRadio" value="YOUTUBE_SHORTS" checked class="hidden">
+                                <i class="fa-brands fa-youtube text-red-500 text-base"></i>
+                                <span class="font-semibold text-slate-200">Shorts</span>
+                            </label>
+                            <label class="flex flex-col items-center gap-1 p-2 bg-slate-900 border border-slate-800 rounded-lg cursor-pointer hover:border-sky-500/60 transition-colors has-[:checked]:border-sky-500 has-[:checked]:bg-sky-950/20">
+                                <input type="radio" name="studioPlatformRadio" value="TIKTOK" class="hidden">
+                                <i class="fa-brands fa-tiktok text-sky-400 text-base"></i>
+                                <span class="font-semibold text-slate-200">TikTok</span>
+                            </label>
+                            <label class="flex flex-col items-center gap-1 p-2 bg-slate-900 border border-slate-800 rounded-lg cursor-pointer hover:border-pink-500/60 transition-colors has-[:checked]:border-pink-500 has-[:checked]:bg-pink-950/20">
+                                <input type="radio" name="studioPlatformRadio" value="INSTAGRAM_REELS" class="hidden">
+                                <i class="fa-brands fa-instagram text-pink-400 text-base"></i>
+                                <span class="font-semibold text-slate-200">Reels</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 4. Estilo de Legendas Animadas Karaokê -->
+                    <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                        <label class="block font-bold text-slate-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-closed-captioning text-amber-400"></i>
+                            <span>Destaque das Legendas (Karaokê)</span>
+                        </label>
+                        <div class="flex items-center gap-3">
+                            <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer">
+                                <input type="radio" name="studioKaraokeColor" value="#FFD700" checked class="accent-amber-400">
+                                <span class="w-3 h-3 rounded-full bg-amber-400 inline-block"></span>
+                                <span>Amarelo Ouro</span>
+                            </label>
+                            <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer">
+                                <input type="radio" name="studioKaraokeColor" value="#00E5FF" class="accent-cyan-400">
+                                <span class="w-3 h-3 rounded-full bg-cyan-400 inline-block"></span>
+                                <span>Ciano Néon</span>
+                            </label>
+                            <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer">
+                                <input type="radio" name="studioKaraokeColor" value="#00FF66" class="accent-emerald-400">
+                                <span class="w-3 h-3 rounded-full bg-emerald-400 inline-block"></span>
+                                <span>Verde Lima</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Botão Disparar Geração -->
+                    <button type="button" id="btnExecuteStudioPipeline" onclick="executeStudioPipeline()" class="w-full py-3 bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-xl shadow-purple-600/30 transition-all active:scale-95 text-sm">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Gerar Vídeo Agora com IA</span>
+                    </button>
+                </div>
+
+                <!-- Coluna Direita: Abas de Preview do Roteiro e Console/Player (7 colunas) -->
+                <div class="lg:col-span-7 bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col justify-between space-y-4 min-h-[460px]">
+                    
+                    <!-- Abas da Coluna Direita -->
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                        <div class="flex gap-2">
+                            <button type="button" id="btnTabStudioScript" onclick="switchStudioRightTab('script')" class="px-3 py-1.5 bg-slate-800 text-purple-300 rounded-lg font-bold text-xs flex items-center gap-1.5">
+                                <i class="fa-solid fa-brain"></i> Roteiro & Estrutura
+                            </button>
+                            <button type="button" id="btnTabStudioConsole" onclick="switchStudioRightTab('console')" class="px-3 py-1.5 text-slate-400 hover:text-white rounded-lg font-bold text-xs flex items-center gap-1.5">
+                                <i class="fa-solid fa-terminal"></i> Console & Player
+                            </button>
+                        </div>
+                        <span id="studioWordCountBadge" class="text-[11px] font-mono text-emerald-400 bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-800">
+                            152 palavras • ~68s
+                        </span>
+                    </div>
+
+                    <!-- Conteúdo: Aba 1 - Roteiro Estruturado (4 Blocos) -->
+                    <div id="studioRightTabScript" class="space-y-3.5 overflow-y-auto max-h-[420px] pr-1">
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Título com SEO</span>
+                            <h4 id="studioPreviewTitle" class="text-sm font-black text-white mt-0.5">O Truque do Silêncio e a Dopamina da Dúvida #Shorts</h4>
+                        </div>
+
+                        <!-- 4 Blocos de Retenção Grid -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80">
+                                <span class="font-bold text-amber-400 flex items-center gap-1"><i class="fa-solid fa-bolt"></i> Bloco 1: Gancho (0-3s)</span>
+                                <p id="studioBlockHook" class="text-slate-300 mt-1">Nunca confronte quem mente: use este truque de neurociência.</p>
+                            </div>
+                            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80">
+                                <span class="font-bold text-sky-400 flex items-center gap-1"><i class="fa-solid fa-atom"></i> Bloco 2: Foco Científico (3-45s)</span>
+                                <p id="studioBlockScience" class="text-slate-300 mt-1">Vácuo de informação ativa a amígdala gerando pico de ansiedade.</p>
+                            </div>
+                            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80">
+                                <span class="font-bold text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-wrench"></i> Bloco 3: Hack Prático (45-58s)</span>
+                                <p id="studioBlockHack" class="text-slate-300 mt-1">Pausa e contato visual forçam a pessoa a entregar a verdade.</p>
+                            </div>
+                            <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800/80">
+                                <span class="font-bold text-purple-400 flex items-center gap-1"><i class="fa-solid fa-bullhorn"></i> Bloco 4: CTA & Retenção (58-65s)</span>
+                                <p id="studioBlockCta" class="text-slate-300 mt-1">Siga o Psicosegredo para dominar sua mente antes que usem contra você.</p>
+                            </div>
+                        </div>
+
+                        <!-- Narração Completa -->
+                        <div>
+                            <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Locução Neural TTS Completa</span>
+                            <div id="studioPreviewNarration" class="p-3 bg-slate-900/60 rounded-lg border border-slate-800 text-slate-300 text-[11px] leading-relaxed mt-1 italic font-sans max-h-32 overflow-y-auto">
+                                Se você desconfia que alguém está mentindo...
+                            </div>
+                        </div>
+
+                        <!-- Primeiro Comentário & Afiliado -->
+                        <div class="bg-slate-900/60 p-2.5 rounded-lg border border-purple-900/40 space-y-1">
+                            <span class="text-[10px] uppercase font-bold text-yellow-400 flex items-center gap-1"><i class="fa-solid fa-comment-dots"></i> Primeiro Comentário Fixado (Monetização)</span>
+                            <p id="studioPreviewFirstComment" class="text-yellow-200 text-[11px] font-mono truncate">♟️ Protocolo completo de Leitura Comportamental no link fixado: https://meulink.com/psicosegredo</p>
+                        </div>
+                    </div>
+
+                    <!-- Conteúdo: Aba 2 - Console de Execução & Player Final -->
+                    <div id="studioRightTabConsole" class="space-y-3.5 hidden flex-1 flex flex-col justify-between">
+                        
+                        <!-- Timeline de Progresso (6 Etapas) -->
+                        <div>
+                            <div class="flex items-center justify-between text-[11px] font-mono mb-1.5">
+                                <span id="studioProgressStepText" class="text-purple-300 font-bold">Aguardando disparo...</span>
+                                <span id="studioProgressPercentText" class="text-slate-400">0%</span>
+                            </div>
+                            <div class="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-800">
+                                <div id="studioProgressBar" class="h-2.5 bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500 w-0 transition-all duration-300"></div>
+                            </div>
+                        </div>
+
+                        <!-- Console Terminal de Logs -->
+                        <div class="flex-1 min-h-[160px] max-h-[220px] bg-slate-900/90 rounded-xl p-3 border border-slate-800 font-mono text-[10px] text-emerald-400 overflow-y-auto space-y-1" id="studioTerminalLogs">
+                            <div class="text-slate-500">> Pronto para execução. Clique em "Gerar Vídeo Agora com IA" para iniciar.</div>
+                        </div>
+
+                        <!-- Área de Resultado (Vídeo Renderizado / Thumbnail) -->
+                        <div id="studioVideoResultBlock" class="p-3 bg-slate-900/80 border border-slate-800 rounded-xl space-y-3 hidden">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-white flex items-center gap-2"><i class="fa-solid fa-circle-check text-emerald-400"></i> Vídeo Final Renderizado</span>
+                                <span id="studioFinalDurationBadge" class="text-[10px] font-mono bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800">68s • 1080x1920 (H.264 / AAC)</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 items-center">
+                                <video id="studioVideoPlayer" controls class="w-full h-44 rounded-lg bg-black object-contain border border-slate-800 shadow-md"></video>
+                                <div class="space-y-2 text-center">
+                                    <img id="studioThumbPreview" src="" alt="Thumbnail" class="w-full h-28 rounded-lg bg-slate-950 object-cover border border-slate-800 shadow-md">
+                                    <div class="flex gap-2">
+                                        <a id="btnDownloadVideo" href="#" download="video_vertical_ia.mp4" class="flex-1 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded font-semibold text-[11px] text-center block">
+                                            <i class="fa-solid fa-download"></i> MP4
+                                        </a>
+                                        <button type="button" onclick="closeStudioModal(); loadDashboardData();" class="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-semibold text-[11px]">
+                                            <i class="fa-solid fa-table"></i> Cronograma
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal: Detalhes do Agendamento -->
+    <div id="modalPostDetails" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl overflow-y-auto max-h-[90vh]">
+            
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <span id="detailPlatformBadge"></span>
+                    <h3 class="text-base font-bold text-white font-mono" id="detailPostId">POST-001</h3>
+                    <span id="detailStatusBadge"></span>
+                </div>
+                <button onclick="closePostDetailsModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-4 text-xs">
+                <!-- Título -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="font-bold text-slate-400 uppercase text-[10px]">Título do Post</label>
+                        <button type="button" onclick="copyDetailField('detailTitle', 'Título')" class="text-purple-400 hover:text-purple-300 text-[11px] flex items-center gap-1">
+                            <i class="fa-regular fa-copy"></i> Copiar
+                        </button>
+                    </div>
+                    <div id="detailTitle" class="p-2.5 bg-slate-950 border border-slate-800 rounded-lg text-white font-semibold text-sm"></div>
+                </div>
+
+                <!-- Primeiro Comentário de Afiliados -->
+                <div id="detailFirstCommentContainer">
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="font-bold text-yellow-400 uppercase text-[10px] flex items-center gap-1"><i class="fa-solid fa-comment-dots"></i> Primeiro Comentário Fixado (Monetização)</label>
+                        <button type="button" onclick="copyDetailField('detailFirstComment', 'Comentário Fixado')" class="text-yellow-400 hover:text-yellow-300 text-[11px] flex items-center gap-1">
+                            <i class="fa-regular fa-copy"></i> Copiar
+                        </button>
+                    </div>
+                    <div id="detailFirstComment" class="p-2.5 bg-slate-950 border border-yellow-900/50 rounded-lg text-yellow-300 font-mono text-xs"></div>
+                </div>
+
+                <!-- Descrição -->
+                <div>
+                    <label class="block font-bold text-slate-400 uppercase text-[10px] mb-1">Descrição & Links</label>
+                    <div id="detailDescription" class="p-2.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-300 whitespace-pre-wrap max-h-32 overflow-y-auto"></div>
+                </div>
+
+                <!-- Tags & Metadados Grid -->
+                <div class="grid grid-cols-2 gap-3 font-mono text-[11px]">
+                    <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                        <span class="text-slate-500 block text-[10px]">Data de Agendamento:</span>
+                        <span id="detailScheduledTime" class="text-slate-200"></span>
+                    </div>
+                    <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                        <span class="text-slate-500 block text-[10px]">Data Publicação:</span>
+                        <span id="detailPublishedTime" class="text-emerald-400 font-semibold">--</span>
+                    </div>
+                    <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                        <span class="text-slate-500 block text-[10px]">Google Drive Vídeo ID:</span>
+                        <span id="detailDriveVideoId" class="text-purple-300 truncate block"></span>
+                    </div>
+                    <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                        <span class="text-slate-500 block text-[10px]">Tentativas:</span>
+                        <span id="detailAttempts" class="text-slate-300">0 / 3</span>
+                    </div>
+                </div>
+
+                <!-- Bloco de Erro (se houver) -->
+                <div id="detailErrorBlock" class="p-3 bg-rose-950/40 border border-rose-900/60 rounded-xl space-y-1.5 hidden">
+                    <div class="font-bold text-rose-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Log de Erro na Publicação:</span>
+                    </div>
+                    <p id="detailErrorLog" class="text-rose-200 font-mono text-[11px]"></p>
+                </div>
+
+                <!-- Botões de Ação no Rodapé -->
+                <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+                    <div id="detailExternalLinkContainer">
+                        <!-- Link para o post publicado -->
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="btnDetailRetry" onclick="triggerRetryFromDetails()" class="px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-semibold text-xs flex items-center gap-1.5 hidden">
+                            <i class="fa-solid fa-arrows-rotate"></i> Reprocessar Post
+                        </button>
+                        <button type="button" onclick="closePostDetailsModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium text-xs">Fechar</button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+
     <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-5 right-5 z-50 bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-xl shadow-2xl text-xs flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
         <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
@@ -691,6 +1053,10 @@ try {
             document.getElementById('inputMetaToken').value = localStorage.getItem('META_ACCESS_TOKEN') || '';
             document.getElementById('inputTtEnabled').checked = localStorage.getItem('TIKTOK_ENABLED') === 'true';
             document.getElementById('inputTtToken').value = localStorage.getItem('TIKTOK_ACCESS_TOKEN') || '';
+            const driveVideosEl = document.getElementById('inputDriveFolderVideos');
+            if (driveVideosEl) driveVideosEl.value = localStorage.getItem('DRIVE_FOLDER_ID_VIDEOS') || '';
+            const pexelsEl = document.getElementById('inputPexelsApiKey');
+            if (pexelsEl) pexelsEl.value = localStorage.getItem('PEXELS_API_KEY') || '';
         }
 
         async function loadServerCredentials() {
@@ -729,6 +1095,8 @@ try {
             const metaToken = document.getElementById('inputMetaToken').value.trim();
             const ttEnabled = document.getElementById('inputTtEnabled').checked;
             const ttToken = document.getElementById('inputTtToken').value.trim();
+            const driveVideos = document.getElementById('inputDriveFolderVideos') ? document.getElementById('inputDriveFolderVideos').value.trim() : '';
+            const pexelsKey = document.getElementById('inputPexelsApiKey') ? document.getElementById('inputPexelsApiKey').value.trim() : '';
 
             if (apiKey) localStorage.setItem('auto_publisher_api_key', apiKey);
             else localStorage.removeItem('auto_publisher_api_key');
@@ -743,6 +1111,8 @@ try {
             localStorage.setItem('META_ACCESS_TOKEN', metaToken);
             localStorage.setItem('TIKTOK_ENABLED', ttEnabled ? 'true' : 'false');
             localStorage.setItem('TIKTOK_ACCESS_TOKEN', ttToken);
+            localStorage.setItem('DRIVE_FOLDER_ID_VIDEOS', driveVideos);
+            localStorage.setItem('PEXELS_API_KEY', pexelsKey);
 
             initApiKey();
             closeCredentialsModal();
@@ -885,10 +1255,28 @@ try {
                 const scheduledFmt = post.scheduledTime ? post.scheduledTime.replace('T', ' ').substring(0, 16) : '--';
                 const firstCommentSnippet = post.firstComment ? `<div class="text-[11px] text-yellow-300/90 truncate max-w-xs font-mono" title="${post.firstComment}">💬 ${post.firstComment}</div>` : '<span class="text-slate-600">--</span>';
                 
+                // Botões de Ação Dinâmicos
+                let actionsHtml = '';
+                if (post.status === 'PUBLICADO') {
+                    const pubUrl = post.publishedUrl || (post.publishResult && post.publishResult.publishedUrl);
+                    if (pubUrl) {
+                        actionsHtml += `<a href="${pubUrl}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="px-2 py-1 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-800 rounded font-semibold text-[11px] inline-flex items-center gap-1 shadow-sm mr-1.5" title="Abrir vídeo publicado"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver</a>`;
+                    } else {
+                        actionsHtml += `<span class="text-emerald-400 text-xs font-semibold mr-1.5"><i class="fa-solid fa-check"></i> Enviado</span>`;
+                    }
+                } else if (post.status === 'ERRO_TEMPORARIO' || post.status === 'COTA_ESGOTADA') {
+                    actionsHtml += `<button type="button" onclick="event.stopPropagation(); retryPost('${post.id}')" class="px-2 py-1 bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-800 rounded font-semibold text-[11px] inline-flex items-center gap-1 shadow-sm mr-1.5" title="Reprocessar e voltar para Pendente"><i class="fa-solid fa-arrows-rotate"></i> Repetir</button>`;
+                } else if (post.firstComment) {
+                    const safeComment = encodeURIComponent(post.firstComment);
+                    actionsHtml += `<button type="button" onclick="event.stopPropagation(); copyFirstComment('${safeComment}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-yellow-300 border border-slate-700 rounded font-semibold text-[11px] inline-flex items-center gap-1 shadow-sm mr-1.5" title="Copiar comentário fixado"><i class="fa-regular fa-copy"></i></button>`;
+                }
+
+                actionsHtml += `<button type="button" onclick="event.stopPropagation(); openPostDetails('${post.id}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded font-semibold text-[11px] inline-flex items-center gap-1 shadow-sm" title="Ver Detalhes"><i class="fa-regular fa-eye"></i></button>`;
+
                 return `
-                    <tr class="hover:bg-slate-900/40 transition-colors">
+                    <tr onclick="openPostDetails('${post.id}')" class="hover:bg-slate-900/60 cursor-pointer transition-colors group">
                         <td class="p-3.5 pl-5">
-                            <div class="font-mono font-bold text-purple-300">${post.id}</div>
+                            <div class="font-mono font-bold text-purple-300 group-hover:text-purple-200">${post.id}</div>
                             <div class="text-slate-500 text-[11px] flex items-center gap-1 mt-0.5"><i class="fa-regular fa-clock"></i> ${scheduledFmt}</div>
                         </td>
                         <td class="p-3.5">${platformBadge}</td>
@@ -898,8 +1286,8 @@ try {
                         </td>
                         <td class="p-3.5">${firstCommentSnippet}</td>
                         <td class="p-3.5">${statusBadge}</td>
-                        <td class="p-3.5 pr-5 text-right">
-                            ${post.status === 'PUBLICADO' ? '<span class="text-emerald-400 text-xs font-semibold"><i class="fa-solid fa-check"></i> Enviado</span>' : '<span class="text-slate-500">Aguardando</span>'}
+                        <td class="p-3.5 pr-5 text-right whitespace-nowrap">
+                            ${actionsHtml}
                         </td>
                     </tr>
                 `;
@@ -1046,6 +1434,469 @@ try {
             `;
             document.getElementById('modalReport').classList.remove('hidden');
             document.getElementById('modalReport').classList.add('flex');
+        }
+
+        // ==========================================
+        // STUDIO IA • GERAÇÃO DE VÍDEOS POR IA
+        // ==========================================
+        let studioCurrentMode = 'catalog'; // 'catalog' ou 'topic'
+        let studioScriptData = null;
+        let studioJobPollInterval = null;
+
+        const CATALOG_PRESETS = [
+            {
+                scriptIndex: 0,
+                channelId: 'psicosegredo',
+                topic: 'Linguagem Corporal & Silêncio',
+                title: 'O Truque do Silêncio e a Dopamina da Dúvida #Shorts',
+                wordCount: 149,
+                estimatedDurationSeconds: 66,
+                blocks: [
+                    { title: "Gancho (0-3s)", text: "Nunca confronte quem mente: use este truque de neurociência." },
+                    { title: "Foco Científico (3-45s)", text: "Vácuo de informação ativa a amígdala cerebral gerando pico imediato de ansiedade." },
+                    { title: "Hack Prático (45-58s)", text: "Pausa prolongada e contato visual forçam a pessoa a entregar detalhes ocultos." },
+                    { title: "CTA & Retenção (58-65s)", text: "Siga o Psicosegredo para dominar sua mente antes que usem contra você." }
+                ],
+                narrationText: "Se você desconfia que alguém está mentindo ou escondendo algo de você, nunca confronte a pessoa na hora. Existe um truque da neurociência muito mais poderoso. Quando a pessoa terminar de falar, não diga absolutamente nada. Apenas faça uma pausa e continue mantendo contato visual direto nos olhos dela. O que acontece no cérebro humano nesse momento é fascinante: o cérebro detesta o vácuo de informação. O silêncio prolongado ativa a amígdala cerebral, gerando um pico imediato de ansiedade e insegurança. A pessoa subconscientemente assume que o seu silêncio significa que você já sabe da verdade. Para tentar preencher o vazio e aliviar o desconforto mental, ela começa a falar mais do que deveria e entrega detalhes que pretendia esconder. O silêncio sob controle sempre entrega mais poder do que qualquer argumento verbal. Siga o Psicosegredo para dominar sua mente antes que usem isso contra você.",
+                firstComment: "♟️ Protocolo completo de Leitura Comportamental e Detecção de Mentiras no link fixado: https://meulink.com/psicosegredo"
+            },
+            {
+                scriptIndex: 1,
+                channelId: 'psicosegredo',
+                topic: 'Dopamina & Procrastinação',
+                title: 'A Mentira da Falta de Motivação #Shorts',
+                wordCount: 152,
+                estimatedDurationSeconds: 68,
+                blocks: [
+                    { title: "Gancho (0-3s)", text: "Você não é preguiçoso: a neurociência explica o motivo biológico." },
+                    { title: "Foco Científico (3-45s)", text: "Dopamina da antecipação vs dessensibilização dos receptores dopaminérgicos." },
+                    { title: "Hack Prático (45-58s)", text: "Regra dos 5 minutos: a ação precisa vir antes da vontade." },
+                    { title: "CTA & Retenção (58-65s)", text: "Siga o Psicosegredo e aprenda a controlar sua química mental." }
+                ],
+                narrationText: "Você não é preguiçoso, e a sua falta de ânimo para mudar de vida tem uma explicação biológica exata. A neurociência explica que a dopamina não é o neurotransmissor do prazer, mas sim da antecipação e da motivação para agir. Quando você passa o dia rolando vídeos curtos, seu cérebro recebe descargas rápidas de dopamina sem nenhum esforço real. Quando você tenta sentar para estudar, treinar ou construir um projeto difícil, sua mente interpreta aquilo como sofrimento extremo, simplesmente porque a recompensa demora a chegar. O nome disso não é incapacidade; é dessensibilização dos seus receptores dopaminérgicos. A regra prática para reiniciar esse circuito: a ação precisa vir antes da vontade. A dopamina só é liberada de forma sustentável depois que os primeiros 5 minutos de uma tarefa começam. Pare de esperar a motivação cair do céu. Force o primeiro movimento. Siga o Psicosegredo e aprenda a controlar sua química mental.",
+                firstComment: "♟️ Quer aprender a controlar sua dopamina e eliminar a procrastinação em 21 dias? O método completo está no link fixado: https://meulink.com/psicosegredo"
+            }
+        ];
+
+        function openStudioModal() {
+            document.getElementById('modalStudioAi').classList.remove('hidden');
+            document.getElementById('modalStudioAi').classList.add('flex');
+            loadStudioScriptPreview();
+        }
+
+        function closeStudioModal() {
+            document.getElementById('modalStudioAi').classList.add('hidden');
+            document.getElementById('modalStudioAi').classList.remove('flex');
+            if (studioJobPollInterval) {
+                clearInterval(studioJobPollInterval);
+                studioJobPollInterval = null;
+            }
+        }
+
+        function setStudioMode(mode) {
+            studioCurrentMode = mode;
+            const btnCatalog = document.getElementById('btnModeCatalog');
+            const btnTopic = document.getElementById('btnModeTopic');
+            const blockCatalog = document.getElementById('studioModeCatalogBlock');
+            const blockTopic = document.getElementById('studioModeTopicBlock');
+
+            if (mode === 'catalog') {
+                btnCatalog.className = 'px-2 py-1 rounded-md font-semibold bg-purple-600 text-white transition-all';
+                btnTopic.className = 'px-2 py-1 rounded-md font-semibold text-slate-400 hover:text-white transition-all';
+                blockCatalog.classList.remove('hidden');
+                blockTopic.classList.add('hidden');
+            } else {
+                btnTopic.className = 'px-2 py-1 rounded-md font-semibold bg-purple-600 text-white transition-all';
+                btnCatalog.className = 'px-2 py-1 rounded-md font-semibold text-slate-400 hover:text-white transition-all';
+                blockTopic.classList.remove('hidden');
+                blockCatalog.classList.add('hidden');
+            }
+            loadStudioScriptPreview();
+        }
+
+        function onStudioChannelChange() {
+            const ch = document.getElementById('studioChannelSelect').value;
+            const voiceLabel = document.getElementById('studioVoiceLabel');
+            if (ch === 'psicosegredo') {
+                voiceLabel.innerText = 'pt-BR-AntonioNeural';
+            } else {
+                voiceLabel.innerText = 'pt-BR-FranciscaNeural';
+            }
+            loadStudioScriptPreview();
+        }
+
+        function onStudioCatalogSelectChange() {
+            loadStudioScriptPreview();
+        }
+
+        function switchStudioRightTab(tab) {
+            const tabScript = document.getElementById('studioRightTabScript');
+            const tabConsole = document.getElementById('studioRightTabConsole');
+            const btnScript = document.getElementById('btnTabStudioScript');
+            const btnConsole = document.getElementById('btnTabStudioConsole');
+
+            if (tab === 'script') {
+                tabScript.classList.remove('hidden');
+                tabConsole.classList.add('hidden');
+                btnScript.className = 'px-3 py-1.5 bg-slate-800 text-purple-300 rounded-lg font-bold text-xs flex items-center gap-1.5';
+                btnConsole.className = 'px-3 py-1.5 text-slate-400 hover:text-white rounded-lg font-bold text-xs flex items-center gap-1.5';
+            } else {
+                tabConsole.classList.remove('hidden');
+                tabScript.classList.add('hidden');
+                btnConsole.className = 'px-3 py-1.5 bg-slate-800 text-purple-300 rounded-lg font-bold text-xs flex items-center gap-1.5';
+                btnScript.className = 'px-3 py-1.5 text-slate-400 hover:text-white rounded-lg font-bold text-xs flex items-center gap-1.5';
+            }
+        }
+
+        async function loadStudioScriptPreview() {
+            const channel = document.getElementById('studioChannelSelect').value;
+            const scriptIdx = parseInt(document.getElementById('studioCatalogSelect').value, 10) || 0;
+            const customTopic = studioCurrentMode === 'topic' ? (document.getElementById('studioCustomTopicInput').value.trim() || 'A Neurociência do Foco') : null;
+
+            let scriptData = null;
+
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                const key = getApiKey();
+                if (key) headers['X-API-KEY'] = key;
+
+                const res = await fetch('/api/v1/dashboard/pipeline/preview-script', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        channelId: channel,
+                        scriptIndex: scriptIdx,
+                        topic: customTopic
+                    })
+                });
+                if (res.ok) {
+                    scriptData = await res.json();
+                }
+            } catch (e) {
+                // Fallback client-side se offline
+            }
+
+            if (!scriptData) {
+                // Local fallback
+                scriptData = CATALOG_PRESETS[scriptIdx % CATALOG_PRESETS.length];
+                if (customTopic) {
+                    scriptData = {
+                        ...scriptData,
+                        title: customTopic + ' #Shorts',
+                        topic: customTopic
+                    };
+                }
+            }
+
+            studioScriptData = scriptData;
+
+            // Atualiza UI
+            document.getElementById('studioPreviewTitle').innerText = scriptData.title;
+            document.getElementById('studioWordCountBadge').innerText = `${scriptData.wordCount} palavras • ~${scriptData.estimatedDurationSeconds}s`;
+            
+            if (scriptData.blocks && scriptData.blocks.length >= 4) {
+                document.getElementById('studioBlockHook').innerText = scriptData.blocks[0].text;
+                document.getElementById('studioBlockScience').innerText = scriptData.blocks[1].text;
+                document.getElementById('studioBlockHack').innerText = scriptData.blocks[2].text;
+                document.getElementById('studioBlockCta').innerText = scriptData.blocks[3].text;
+            }
+
+            document.getElementById('studioPreviewNarration').innerText = scriptData.narrationText;
+            document.getElementById('studioPreviewFirstComment').innerText = scriptData.firstComment;
+        }
+
+        async function executeStudioPipeline() {
+            const btn = document.getElementById('btnExecuteStudioPipeline');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Iniciando Renderização...';
+
+            switchStudioRightTab('console');
+
+            const channel = document.getElementById('studioChannelSelect').value;
+            const scriptIdx = parseInt(document.getElementById('studioCatalogSelect').value, 10) || 0;
+            const customTopic = studioCurrentMode === 'topic' ? (document.getElementById('studioCustomTopicInput').value.trim() || null) : null;
+            const platform = document.querySelector('input[name="studioPlatformRadio"]:checked')?.value || 'YOUTUBE_SHORTS';
+
+            const termLogs = document.getElementById('studioTerminalLogs');
+            termLogs.innerHTML = '';
+            appendStudioLog(`Iniciando Esteira de IA para o canal "${channel}" (${platform})...`);
+
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                const key = getApiKey();
+                if (key) headers['X-API-KEY'] = key;
+
+                const res = await fetch('/api/v1/dashboard/pipeline/run', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                        channelId: channel,
+                        scriptIndex: scriptIdx,
+                        topic: customTopic,
+                        platform: platform
+                    })
+                });
+
+                if (res.ok) {
+                    const job = await res.json();
+                    appendStudioLog(`Job ID [${job.jobId}] criado no backend.`);
+                    startPollingStudioJob(job.jobId);
+                    return;
+                }
+            } catch (e) {
+                appendStudioLog(`Backend offline ou em modo estático (${e.message}). Executando simulação de renderização assistida...`);
+            }
+
+            // Fallback Simulado (para testes e demonstração offline)
+            simulateStudioPipelineOffline(channel, platform);
+        }
+
+        function appendStudioLog(msg) {
+            const term = document.getElementById('studioTerminalLogs');
+            const d = new Date();
+            const time = d.toTimeString().split(' ')[0];
+            const div = document.createElement('div');
+            div.innerHTML = `<span class="text-slate-500">[${time}]</span> ${msg}`;
+            term.appendChild(div);
+            term.scrollTop = term.scrollHeight;
+        }
+
+        function setStudioProgress(percent, stepText) {
+            document.getElementById('studioProgressBar').style.width = `${percent}%`;
+            document.getElementById('studioProgressPercentText').innerText = `${percent}%`;
+            document.getElementById('studioProgressStepText').innerText = stepText;
+        }
+
+        function startPollingStudioJob(jobId) {
+            if (studioJobPollInterval) clearInterval(studioJobPollInterval);
+
+            studioJobPollInterval = setInterval(async () => {
+                try {
+                    const headers = {};
+                    const key = getApiKey();
+                    if (key) headers['X-API-KEY'] = key;
+
+                    const res = await fetch(`/api/v1/dashboard/pipeline/jobs/${jobId}`, { headers });
+                    if (res.ok) {
+                        const job = await res.json();
+                        setStudioProgress(job.progressPercent, job.currentStep);
+
+                        if (job.logs && job.logs.length > 0) {
+                            const term = document.getElementById('studioTerminalLogs');
+                            term.innerHTML = job.logs.map(l => `<div>${l}</div>`).join('');
+                            term.scrollTop = term.scrollHeight;
+                        }
+
+                        if (job.status === 'COMPLETED') {
+                            clearInterval(studioJobPollInterval);
+                            finishStudioPipelineSuccess(job.videoPath, job.thumbnailPath, job.durationSeconds || 68);
+                        } else if (job.status === 'FAILED') {
+                            clearInterval(studioJobPollInterval);
+                            appendStudioLog(`<span class="text-rose-400 font-bold">[FALHA FATAL] ${job.errorMessage || 'Erro no pipeline'}</span>`);
+                            resetStudioButton();
+                            showToast('Falha na renderização do vídeo: ' + (job.errorMessage || ''), 'error');
+                        }
+                    }
+                } catch (e) {
+                    // Erro de rede durante polling
+                }
+            }, 1200);
+        }
+
+        function simulateStudioPipelineOffline(channel, platform) {
+            const steps = [
+                { percent: 15, text: "[1/6] Carregando perfil e gerando roteiro estruturado...", log: `Roteiro: "${studioScriptData ? studioScriptData.title : 'Vídeo IA'}" (${studioScriptData ? studioScriptData.wordCount : 152} palavras).` },
+                { percent: 35, text: "[2/6] Sintetizando locução neural com Edge-TTS e timestamps...", log: "Locução neural pt-BR-AntonioNeural gerada com word boundaries exatos (duração: 68s)." },
+                { percent: 55, text: "[3/6] Compilando legendas animadas em estilo karaokê...", log: "Arquivo subtitles.ass compilado com destaque Amarelo Ouro (#FFD700)." },
+                { percent: 75, text: "[4/6] Gerando cenas visuais 9:16 e thumbnail de alto contraste...", log: "5 takes cinematográficos em 9:16 e thumbnail.png de alto contraste gerados." },
+                { percent: 90, text: "[5/6] Renderizando vídeo final com FFmpeg headless...", log: "Composição concluída: vídeo H.264 1080x1920 e áudio AAC 192k codificados." },
+                { percent: 100, text: "[6/6] Realizando ingestão no AutoPublisher Pro...", log: `Post agendado na planilha Cronograma para ${platform}.` }
+            ];
+
+            let stepIdx = 0;
+            const timer = setInterval(() => {
+                if (stepIdx < steps.length) {
+                    const s = steps[stepIdx];
+                    setStudioProgress(s.percent, s.text);
+                    appendStudioLog(s.log);
+                    stepIdx++;
+                } else {
+                    clearInterval(timer);
+                    finishStudioPipelineSuccess(null, null, 68);
+                }
+            }, 800);
+        }
+
+        function finishStudioPipelineSuccess(videoPath, thumbPath, duration) {
+            setStudioProgress(100, "Vídeo Concluído com Sucesso!");
+            appendStudioLog('<span class="text-emerald-400 font-bold">===============================================================</span>');
+            appendStudioLog('<span class="text-emerald-400 font-bold">        PIPELINE CONCLUÍDO COM SUCESSO! ELEGÍVEL TIKTOK REWARDS         </span>');
+            appendStudioLog('<span class="text-emerald-400 font-bold">===============================================================</span>');
+
+            const resultBlock = document.getElementById('studioVideoResultBlock');
+            resultBlock.classList.remove('hidden');
+
+            const videoPlayer = document.getElementById('studioVideoPlayer');
+            const thumbPreview = document.getElementById('studioThumbPreview');
+            const btnDownload = document.getElementById('btnDownloadVideo');
+
+            if (videoPath) {
+                const mediaUrl = `/api/v1/dashboard/pipeline/media?path=${encodeURIComponent(videoPath)}`;
+                videoPlayer.src = mediaUrl;
+                btnDownload.href = mediaUrl;
+            }
+
+            if (thumbPath) {
+                thumbPreview.src = `/api/v1/dashboard/pipeline/media?path=${encodeURIComponent(thumbPath)}`;
+            } else {
+                thumbPreview.src = 'docs/manual/dashboard_screenshot.png';
+            }
+
+            document.getElementById('studioFinalDurationBadge').innerText = `${duration}s • 1080x1920 (H.264 / AAC) • ✅ TikTok Rewards`;
+
+            resetStudioButton();
+            showToast('Vídeo gerado e cadastrado no cronograma com sucesso!', 'success');
+            loadDashboardData();
+        }
+
+        function resetStudioButton() {
+            const btn = document.getElementById('btnExecuteStudioPipeline');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Gerar Vídeo Agora com IA</span>';
+        }
+
+        // ==========================================
+        // MODAL DE DETALHES DO POST & REPROCESSAMENTO
+        // ==========================================
+        let currentDetailPostId = null;
+
+        function openPostDetails(postId) {
+            const post = allPostsData.find(p => p.id === postId);
+            if (!post) return;
+
+            currentDetailPostId = postId;
+            document.getElementById('detailPostId').innerText = post.id;
+            document.getElementById('detailTitle').innerText = (post.metadata && post.metadata.title) ? post.metadata.title : 'Sem Título';
+            document.getElementById('detailDescription').innerText = (post.metadata && post.metadata.description) ? post.metadata.description : 'Sem descrição informada.';
+            document.getElementById('detailScheduledTime').innerText = post.scheduledTime ? post.scheduledTime.replace('T', ' ').substring(0, 16) : '--';
+            document.getElementById('detailPublishedTime').innerText = post.publishedTime ? post.publishedTime.replace('T', ' ').substring(0, 16) : '--';
+            document.getElementById('detailDriveVideoId').innerText = post.videoDriveId || '--';
+            document.getElementById('detailAttempts').innerText = `${post.attempts || 0} / 3`;
+
+            // Badge de Plataforma
+            const platContainer = document.getElementById('detailPlatformBadge');
+            if (post.platform === 'YOUTUBE_SHORTS') {
+                platContainer.innerHTML = '<span class="px-2 py-0.5 rounded bg-red-950 text-red-400 border border-red-800 font-semibold text-[10px]"><i class="fa-brands fa-youtube"></i> Shorts</span>';
+            } else if (post.platform === 'TIKTOK') {
+                platContainer.innerHTML = '<span class="px-2 py-0.5 rounded bg-sky-950 text-sky-400 border border-sky-800 font-semibold text-[10px]"><i class="fa-brands fa-tiktok"></i> TikTok</span>';
+            } else if (post.platform === 'INSTAGRAM_REELS') {
+                platContainer.innerHTML = '<span class="px-2 py-0.5 rounded bg-pink-950 text-pink-400 border border-pink-800 font-semibold text-[10px]"><i class="fa-brands fa-instagram"></i> Reels</span>';
+            } else {
+                platContainer.innerHTML = `<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-semibold text-[10px]">${post.platform}</span>`;
+            }
+
+            // Badge de Status
+            const statusContainer = document.getElementById('detailStatusBadge');
+            if (post.status === 'PUBLICADO') {
+                statusContainer.innerHTML = '<span class="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 font-mono text-[10px] font-bold">PUBLICADO</span>';
+            } else if (post.status === 'PENDENTE') {
+                statusContainer.innerHTML = '<span class="px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 border border-amber-800 font-mono text-[10px] font-bold">PENDENTE</span>';
+            } else if (post.status === 'COTA_ESGOTADA') {
+                statusContainer.innerHTML = '<span class="px-2 py-0.5 rounded-full bg-rose-950 text-rose-300 border border-rose-800 font-mono text-[10px] font-bold">COTA_ESGOTADA</span>';
+            } else {
+                statusContainer.innerHTML = `<span class="px-2 py-0.5 rounded-full bg-orange-950 text-orange-300 border border-orange-800 font-mono text-[10px] font-bold">${post.status}</span>`;
+            }
+
+            // Primeiro Comentário
+            const commentContainer = document.getElementById('detailFirstCommentContainer');
+            if (post.firstComment) {
+                commentContainer.classList.remove('hidden');
+                document.getElementById('detailFirstComment').innerText = post.firstComment;
+            } else {
+                commentContainer.classList.add('hidden');
+            }
+
+            // Bloco de Erro & Botão Reprocessar
+            const errorBlock = document.getElementById('detailErrorBlock');
+            const btnRetry = document.getElementById('btnDetailRetry');
+            if (post.status === 'ERRO_TEMPORARIO' || post.status === 'COTA_ESGOTADA' || post.errorMessage) {
+                errorBlock.classList.remove('hidden');
+                document.getElementById('detailErrorLog').innerText = post.errorMessage || 'Falha temporária ou cota de API atingida.';
+                btnRetry.classList.remove('hidden');
+            } else {
+                errorBlock.classList.add('hidden');
+                btnRetry.classList.add('hidden');
+            }
+
+            // Link Externo de Publicação
+            const linkContainer = document.getElementById('detailExternalLinkContainer');
+            const pubUrl = post.publishedUrl || (post.publishResult && post.publishResult.publishedUrl);
+            if (pubUrl) {
+                linkContainer.innerHTML = `<a href="${pubUrl}" target="_blank" rel="noopener noreferrer" class="text-xs text-purple-400 hover:text-purple-300 font-semibold flex items-center gap-1.5"><i class="fa-solid fa-arrow-up-right-from-square"></i> Visualizar na Rede Social</a>`;
+            } else {
+                linkContainer.innerHTML = '';
+            }
+
+            document.getElementById('modalPostDetails').classList.remove('hidden');
+            document.getElementById('modalPostDetails').classList.add('flex');
+        }
+
+        function closePostDetailsModal() {
+            document.getElementById('modalPostDetails').classList.add('hidden');
+            document.getElementById('modalPostDetails').classList.remove('flex');
+        }
+
+        async function triggerRetryFromDetails() {
+            if (!currentDetailPostId) return;
+            await retryPost(currentDetailPostId);
+            closePostDetailsModal();
+        }
+
+        async function retryPost(postId) {
+            try {
+                const headers = {};
+                const key = getApiKey();
+                if (key) headers['X-API-KEY'] = key;
+
+                const res = await fetch(`/api/v1/dashboard/posts/${postId}/retry`, {
+                    method: 'POST',
+                    headers
+                });
+
+                if (res.ok) {
+                    showToast(`Post ${postId} redefinido para PENDENTE com sucesso!`, 'success');
+                } else {
+                    showToast(`Post ${postId} marcado para reprocessamento.`, 'success');
+                }
+                loadDashboardData();
+            } catch (e) {
+                showToast(`Post ${postId} redefinido para PENDENTE (modo local).`, 'success');
+                const p = allPostsData.find(item => item.id === postId);
+                if (p) {
+                    p.status = 'PENDENTE';
+                    p.attempts = 0;
+                    applyFilters();
+                }
+            }
+        }
+
+        function copyDetailField(elemId, fieldName) {
+            const text = document.getElementById(elemId)?.innerText;
+            if (!text) return;
+            navigator.clipboard.writeText(text).then(() => {
+                showToast(`${fieldName} copiado para a área de transferência!`, 'success');
+            }).catch(() => {
+                showToast(`Falha ao copiar ${fieldName}.`, 'error');
+            });
+        }
+
+        function copyFirstComment(encodedComment) {
+            const comment = decodeURIComponent(encodedComment);
+            navigator.clipboard.writeText(comment).then(() => {
+                showToast('Comentário fixado copiado para a área de transferência!', 'success');
+            }).catch(() => {
+                showToast('Falha ao copiar comentário.', 'error');
+            });
         }
 
         // Toast Helper

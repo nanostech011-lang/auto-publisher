@@ -80,4 +80,34 @@ public class DashboardService {
 
         return newPost;
     }
+
+    /**
+     * Redefine um post para o status PENDENTE e zera as tentativas, permitindo nova tentativa de publicacao.
+     */
+    public PostSchedule retryPost(String postId) {
+        log.info("Recebida solicitacao para reprocessar post com ID: {}", postId);
+        List<PostSchedule> currentPosts = scheduleRepositoryPort.findAllPosts();
+        for (PostSchedule post : currentPosts) {
+            if (post.id().equalsIgnoreCase(postId)) {
+                scheduleRepositoryPort.updateStatus(post.rowIndex(), PublishStatus.PENDENTE, null, "Reprocessamento agendado via Dashboard Web", 0);
+                log.info("Post {} na linha {} redefinido para PENDENTE com tentativas zeradas.", post.id(), post.rowIndex());
+                return new PostSchedule(
+                        post.rowIndex(),
+                        post.id(),
+                        post.scheduledTime(),
+                        post.platform(),
+                        post.videoDriveId(),
+                        post.thumbnailDriveId(),
+                        post.metadata(),
+                        PublishStatus.PENDENTE,
+                        null,
+                        null,
+                        "Reprocessamento agendado via Dashboard Web",
+                        0
+                );
+            }
+        }
+        throw new IllegalArgumentException("Post com ID " + postId + " nao encontrado.");
+    }
 }
+

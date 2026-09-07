@@ -43,11 +43,32 @@ Implementação de uma interface gráfica web moderna (tema escuro com Tailwind 
   - [x] Campo dedicado para o Primeiro Comentário de Afiliados.
   - [x] Persistência via Sheets API (`values.append`) sem sobrescrever dados existentes.
 
-### US-07.4: Central de Chaves & Credenciais All-in-One com Gerador .env
-* **Descrição:** Interface amigável para inserir e visualizar todas as chaves e APIs do sistema (Segurança, Sheets, YouTube, Meta, TikTok) com alternador de visibilidade e exportador de `.env`.
+### US-07.4: Central de Chaves & Credenciais All-in-One com Pexels API
+* **Descrição:** Interface amigável para inserir e visualizar todas as chaves e APIs do sistema (Segurança, Sheets, YouTube, Meta, TikTok, Pexels e Pastas do Drive) com alternador de visibilidade.
 * **Critérios de Aceite:**
   - [x] Modal com abas temáticas e chips de status de conexão (`🟢 Conectado` / `⚪ Não configurado`).
   - [x] Botões para alternar visibilidade (olhinho 👁️) para cada token secreto.
   - [x] Botão para consultar status do servidor (`GET /api/v1/dashboard/credentials`).
-  - [x] Gerador de arquivo `.env` com botões "Copiar Conteúdo" e "Baixar Arquivo .env".
+  - [x] Suporte à `PEXELS_API_KEY` para o coletor de B-roll do pipeline de IA.
   - [x] Persistência segura no `localStorage` do navegador para autorizar chamadas `X-API-KEY`.
+
+### US-07.5: Studio IA Integrado no Dashboard Web (Upstream Engine)
+* **Descrição:** Interface gráfica para configurar, pré-visualizar roteiros de neurociência e disparar a esteira de geração de vídeos verticais por IA com acompanhamento do progresso e player de vídeo.
+* **Critérios de Aceite:**
+  - [x] Botão destacado "Studio IA (Vídeos)" no header de navegação com gradiente moderno.
+  - [x] Seletor dinâmico de perfis de canal (`@psicosegredo`, template multi-nicho) com badges de nicho e voz neural.
+  - [x] Modo Catálogo de Roteiros Validados vs Modo Tema Livre por IA.
+  - [x] Pré-visualização completa da estrutura em 4 blocos de retenção (Gancho, Foco Científico, Hack Prático, CTA), contagem de palavras e badge `TikTok Rewards Ready (>= 60s)`.
+  - [x] Seletor de plataforma (`YOUTUBE_SHORTS`, `TIKTOK`, `INSTAGRAM_REELS`) e cor de destaque da legenda karaokê.
+  - [x] Timeline de 6 etapas de renderização em tempo real e console terminal com logs ao vivo.
+  - [x] Player HTML5 vertical para reprodução do MP4 gerado, visualizador de miniatura e botões para download.
+  - [x] Ingestão e agendamento automático na planilha ao concluir.
+
+### US-07.6: Modal de Detalhes do Post & Reprocessamento sob Demanda
+* **Descrição:** Visualização detalhada de qualquer post agendado e capacidade de reprocessar posts que falharam ou tiveram cota esgotada.
+* **Critérios de Aceite:**
+  - [x] Linhas da tabela do cronograma clicáveis para abrir o modal de detalhes do agendamento.
+  - [x] Exibição de título, primeiro comentário fixado com botão de cópia rápida, descrição completa, tags, horários e Drive IDs.
+  - [x] Link externo direto para postagens já publicadas.
+  - [x] Botão "Reprocessar Post" (`POST /api/v1/dashboard/posts/{id}/retry`) para redefinir posts com `ERRO_TEMPORARIO` ou `COTA_ESGOTADA` de volta para `PENDENTE` com tentativas zeradas.
+
