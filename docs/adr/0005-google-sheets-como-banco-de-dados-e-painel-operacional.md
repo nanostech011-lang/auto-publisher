@@ -51,3 +51,11 @@ Decidimos utilizar o **Google Sheets** como banco de dados transacional/operacio
 ### Pontos de Atenção / Trade-offs
 * **Ausência de Chaves Estrangeiras e Tipagem Rígida de BD:** Planilhas não impedem que um usuário acidentalmente digite texto em uma coluna numérica. **Mitigação:** O `GoogleSheetsAdapter` e a camada de aplicação executam validação rígida de tipos e regras de negócio antes de processar qualquer linha. Linhas com formatação inválida são marcadas imediatamente com status `ERRO_FATAL` na coluna de logs.
 * **Desempenho com Volumes Extremos:** Planilhas não são adequadas para milhões de registros. Como o volume operacional de um canal dark varia entre 30 e 180 postagens por mês, a tabela permanecerá extremamente leve por anos.
+
+
+---
+
+## Adendo de Arquitetura (Setembro de 2026 - Épicos 07 e 08)
+
+1. **Dashboard Web Embarcado:** O sistema foi enriquecido com uma interface visual web responsiva construída em Tailwind CSS e servida diretamente pelo Spring Boot em `src/main/resources/static/index.html` a custo R$ 0,00. O Google Sheets continua sendo a fonte de verdade do cronograma e histórico de execuções.
+2. **SaaS Multi-Tenant:** A infraestrutura suporta isolamento por Tenant via `DynamicGoogleClientProvider`, permitindo que cada cliente autenticado aponte para sua própria planilha do Google Sheets mantendo segregação total de dados.

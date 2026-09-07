@@ -33,6 +33,9 @@ function parseArgs() {
     } else if ((args[i] === '--url' || args[i] === '--source-url') && args[i + 1]) {
       options.sourceUrl = args[i + 1];
       i++;
+    } else if ((args[i] === '--visual-directive' || args[i] === '--image-desc' || args[i] === '--visual' || args[i] === '--style') && args[i + 1]) {
+      options.visualDirective = args[i + 1];
+      i++;
     }
   }
 
@@ -48,6 +51,7 @@ async function main() {
   console.log(`Canal: ${options.channel}`);
   console.log(`Script Index: ${options.scriptIndex}`);
   if (options.topic) console.log(`Tema: ${options.topic}`);
+  if (options.visualDirective) console.log(`Diretriz Visual das Imagens: "${options.visualDirective}"`);
   console.log(`Plataforma Alvo: ${options.platform}\n`);
 
   const runId = `run_${Date.now()}`;
@@ -63,7 +67,8 @@ async function main() {
     channelId: options.channel,
     topic: options.topic,
     scriptIndex: options.scriptIndex,
-    sourceUrl: options.sourceUrl
+    sourceUrl: options.sourceUrl,
+    visualDirective: options.visualDirective
   });
 
   console.log(`Titulo: "${scriptData.title}"`);
@@ -120,7 +125,21 @@ async function main() {
   });
   console.log(`${videoClips.length} takes visuais gerados.`);
 
-  const thumbBaseImage = path.resolve(`pipeline/assets/scenes/${options.channel}/scene_1.jpg`);
+  const generatedThumbImage = path.join(scratchDir, 'scene_1_generated.jpg');
+  const persianThumbImage = path.resolve(`pipeline/assets/scenes/${options.channel}/guerreiros_persas/scene_1.jpg`);
+  const procrastinThumbImage = path.resolve(`pipeline/assets/scenes/${options.channel}/procrastinacao/scene_1.jpg`);
+  const allText = ((options.visualDirective || '') + ' ' + scriptData.title + ' ' + (scriptData.topic || '')).toLowerCase();
+
+  let thumbBaseImage = null;
+  if (fs.existsSync(generatedThumbImage)) {
+    thumbBaseImage = generatedThumbImage;
+  } else if ((allText.includes('persa') || allText.includes('guerreiro')) && fs.existsSync(persianThumbImage)) {
+    thumbBaseImage = persianThumbImage;
+  } else if (allText.includes('procrastin') && fs.existsSync(procrastinThumbImage)) {
+    thumbBaseImage = procrastinThumbImage;
+  } else {
+    thumbBaseImage = path.resolve(`pipeline/assets/scenes/${options.channel}/scene_1.jpg`);
+  }
   const thumbPath = path.join(outputDir, 'thumbnail.png');
   await createProceduralThumbnail({
     title: scriptData.title,

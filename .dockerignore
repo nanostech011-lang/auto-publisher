@@ -1,0 +1,43 @@
+# ==============================================================================
+# AutoPublisher Pro - Docker Ignore Rules (Build Context Minimizer)
+# ==============================================================================
+
+.git/
+.github/
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+target/
+build/
+bin/
+*.class
+
+node_modules/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+tests/
+
+pipeline/scratch/
+pipeline/output/
+*.mp4
+*.mkv
+*.avi
+*.mov
+
+.env
+.env.local
+credentials.json
+client_secret*.json
+service-account*.json
+*.pem
+*.key
+
+docs/manual/test_run/
+docs/manual/manual_screenshot.png

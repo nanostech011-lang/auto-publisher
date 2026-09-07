@@ -1,5 +1,7 @@
 package com.autopublisher.infrastructure.adapter.sheets;
 
+import com.autopublisher.infrastructure.config.DynamicGoogleClientProvider;
+
 import com.autopublisher.application.port.out.ScheduleRepositoryPort;
 import com.autopublisher.domain.model.Platform;
 import com.autopublisher.domain.model.PostSchedule;
@@ -42,6 +44,8 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
     private final String spreadsheetId;
     private final String tabName;
 
+    private DynamicGoogleClientProvider dynamicClientProvider;
+
     public GoogleSheetsAdapter(
             Sheets sheetsService,
             @Value("${autopublisher.sheets.spreadsheet-id:}") String spreadsheetId,
@@ -52,19 +56,36 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
         this.tabName = tabName;
     }
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setDynamicClientProvider(DynamicGoogleClientProvider dynamicClientProvider) {
+        this.dynamicClientProvider = dynamicClientProvider;
+    }
+
+    private Sheets getActiveSheets() {
+        return (dynamicClientProvider != null) ? dynamicClientProvider.getSheetsService() : sheetsService;
+    }
+
+    private String getActiveSpreadsheetId() {
+        return (dynamicClientProvider != null) ? dynamicClientProvider.getCurrentSpreadsheetId(spreadsheetId) : spreadsheetId;
+    }
+
+    private String getActiveTabName() {
+        return (dynamicClientProvider != null) ? dynamicClientProvider.getCurrentSheetTabName(tabName) : tabName;
+    }
+
     @Override
     public List<PostSchedule> findPendingPostsDue(LocalDateTime referenceTime) {
-        if (spreadsheetId == null || spreadsheetId.trim().isEmpty()) {
+        if (getActiveSpreadsheetId() == null || getActiveSpreadsheetId().trim().isEmpty()) {
             log.warn("GOOGLE_SHEETS_SPREADSHEET_ID nao configurado. Nenhuma postagem sera lida.");
             return Collections.emptyList();
         }
 
-        String range = String.format("%s!A2:Q", tabName);
+        String range = String.format("%s!A2:Q", getActiveTabName());
         log.info("Lendo planilha do Google Sheets no range: {}", range);
 
         try {
-            ValueRange response = sheetsService.spreadsheets().values()
-                    .get(spreadsheetId, range)
+            ValueRange response = getActiveSheets().spreadsheets().values()
+                    .get(getActiveSpreadsheetId(), range)
                     .execute();
 
             List<List<Object>> rows = response.getValues();
@@ -103,12 +124,12 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
 
     @Override
     public void updateStatus(int rowIndex, PublishStatus status, String publishedUrl, String logMessage, int attempts) {
-        if (spreadsheetId == null || spreadsheetId.trim().isEmpty()) {
+        if (getActiveSpreadsheetId() == null || getActiveSpreadsheetId().trim().isEmpty()) {
             log.warn("GOOGLE_SHEETS_SPREADSHEET_ID nao configurado. Ignorando gravacao de status na linha {}.", rowIndex);
             return;
         }
 
-        String range = String.format("%s!L%d:P%d", tabName, rowIndex, rowIndex);
+        String range = String.format("%s!L%d:P%d", getActiveTabName(), rowIndex, rowIndex);
         String formattedTimestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
         List<Object> updateValues = Arrays.asList(
@@ -122,8 +143,8 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
         ValueRange body = new ValueRange().setValues(List.of(updateValues));
 
         try {
-            sheetsService.spreadsheets().values()
-                    .update(spreadsheetId, range, body)
+            getActiveSheets().spreadsheets().values()
+                    .update(getActiveSpreadsheetId(), range, body)
                     .setValueInputOption("USER_ENTERED")
                     .execute();
             log.info("Status da linha {} atualizado com sucesso para: {}", rowIndex, status);
@@ -134,15 +155,15 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
 
     @Override
     public List<PostSchedule> findAllPosts() {
-        if (spreadsheetId == null || spreadsheetId.trim().isEmpty()) {
+        if (getActiveSpreadsheetId() == null || getActiveSpreadsheetId().trim().isEmpty()) {
             log.warn("GOOGLE_SHEETS_SPREADSHEET_ID nao configurado. Nenhum post sera retornado.");
             return Collections.emptyList();
         }
 
-        String range = String.format("%s!A2:Q", tabName);
+        String range = String.format("%s!A2:Q", getActiveTabName());
         try {
-            ValueRange response = sheetsService.spreadsheets().values()
-                    .get(spreadsheetId, range)
+            ValueRange response = getActiveSheets().spreadsheets().values()
+                    .get(getActiveSpreadsheetId(), range)
                     .execute();
 
             List<List<Object>> rows = response.getValues();
@@ -175,11 +196,11 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
 
     @Override
     public void appendPost(PostSchedule post) {
-        if (spreadsheetId == null || spreadsheetId.trim().isEmpty()) {
+        if (getActiveSpreadsheetId() == null || getActiveSpreadsheetId().trim().isEmpty()) {
             throw new IllegalStateException("GOOGLE_SHEETS_SPREADSHEET_ID nao configurado.");
         }
 
-        String range = String.format("%s!A:Q", tabName);
+        String range = String.format("%s!A:Q", getActiveTabName());
         String formattedScheduledTime = post.scheduledTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String tagsJoined = (post.metadata().tags() != null) ? String.join(", ", post.metadata().tags()) : "";
 
@@ -206,12 +227,12 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
         ValueRange body = new ValueRange().setValues(List.of(newRow));
 
         try {
-            sheetsService.spreadsheets().values()
-                    .append(spreadsheetId, range, body)
+            getActiveSheets().spreadsheets().values()
+                    .append(getActiveSpreadsheetId(), range, body)
                     .setValueInputOption("USER_ENTERED")
                     .setInsertDataOption("INSERT_ROWS")
                     .execute();
-            log.info("Novo post {} inserido com sucesso na aba {}", post.id(), tabName);
+            log.info("Novo post {} inserido com sucesso na aba {}", post.id(), getActiveTabName());
         } catch (IOException e) {
             log.error("Falha ao anexar novo post na planilha Google Sheets: {}", e.getMessage(), e);
             throw new RuntimeException("Erro ao anexar post no Google Sheets: " + e.getMessage(), e);

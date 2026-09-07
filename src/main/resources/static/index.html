@@ -788,6 +788,27 @@ try {
                                         <div id="studioYtTitle" class="text-[11px] text-white font-bold truncate">Título do Vídeo</div>
                                     </div>
                                 </div>
+
+                                <!-- Diretriz Visual das Imagens (Opcional - Ex: Guerreiros Persas) -->
+                                <div class="pt-2 border-t border-slate-900/80 space-y-1.5">
+                                    <div class="flex items-center justify-between">
+                                        <label class="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
+                                            <i class="fa-solid fa-paintbrush text-pink-400"></i>
+                                            <span>Diretriz Visual das Imagens (Opcional):</span>
+                                        </label>
+                                        <span class="text-[9px] text-pink-400/80 font-mono">IA Image Style</span>
+                                    </div>
+                                    <div class="relative">
+                                        <input type="text" id="studioVisualDirectiveInput" oninput="onVisualDirectiveInput()" placeholder="Ex: Guerreiros persas antigos, estética cyberpunk, estátuas estoicas de mármore..." class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-purple-500 text-[11px] placeholder:text-slate-600">
+                                    </div>
+                                    <!-- Chips de sugestão rápida de estilo -->
+                                    <div class="flex flex-wrap gap-1 pt-0.5">
+                                        <button type="button" onclick="setVisualDirective('Guerreiros persas antigos em armaduras épicas')" class="text-[9px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 px-1.5 py-0.5 rounded transition-colors">⚔️ Guerreiros Persas</button>
+                                        <button type="button" onclick="setVisualDirective('Filosofia estoica com estátuas de mármore e Roma Antiga')" class="text-[9px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 px-1.5 py-0.5 rounded transition-colors">🏛️ Estoicos & Mármore</button>
+                                        <button type="button" onclick="setVisualDirective('Cyberpunk dark futurista com hologramas e néon')" class="text-[9px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 px-1.5 py-0.5 rounded transition-colors">⚡ Cyberpunk Néon</button>
+                                        <button type="button" onclick="setVisualDirective('Minimalismo cinematográfico dark chiaroscuro')" class="text-[9px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 px-1.5 py-0.5 rounded transition-colors">🎬 Chiaroscuro</button>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Modo 2: Tema Livre -->
@@ -904,8 +925,14 @@ try {
                         <!-- Conteúdo: Aba 1 - Roteiro Estruturado (4 Blocos) -->
                         <div id="studioRightTabScript" class="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1 min-h-0">
                             <div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Título com SEO</span>
+                                <div class="flex items-center justify-between flex-wrap gap-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Título com SEO</span>
+                                        <span id="studioVisualDirectiveBadge" class="hidden text-[10px] bg-pink-950 text-pink-300 border border-pink-800/80 px-2 py-0.5 rounded-full font-mono items-center gap-1.5">
+                                            <i class="fa-solid fa-paintbrush text-pink-400 text-[9px]"></i>
+                                            <span id="studioVisualDirectiveBadgeText">Visual: Guerreiros Persas</span>
+                                        </span>
+                                    </div>
                                     <button type="button" onclick="copyStudioScriptText()" class="text-purple-400 hover:text-purple-300 text-[11px] font-semibold flex items-center gap-1 transition-colors">
                                         <i class="fa-regular fa-copy"></i> Copiar Locução
                                     </button>
@@ -933,23 +960,47 @@ try {
                                 </div>
                             </div>
 
-                            <!-- 4 Blocos de Retenção Grid -->
+                            <!-- 4 Blocos de Retenção Grid com Diretrizes Visuais de Imagens -->
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[11px]">
-                                <div class="bg-slate-900/80 p-3 rounded-lg border border-amber-500/20 hover:border-amber-500/40 transition-colors">
-                                    <span class="font-bold text-amber-400 flex items-center gap-1"><i class="fa-solid fa-bolt"></i> Bloco 1: Gancho (0-3s)</span>
-                                    <p id="studioBlockHook" class="text-slate-300 mt-1 leading-relaxed">Nunca confronte quem mente: use este truque de neurociência.</p>
+                                <div class="bg-slate-900/80 p-3 rounded-lg border border-amber-500/20 hover:border-amber-500/40 transition-colors flex flex-col justify-between">
+                                    <div>
+                                        <span class="font-bold text-amber-400 flex items-center gap-1"><i class="fa-solid fa-bolt"></i> Bloco 1: Gancho (0-3s)</span>
+                                        <p id="studioBlockHook" class="text-slate-300 mt-1 leading-relaxed">Nunca confronte quem mente: use este truque de neurociência.</p>
+                                    </div>
+                                    <div id="studioBlockHookVisual" class="text-[10px] text-pink-400 font-medium italic mt-2 pt-1.5 border-t border-slate-800/80 hidden items-center gap-1.5">
+                                        <i class="fa-solid fa-palette text-[9px]"></i>
+                                        <span id="studioBlockHookVisualText">Visual: Guerreiros persas em close-up</span>
+                                    </div>
                                 </div>
-                                <div class="bg-slate-900/80 p-3 rounded-lg border border-sky-500/20 hover:border-sky-500/40 transition-colors">
-                                    <span class="font-bold text-sky-400 flex items-center gap-1"><i class="fa-solid fa-atom"></i> Bloco 2: Foco Central (3-45s)</span>
-                                    <p id="studioBlockScience" class="text-slate-300 mt-1 leading-relaxed">Vácuo de informação ativa a amígdala gerando pico de ansiedade.</p>
+                                <div class="bg-slate-900/80 p-3 rounded-lg border border-sky-500/20 hover:border-sky-500/40 transition-colors flex flex-col justify-between">
+                                    <div>
+                                        <span class="font-bold text-sky-400 flex items-center gap-1"><i class="fa-solid fa-atom"></i> Bloco 2: Foco Central (3-45s)</span>
+                                        <p id="studioBlockScience" class="text-slate-300 mt-1 leading-relaxed">Vácuo de informação ativa a amígdala gerando pico de ansiedade.</p>
+                                    </div>
+                                    <div id="studioBlockScienceVisual" class="text-[10px] text-pink-400 font-medium italic mt-2 pt-1.5 border-t border-slate-800/80 hidden items-center gap-1.5">
+                                        <i class="fa-solid fa-palette text-[9px]"></i>
+                                        <span id="studioBlockScienceVisualText">Visual: Formação tática de guerreiros persas</span>
+                                    </div>
                                 </div>
-                                <div class="bg-slate-900/80 p-3 rounded-lg border border-emerald-500/20 hover:border-emerald-500/40 transition-colors">
-                                    <span class="font-bold text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-wrench"></i> Bloco 3: Hack Prático (45-58s)</span>
-                                    <p id="studioBlockHack" class="text-slate-300 mt-1 leading-relaxed">Pausa e contato visual forçam a pessoa a entregar a verdade.</p>
+                                <div class="bg-slate-900/80 p-3 rounded-lg border border-emerald-500/20 hover:border-emerald-500/40 transition-colors flex flex-col justify-between">
+                                    <div>
+                                        <span class="font-bold text-emerald-400 flex items-center gap-1"><i class="fa-solid fa-wrench"></i> Bloco 3: Hack Prático (45-58s)</span>
+                                        <p id="studioBlockHack" class="text-slate-300 mt-1 leading-relaxed">Pausa e contato visual forçam a pessoa a entregar a verdade.</p>
+                                    </div>
+                                    <div id="studioBlockHackVisual" class="text-[10px] text-pink-400 font-medium italic mt-2 pt-1.5 border-t border-slate-800/80 hidden items-center gap-1.5">
+                                        <i class="fa-solid fa-palette text-[9px]"></i>
+                                        <span id="studioBlockHackVisualText">Visual: Mãos de guerreiros persas em ação firme</span>
+                                    </div>
                                 </div>
-                                <div class="bg-slate-900/80 p-3 rounded-lg border border-purple-500/20 hover:border-purple-500/40 transition-colors">
-                                    <span class="font-bold text-purple-400 flex items-center gap-1"><i class="fa-solid fa-bullhorn"></i> Bloco 4: CTA & Retenção (58-65s)</span>
-                                    <p id="studioBlockCta" class="text-slate-300 mt-1 leading-relaxed">Siga o Psicosegredo para dominar sua mente antes que usem contra você.</p>
+                                <div class="bg-slate-900/80 p-3 rounded-lg border border-purple-500/20 hover:border-purple-500/40 transition-colors flex flex-col justify-between">
+                                    <div>
+                                        <span class="font-bold text-purple-400 flex items-center gap-1"><i class="fa-solid fa-bullhorn"></i> Bloco 4: CTA & Retenção (58-65s)</span>
+                                        <p id="studioBlockCta" class="text-slate-300 mt-1 leading-relaxed">Siga o Psicosegredo para dominar sua mente antes que usem contra você.</p>
+                                    </div>
+                                    <div id="studioBlockCtaVisual" class="text-[10px] text-pink-400 font-medium italic mt-2 pt-1.5 border-t border-slate-800/80 hidden items-center gap-1.5">
+                                        <i class="fa-solid fa-palette text-[9px]"></i>
+                                        <span id="studioBlockCtaVisualText">Visual: Guerreiro persa no topo da montanha</span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -2172,6 +2223,24 @@ try {
             loadStudioScriptPreview();
         }
 
+        function setVisualDirective(directive) {
+            const input = document.getElementById('studioVisualDirectiveInput');
+            if (input) {
+                input.value = directive;
+            }
+            onVisualDirectiveInput();
+        }
+
+        function onVisualDirectiveInput() {
+            const input = document.getElementById('studioVisualDirectiveInput');
+            const directive = input ? input.value.trim() : '';
+
+            if (studioScriptData) {
+                studioScriptData.visualDirective = directive || null;
+                renderStudioScriptPreviewUI(studioScriptData);
+            }
+        }
+
         function onStudioCatalogSelectChange() {
             loadStudioScriptPreview();
         }
@@ -2204,6 +2273,9 @@ try {
                 return;
             }
 
+            const visualInput = document.getElementById('studioVisualDirectiveInput');
+            const visualDirective = visualInput ? visualInput.value.trim() : '';
+
             const btn = document.getElementById('btnAnalyzeYoutube');
             if (btn) {
                 btn.disabled = true;
@@ -2220,26 +2292,37 @@ try {
                 const res = await fetch('/api/v1/dashboard/pipeline/analyze-youtube', {
                     method: 'POST',
                     headers,
-                    body: JSON.stringify({ url: url, channelId: channel })
+                    body: JSON.stringify({ 
+                        url: url, 
+                        channelId: channel,
+                        visualDirective: visualDirective || null
+                    })
                 });
 
                 if (res.ok) {
                     const data = await res.json();
+                    if (visualDirective && data.script && !data.script.visualDirective) {
+                        data.script.visualDirective = visualDirective;
+                    }
                     displayAnalyzedYouTubeResult(data);
                     showToast('Vídeo do YouTube analisado e roteiro estruturado com sucesso!', 'success');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Analisar</span>';
+                    }
                     return;
                 }
             } catch (e) {
                 console.warn('Erro ao chamar endpoint de análise do YouTube:', e);
-            } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Analisar</span>';
-                }
             }
 
             // Fallback gracioso client-side caso o backend esteja em modo mock/offline
-            fallbackSimulatedYouTubeAnalysis(url, channel);
+            await fallbackSimulatedYouTubeAnalysis(url, channel, visualDirective);
+
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Analisar</span>';
+            }
         }
 
         function displayAnalyzedYouTubeResult(data) {
@@ -2274,34 +2357,70 @@ try {
             }
         }
 
-        function fallbackSimulatedYouTubeAnalysis(url, channel) {
-            let videoId = 'dQw4w9WgXcQ';
+        async function fallbackSimulatedYouTubeAnalysis(url, channel, visualDirective) {
+            let videoId = 'faE1EGQJ0lQ';
             const match = url.match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([a-zA-Z0-9_-]{11})/);
             if (match) videoId = match[1];
 
+            let title = 'COMO CURAR (RÁPIDO) SUA PROCRASTINAÇÃO';
+            let author = 'Eslen Delanogare';
+            let thumb = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+            try {
+                const oembedRes = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
+                if (oembedRes.ok) {
+                    const info = await oembedRes.json();
+                    if (info.title) title = info.title;
+                    if (info.author_name) author = info.author_name;
+                    if (info.thumbnail_url) thumb = info.thumbnail_url;
+                }
+            } catch (e) {
+                console.log('oEmbed fetch bypassed:', e);
+            }
+
+            const directive = visualDirective || (document.getElementById('studioVisualDirectiveInput')?.value.trim() || null);
+
             const fallbackData = {
-                title: 'Insights Virais: Como Hackear o Foco & Alta Performance',
-                author: 'Canal de Referência',
-                thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+                title: title,
+                author: author,
+                thumbnailUrl: thumb,
                 transcriptAvailable: true,
                 script: {
-                    title: 'O Hack de Foco dos 1% Mais Produtivos #Shorts',
-                    topic: 'Foco e Produtividade Viral',
-                    wordCount: 151,
-                    estimatedDurationSeconds: 67,
+                    title: 'Como Vencer a Procrastinação em 5 Minutos #Shorts',
+                    topic: title,
+                    fromYouTube: true,
+                    visualDirective: directive,
+                    wordCount: 154,
+                    estimatedDurationSeconds: 68,
                     blocks: [
-                        { title: "Gancho (0-3s)", text: "Este é o segredo que os 1% usam para produzir em 2 horas o que você leva o dia todo." },
-                        { title: "Foco Científico (3-45s)", text: "O estado de hiperfoco não é sorte: a neurociência prova que blocos de 45 minutos sincronizam ondas beta cerebrais." },
-                        { title: "Hack Prático (45-58s)", text: "Zere as notificações, use fone com ruído branco e defina uma única meta inegociável." },
-                        { title: "CTA & Retenção (58-65s)", text: "Curta este vídeo e salve agora para aplicar amanhã cedo." }
+                        { 
+                            title: "Gancho (0-3s)", 
+                            text: "Você não é preguiçoso: seu cérebro só está viciado em dopamina barata.",
+                            visualDescription: directive ? `${directive}: close-up cinematográfico com olhar compenetrado e armadura ornamentada` : "Close-up dramático e dinâmico com iluminação de alto contraste"
+                        },
+                        { 
+                            title: "Neurociência (3-45s)", 
+                            text: "A procrastinação é uma reação da amígdala fugindo do desconforto. Quando você inicia por apenas 5 minutos, o córtex pré-frontal assume o comando.",
+                            visualDescription: directive ? `${directive}: soldados de elite em formação tática inabalável contra o caos` : "Metáfora visual de avanço estratégico contra o caos e a desordem mental"
+                        },
+                        { 
+                            title: "Hack Prático (45-58s)", 
+                            text: "Aplique a regra dos 5 minutos: faça o primeiro movimento tão simples que seja impossível falhar.",
+                            visualDescription: directive ? `${directive}: mãos firmes empunhando armamento clássico prontas para a ação imediata` : "Mãos em ação decidida executando a primeira tarefa sem hesitação"
+                        },
+                        { 
+                            title: "CTA & Retenção (58-68s)", 
+                            text: "Siga o Psicosegredo para dominar sua química mental e salve este vídeo para aplicar amanhã.",
+                            visualDescription: directive ? `${directive}: comandante vitorioso em penhasco épico contemplando o horizonte conquistado` : "Líder vitorioso no horizonte contemplando o domínio conquistado"
+                        }
                     ],
-                    narrationText: "Este é o segredo comprovado que os um por cento usam para produzir em duas horas o que a maioria leva o dia inteiro tentando fazer. O estado de hiperfoco absoluto não depende de sorte nem de força de vontade: a neurociência moderna prova que ciclos de quarenta e cinco minutos de imersão total sincronizam as ondas cerebrais e ativam o fluxo cognitivo máximo. Quando você elimina interrupções bruscas, seu cérebro para de gastar energia alternando tarefas e entra no chamado estado de flow profundo. Para aplicar isso na prática hoje mesmo: silencie todas as notificações do celular, coloque um ruído branco contínuo nos fones e execute apenas uma meta inegociável por vez. Se você dominar esse princípio, ninguém consegue competir com o seu ritmo de entrega. Curta este vídeo e salve agora para aplicar amanhã de manhã.",
-                    firstComment: "🚀 Domine o protocolo completo de foco e alta performance no link fixado: https://meulink.com/vip"
+                    narrationText: "Você não é preguiçoso: a neurociência comprova que a sua falta de ânimo tem uma explicação biológica exata. A procrastinação não é defeito de caráter, é uma resposta imediata da sua amígdala tentando proteger seu cérebro do desconforto de uma tarefa exigente. Quando você passa horas no celular, seu circuito de recompensa é inundado de dopamina sem esforço, tornando qualquer trabalho real insuportável. Para quebrar esse ciclo agora: use a regra dos 5 minutos. Comprometa-se a agir por apenas trezentos segundos. O cérebro elimina o atrito inicial e o córtex pré-frontal assume o comando. Siga nosso canal para reprogramar sua mente e comente FOCO para receber o método completo.",
+                    firstComment: "🧠 Protocolo neurocientífico contra procrastinação desbloqueado no link fixado: https://meulink.com/antiprocrastinacao"
                 }
             };
 
             displayAnalyzedYouTubeResult(fallbackData);
-            showToast('Vídeo modelado via IA com roteiro de 4 blocos!', 'success');
+            showToast('Vídeo do YouTube transcrito e roteiro modelado com diretriz visual!', 'success');
         }
 
         async function loadStudioScriptPreview() {
@@ -2309,9 +2428,11 @@ try {
             const scriptIdx = parseInt(document.getElementById('studioCatalogSelect')?.value, 10) || 0;
             const customTopic = studioCurrentMode === 'topic' ? (document.getElementById('studioCustomTopicInput')?.value.trim() || 'A Neurociência do Foco') : null;
             const sourceUrl = studioCurrentMode === 'youtube' ? (document.getElementById('studioYoutubeUrlInput')?.value.trim() || null) : null;
+            const visualDirective = document.getElementById('studioVisualDirectiveInput')?.value.trim() || null;
 
             // Se estamos em modo YouTube e já temos um script analisado ativo
             if (studioCurrentMode === 'youtube' && studioScriptData && studioScriptData.fromYouTube) {
+                if (visualDirective) studioScriptData.visualDirective = visualDirective;
                 renderStudioScriptPreviewUI(studioScriptData);
                 return;
             }
@@ -2330,7 +2451,8 @@ try {
                         channelId: channel,
                         scriptIndex: scriptIdx,
                         topic: customTopic,
-                        sourceUrl: sourceUrl
+                        sourceUrl: sourceUrl,
+                        visualDirective: visualDirective
                     })
                 });
                 if (res.ok) {
@@ -2358,6 +2480,10 @@ try {
                 }
             }
 
+            if (visualDirective) {
+                scriptData.visualDirective = visualDirective;
+            }
+
             studioScriptData = scriptData;
             renderStudioScriptPreviewUI(scriptData);
         }
@@ -2375,6 +2501,24 @@ try {
                 wordCountBadge.innerText = `${words} palavras • ~${dur}s`;
             }
 
+            // Gerenciamento da Diretriz Visual (Badge Superior e Cenas por Bloco)
+            const visualInput = document.getElementById('studioVisualDirectiveInput');
+            const directive = scriptData.visualDirective || (visualInput ? visualInput.value.trim() : '');
+
+            const badge = document.getElementById('studioVisualDirectiveBadge');
+            const badgeText = document.getElementById('studioVisualDirectiveBadgeText');
+            if (badge && badgeText) {
+                if (directive) {
+                    badgeText.innerText = `Visual: ${directive}`;
+                    badge.classList.remove('hidden');
+                    badge.classList.add('inline-flex');
+                } else {
+                    badge.classList.add('hidden');
+                    badge.classList.remove('inline-flex');
+                }
+            }
+
+            // Atualização dos 4 Blocos de Retenção e suas Diretrizes Visuais
             if (scriptData.blocks && scriptData.blocks.length >= 4) {
                 const hook = document.getElementById('studioBlockHook');
                 const science = document.getElementById('studioBlockScience');
@@ -2385,6 +2529,29 @@ try {
                 if (science) science.innerText = scriptData.blocks[1].text;
                 if (hack) hack.innerText = scriptData.blocks[2].text;
                 if (cta) cta.innerText = scriptData.blocks[3].text;
+
+                const blockVisualConfigs = [
+                    { elId: 'studioBlockHookVisual', textId: 'studioBlockHookVisualText', fallback: 'close-up dramático com iluminação forte', block: scriptData.blocks[0] },
+                    { elId: 'studioBlockScienceVisual', textId: 'studioBlockScienceVisualText', fallback: 'formação tática e avanço estratégico', block: scriptData.blocks[1] },
+                    { elId: 'studioBlockHackVisual', textId: 'studioBlockHackVisualText', fallback: 'mãos firmes prontas para a ação imediata', block: scriptData.blocks[2] },
+                    { elId: 'studioBlockCtaVisual', textId: 'studioBlockCtaVisualText', fallback: 'comandante vitorioso contemplando o horizonte', block: scriptData.blocks[3] }
+                ];
+
+                blockVisualConfigs.forEach(item => {
+                    const visualEl = document.getElementById(item.elId);
+                    const textEl = document.getElementById(item.textId);
+                    if (visualEl && textEl) {
+                        const desc = item.block.visualDescription || (directive ? `${directive}: ${item.fallback}` : null);
+                        if (desc) {
+                            textEl.innerText = `Cena Visual: ${desc}`;
+                            visualEl.classList.remove('hidden');
+                            visualEl.classList.add('flex');
+                        } else {
+                            visualEl.classList.add('hidden');
+                            visualEl.classList.remove('flex');
+                        }
+                    }
+                });
             }
 
             const narration = document.getElementById('studioPreviewNarration');
@@ -2405,6 +2572,7 @@ try {
             const scriptIdx = parseInt(document.getElementById('studioCatalogSelect')?.value, 10) || 0;
             const customTopic = studioCurrentMode === 'topic' ? (document.getElementById('studioCustomTopicInput')?.value.trim() || null) : null;
             const sourceUrl = studioCurrentMode === 'youtube' ? (document.getElementById('studioYoutubeUrlInput')?.value.trim() || null) : null;
+            const visualDirective = document.getElementById('studioVisualDirectiveInput')?.value.trim() || null;
             const platform = document.querySelector('input[name="studioPlatformRadio"]:checked')?.value || 'YOUTUBE_SHORTS';
 
             const termLogs = document.getElementById('studioTerminalLogs');
@@ -2414,6 +2582,9 @@ try {
                 appendStudioLog(`Fonte de Origem: YouTube (${sourceUrl})`);
             } else if (customTopic) {
                 appendStudioLog(`Tema Customizado: "${customTopic}"`);
+            }
+            if (visualDirective) {
+                appendStudioLog(`🎨 Diretriz Visual Solicitada: "${visualDirective}"`);
             }
 
             try {
@@ -2429,6 +2600,7 @@ try {
                         scriptIndex: scriptIdx,
                         topic: customTopic,
                         sourceUrl: sourceUrl,
+                        visualDirective: visualDirective,
                         platform: platform
                     })
                 });
@@ -2502,12 +2674,14 @@ try {
         function simulateStudioPipelineOffline(channel, platform) {
             const sourceUrl = studioCurrentMode === 'youtube' ? document.getElementById('studioYoutubeUrlInput')?.value.trim() : null;
             const sourceLog = sourceUrl ? `Modelando a partir do vídeo YouTube (${sourceUrl.substring(0, 35)}...)` : `Tema do canal "${channel}"`;
+            const visualDirective = document.getElementById('studioVisualDirectiveInput')?.value.trim() || null;
+            const visualLog = visualDirective ? ` com estilo visual "${visualDirective}"` : '';
 
             const steps = [
                 { percent: 15, text: "[1/6] Analisando fonte e gerando roteiro estruturado...", log: `Roteiro: "${studioScriptData ? studioScriptData.title : 'Vídeo IA'}" (${studioScriptData ? studioScriptData.wordCount : 152} palavras). ${sourceLog}.` },
                 { percent: 35, text: "[2/6] Sintetizando locução neural com Edge-TTS e timestamps...", log: "Locução neural gerada com word boundaries exatos (duração: 68s, elegível TikTok Rewards)." },
                 { percent: 55, text: "[3/6] Compilando legendas animadas em estilo karaokê...", log: "Arquivo subtitles.ass compilado com destaque Amarelo Ouro (#FFD700)." },
-                { percent: 75, text: "[4/6] Gerando cenas visuais 9:16 e thumbnail de alto contraste...", log: "5 takes cinematográficos em 9:16 e thumbnail.png de alto contraste gerados." },
+                { percent: 75, text: "[4/6] Gerando cenas visuais 9:16 e thumbnail de alto contraste...", log: `5 takes cinematográficos verticais 9:16${visualLog} e thumbnail.png de alto impacto renderizados.` },
                 { percent: 90, text: "[5/6] Renderizando vídeo final com FFmpeg headless...", log: "Composição concluída: vídeo H.264 1080x1920 e áudio AAC 192k codificados." },
                 { percent: 100, text: "[6/6] Realizando ingestão no AutoPublisher Pro...", log: `Post agendado na planilha Cronograma para a plataforma ${platform}.` }
             ];
@@ -2548,7 +2722,7 @@ try {
             if (thumbPath) {
                 thumbPreview.src = `/api/v1/dashboard/pipeline/media?path=${encodeURIComponent(thumbPath)}`;
             } else {
-                thumbPreview.src = 'docs/manual/dashboard_screenshot.png';
+                thumbPreview.src = document.getElementById('studioYtThumb')?.src || 'docs/manual/dashboard_screenshot.png';
             }
 
             document.getElementById('studioFinalDurationBadge').innerText = `${duration}s • 1080x1920 (H.264 / AAC) • ✅ TikTok Rewards`;

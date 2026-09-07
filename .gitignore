@@ -34,25 +34,45 @@ bin/
 .DS_Store
 Thumbs.db
 
-# Logs
+# Logs & Temporários
 logs/
 *.log
+*.tmp
+*.bak
+*.orig
 
 # Maven & Gradle
 .mvn/timing.properties
 .gradle/
 
-# Node & Playwright
+# Node & Package Managers (Estrito para pnpm)
 node_modules/
+package-lock.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+
+# Testes Playwright & Dumps Efêmeros
 test-results/
 playwright-report/
 blob-report/
 playwright/.cache/
-!package.json
-!package-lock.json
-!pnpm-lock.yaml
-!pnpm-workspace.yaml
+docs/manual/manual_screenshot.png
+docs/manual/test_run/
 
-# Pipeline temporarios
-pipeline/scratch/
-pipeline/output/
+# Pipeline & Renderização de Mídia (Zero-Copy)
+# Bloqueio de mídias geradas e scratch temporário
+pipeline/scratch/**/*
+pipeline/output/**/*
+!pipeline/scratch/.gitkeep
+!pipeline/output/.gitkeep
+!pipeline/assets/fonts/.gitkeep
+!pipeline/assets/music/.gitkeep
+
+# Bloqueio geral de vídeos binários pesados
+*.mp4
+*.mkv
+*.avi
+*.mov
+
+# Migrações antigas
+.github/modernize/

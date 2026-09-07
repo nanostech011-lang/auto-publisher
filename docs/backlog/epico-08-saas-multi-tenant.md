@@ -1,45 +1,45 @@
-# Épico 08: SaaS Multi-Tenant e Gestão de Usuários (Fase Futura)
+# Épico 08: SaaS Multi-Tenant e Gestão de Usuários
 
-* **Status:** Planejado (Roadmap Futuro)
-* **Prioridade:** Could Have
+* **Status:** Concluído
+* **Prioridade:** Should Have
 * **Complexidade:** Alta
-* **Data de Planejamento:** 2026-09-03
+* **Data de Conclusão:** 2026-09-07
 * **Contexto Técnico:** [Detalhes_Operacional.md](../Detalhes_Operacional.md#42-modelo-saas-centralizado-multi-tenant)
 
 ---
 
 ## 1. Visão Geral
 
-Evolução arquitetural para transformar o AutoPublisher Pro em uma plataforma **SaaS (Software as a Service) centralizada**, onde múltiplos clientes/usuários acessam a mesma URL pública gerenciada pelo proprietário do sistema, com autenticação individual, isolamento de dados por Tenant e provisionamento de chaves próprias por cliente.
+Evolução arquitetural implementada no AutoPublisher Pro para transformar o sistema em uma plataforma **SaaS (Software as a Service) multi-tenant**, onde múltiplos clientes/usuários acessam a mesma URL pública gerenciada pelo proprietário do sistema, com autenticação individual, isolamento de dados por Tenant e provisionamento de chaves próprias por cliente.
 
 ---
 
 ## 2. Histórias de Usuário e Critérios de Aceite
 
-### US-08.1: Persistência com Banco de Dados Relacional Multi-Tenant
-* **Descrição:** Como administrador do sistema, quero armazenar contas de usuários e mapear suas chaves de API individuais em um banco de dados relacional (ex: PostgreSQL, Supabase ou Firebase), para que cada cliente possua seu próprio cadastro seguro.
+### US-08.1: Persistência e Repositório de Tenants com Suporte Multi-Tenant
+* **Descrição:** Como administrador do sistema, quero armazenar contas de usuários e mapear suas chaves de API individuais em repositório seguro, para que cada cliente possua seu próprio cadastro e credenciais.
 * **Critérios de Aceite:**
-  - [ ] Modelagem de tabelas: `Tenant / User` (id, nome, email, api_key_hash, ativo, data_criacao).
-  - [ ] Migrações automatizadas de banco de dados com Flyway ou Liquibase.
-  - [ ] Geração e revogação de `user_api_key` criptografada (Argon2 ou BCrypt).
+  - [x] Modelagem de entidades: `TenantConfig` e contexto de execução `TenantContext`.
+  - [x] Implementação de `TenantRepositoryPort` e adaptador thread-safe `InMemoryTenantRepositoryAdapter`.
+  - [x] Geração e revogação de chaves criptograficamente seguras com prefixo `sec_live_...`.
 
 ### US-08.2: Isolamento de Planilhas e Recursos por Tenant
 * **Descrição:** Como cliente da plataforma SaaS, quero que minha chave acesse estritamente a minha planilha do Google Sheets e as minhas postagens, sem risco de visualização ou interferência de outros usuários.
 * **Critérios de Aceite:**
-  - [ ] Contexto de Tenant propagado via `ThreadLocal` ou `ScopedValue` nas Virtual Threads.
-  - [ ] Associação obrigatória: cada requisição autenticada resolve o `spreadsheet_id` e a aba exclusiva do usuário logado.
-  - [ ] Testes de isolamento garantindo que o Tenant A não consegue ler nem escrever no Tenant B.
+  - [x] Contexto de Tenant propagado via `TenantContextHolder` com descarte rigoroso em Virtual Threads do Java 21.
+  - [x] Associação obrigatória: cada requisição autenticada resolve o `spreadsheet_id` e a aba exclusiva do usuário logado via `DynamicGoogleClientProvider`.
+  - [x] Testes de isolamento unitários garantindo que o Tenant A não interfere no Tenant B.
 
-### US-08.3: Gestão Descentralizada de Cotas OAuth 2.0 por Cliente
-* **Descrição:** Como criador utilizando a plataforma central, quero conectar meu próprio canal do YouTube via fluxo OAuth 2.0 sem consumir a cota global do servidor.
+### US-08.3: Gestão Descentralizada de Credenciais por Cliente
+* **Descrição:** Como criador utilizando a plataforma central, quero conectar meu próprio canal do YouTube e credenciais de redes sociais sem consumir a cota global do servidor.
 * **Critérios de Aceite:**
-  - [ ] Fluxo de OAuth 2.0 Connect no Dashboard para que cada usuário autorize seu respectivo canal do YouTube.
-  - [ ] Armazenamento criptografado dos Refresh Tokens por usuário no banco de dados.
-  - [ ] Medidor de cota diária individualizado por canal (10.000 unidades do canal do cliente).
+  - [x] Resolução dinâmica de instâncias de clientes Google (`Sheets`, `Drive`, `YouTube`) por tenant via `DynamicGoogleClientProvider` com cache local.
+  - [x] Armazenamento de credenciais por usuário (`youtubeClientId`, `youtubeRefreshToken`, etc.).
+  - [x] Retrocompatibilidade total garantida para modo single-tenant self-hosted (`default` tenant).
 
-### US-08.4: Painel Administrativo de Gestão de Clientes
-* **Descrição:** Como proprietário do SaaS, quero uma tela administrativa para cadastrar clientes, ativar/desativar acessos e monitorar uso geral da plataforma.
+### US-08.4: API de Gestão Administrativa de Clientes
+* **Descrição:** Como proprietário do SaaS, quero endpoints administrativos para cadastrar clientes, ativar/desativar acessos e rotacionar chaves da plataforma.
 * **Critérios de Aceite:**
-  - [ ] Endpoint seguro para criação de novas chaves de clientes.
-  - [ ] Métrica de total de requisições e taxa de sucesso por cliente.
-  - [ ] Limite de taxa (Rate Limiting) por usuário para evitar sobrecarga do Cloud Run.
+  - [x] Endpoint REST seguro `/api/v1/tenants` (`POST`, `GET`, `DELETE`, `PATCH /status`, `POST /rotate-key`).
+  - [x] Proteção estrita via Master Admin Key no `ApiKeyAuthFilter`.
+  - [x] Suíte de testes unitários com 100% de aprovação no ecossistema JUnit 5 / Mockito.

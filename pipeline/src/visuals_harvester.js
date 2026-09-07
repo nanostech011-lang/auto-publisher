@@ -150,6 +150,39 @@ export function createProceduralThumbnail({
 }
 
 /**
+ * Gera imagem de inteligência artificial 9:16 altamente cinematográfica para o prompt da cena
+ */
+export async function generateSceneImageFromPrompt({ prompt, outputPath }) {
+  const dir = path.dirname(outputPath);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+  const cleanPrompt = encodeURIComponent(
+    `${prompt}, cinematic 8k, ultra photorealistic, dramatic chiaroscuro lighting, vertical 9:16`
+  );
+  const seed = Math.floor(Math.random() * 1000000);
+  const url = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=720&height=1280&nologo=true&seed=${seed}`;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
+
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const buffer = Buffer.from(await res.arrayBuffer());
+      if (buffer.length > 5000) {
+        fs.writeFileSync(outputPath, buffer);
+        return outputPath;
+      }
+    }
+  } catch (err) {
+    clearTimeout(timeout);
+    console.warn(`[Visuals IA] Erro ao gerar imagem remota: ${err.message}`);
+  }
+  return null;
+}
+
+/**
  * Coleta ou gera todas as cenas necessárias para um roteiro
  */
 export async function harvestVisualScenes({
@@ -163,14 +196,58 @@ export async function harvestVisualScenes({
   for (let i = 0; i < scenes.length; i++) {
     const scene = scenes[i];
     const clipPath = path.join(scratchDir, `scene_${i + 1}.mp4`);
+    const sceneImgPath = path.join(scratchDir, `scene_${i + 1}_generated.jpg`);
 
-    // Verifica se ha imagem cinematica pre-gerada para o canal
-    const sceneJpg = path.join(channelAssetsDir, `scene_${i + 1}.jpg`);
-    const scenePng = path.join(channelAssetsDir, `scene_${i + 1}.png`);
-    const imageAsset = fs.existsSync(sceneJpg) ? sceneJpg : (fs.existsSync(scenePng) ? scenePng : null);
+    let imageAsset = null;
+
+    // Detecta se há subpasta temática dedicada (ex: guerreiros_persas ou procrastinacao)
+    const allPrompts = scenes.map(s => s.prompt || '').join(' ').toLowerCase();
+    let themeSubdir = null;
+    if (allPrompts.includes('persian') || allPrompts.includes('persa') || allPrompts.includes('guerreir')) {
+      themeSubdir = 'guerreiros_persas';
+    } else if (allPrompts.includes('procrastin') || allPrompts.includes('exhausted') || allPrompts.includes('dopamine') || allPrompts.includes('hourglass')) {
+      themeSubdir = 'procrastinacao';
+    }
+
+    // 1. Prioridade A: Asset temático dedicado em alta resolução para o tópico exato
+    if (themeSubdir) {
+      const thematicJpg = path.join(channelAssetsDir, themeSubdir, `scene_${i + 1}.jpg`);
+      const thematicPng = path.join(channelAssetsDir, themeSubdir, `scene_${i + 1}.png`);
+      if (fs.existsSync(thematicJpg)) {
+        imageAsset = thematicJpg;
+        console.log(`Cena ${i + 1}: Usando visual temático calibrado (${themeSubdir}/scene_${i + 1}.jpg) de acordo com o roteiro!`);
+      } else if (fs.existsSync(thematicPng)) {
+        imageAsset = thematicPng;
+        console.log(`Cena ${i + 1}: Usando visual temático calibrado (${themeSubdir}/scene_${i + 1}.png) de acordo com o roteiro!`);
+      }
+    }
+
+    // 2. Prioridade B: Gerar imagem de IA sob demanda a partir da descrição do roteiro
+    if (!imageAsset && scene.prompt) {
+      console.log(`Cena ${i + 1}: Gerando imagem de IA exclusiva a partir da descrição do roteiro...`);
+      console.log(`  -> Descrição: "${scene.prompt.slice(0, 85)}..."`);
+      const generated = await generateSceneImageFromPrompt({
+        prompt: scene.prompt,
+        outputPath: sceneImgPath
+      });
+      if (generated && fs.existsSync(generated)) {
+        imageAsset = generated;
+        console.log(`  -> Imagem de IA gerada com sucesso (${(fs.statSync(generated).size / 1024).toFixed(0)} KB)`);
+      }
+    }
+
+    // 3. Fallback de contingência caso nada acima exista
+    if (!imageAsset) {
+      const sceneJpg = path.join(channelAssetsDir, `scene_${i + 1}.jpg`);
+      const scenePng = path.join(channelAssetsDir, `scene_${i + 1}.png`);
+      imageAsset = fs.existsSync(sceneJpg) ? sceneJpg : (fs.existsSync(scenePng) ? scenePng : null);
+      if (imageAsset) {
+        console.log(`Cena ${i + 1}: Fallback para asset existente (${path.basename(imageAsset)})...`);
+      }
+    }
 
     if (imageAsset) {
-      console.log(`Cena ${i + 1}: Renderizando a partir de asset cinematografico (${path.basename(imageAsset)}) com movimento de camera Ken Burns...`);
+      console.log(`Cena ${i + 1}: Renderizando clipe 9:16 com movimento de câmera Ken Burns...`);
       await createSceneFromImage({
         imagePath: imageAsset,
         durationSeconds: scene.duration,

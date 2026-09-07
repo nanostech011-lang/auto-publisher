@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  autopublisher:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: autopublisher-pro:latest
+    container_name: autopublisher-pro
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - SPRING_PROFILES_ACTIVE=prod
+      - AUTOPUBLISHER_SECURITY_API_KEY=${AUTOPUBLISHER_API_KEY:-dev-local-api-key}
+      - AUTOPUBLISHER_SECURITY_MASTER_API_KEY=${AUTOPUBLISHER_MASTER_API_KEY:-master-super-secret-key}
+      - GOOGLE_SHEETS_SPREADSHEET_ID=${GOOGLE_SHEETS_SPREADSHEET_ID:-}
+      - YOUTUBE_CLIENT_ID=${YOUTUBE_CLIENT_ID:-}
+      - YOUTUBE_CLIENT_SECRET=${YOUTUBE_CLIENT_SECRET:-}
+      - YOUTUBE_REFRESH_TOKEN=${YOUTUBE_REFRESH_TOKEN:-}
+    volumes:
+      - ./pipeline/assets:/app/pipeline/assets:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M

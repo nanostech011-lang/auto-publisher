@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { analyzeAndAdaptYouTubeVideo } from './youtube_analyzer.js';
+import { analyzeAndAdaptYouTubeVideo, generateThematicScenes } from './youtube_analyzer.js';
 
 /**
  * Banco de roteiros validados e calibrados para nichos canônicos
@@ -103,13 +103,14 @@ export async function generateScript({
   topic,
   scriptIndex = 0,
   sourceUrl = null,
-  customProfile = null
+  customProfile = null,
+  visualDirective = null
 }) {
   const channel = customProfile || loadChannelProfile(channelId);
 
   // 1. Se foi fornecido um Link do YouTube, aciona o analisador de conteúdo
   if (sourceUrl && (sourceUrl.includes('youtube.com') || sourceUrl.includes('youtu.be'))) {
-    return await analyzeAndAdaptYouTubeVideo({ url: sourceUrl, channelProfile: channel });
+    return await analyzeAndAdaptYouTubeVideo({ url: sourceUrl, channelProfile: channel, visualDirective });
   }
 
   // 2. Se for busca por tema livre ou catálogo
@@ -164,7 +165,7 @@ export async function generateScript({
         { title: 'Hack Prático (45-58s)', text: hack },
         { title: 'CTA & Retenção (58-65s)', text: cta }
       ],
-      scenes: selectedScript.scenes,
+      scenes: generateThematicScenes(topic, body, channel.visual_profile?.aesthetic, visualDirective),
       metadata: {
         title: customTitle,
         description: `${customTitle}\n\n${ctaProfile.description_template || ''}\n\nTags: #${tags.slice(0, 5).join(' #')}`,

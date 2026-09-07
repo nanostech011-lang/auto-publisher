@@ -33,7 +33,7 @@ Histórico e justificativa das decisões técnicas e de design do sistema:
 *   [**ADR 0005:** Google Sheets como Banco de Dados Operacional e Interface do Usuário](adr/0005-google-sheets-como-banco-de-dados-e-painel-operacional.md)
 
 ### 5. [Product Backlog (Épicos e Histórias)](backlog/README.md)
-Gestão ágil de demandas dividida em 6 épicos detalhados com critérios de aceitação:
+Gestão ágil de demandas dividida em 9 épicos detalhados com critérios de aceitação:
 *   [**Épico 01:** Infraestrutura, Setup e Segurança](backlog/epico-01-infraestrutura-e-setup.md)
 *   [**Épico 02:** Núcleo de Domínio e Arquitetura Hexagonal](backlog/epico-02-dominio-e-portas.md)
 *   [**Épico 03:** Adaptadores de Integração e Streaming Zero-Copy](backlog/epico-03-adaptadores-e-streaming.md)

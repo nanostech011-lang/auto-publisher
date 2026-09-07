@@ -107,16 +107,16 @@ auto-publisher/
 Instale as dependências da esteira de vídeo com `pnpm`:
 ```bash
 # Na raiz do projeto ou dentro de pipeline/
-pnpm --prefix pipeline install
+pnpm install
 ```
 
 Execute o pipeline para criar um vídeo completo (áudio, legendas, cortes 9:16 e thumbnail):
 ```bash
 # Executa o roteiro 1 do canal piloto (@psicosegredo)
-pnpm --prefix pipeline pipeline --channel psicosegredo --script 0
+pnpm pipeline --channel psicosegredo --script 0
 
 # Ou criar vídeo a partir de um tema dinâmico
-pnpm --prefix pipeline pipeline --channel psicosegredo --topic "Como desarmar uma discussão em 5 segundos"
+pnpm pipeline --channel psicosegredo --topic "Como desarmar uma discussão em 5 segundos"
 ```
 
 O vídeo final será gerado em `pipeline/output/run_{timestamp}/video_final_9x16.mp4` e o manifesto de publicação em `POST-AUTO-*_manifest.json`.
@@ -173,3 +173,20 @@ docker build -t autopublisher-pro:latest .
 | **Quota Guard YouTube** | Max 6 posts/dia (10k units) | **QuotaExceededException** | ✅ Aprovado |
 | **Custo Mensal de Infraestrutura** | R$ 0,00 | **100% Free Tier (Cloud Run + Sheets + Edge-TTS)** | ✅ Aprovado |
 
+
+
+---
+
+## 🐳 Execução via Docker Performático
+
+O projeto conta com um `Dockerfile` multi-stage altamente otimizado com **Java 21 LTS**, **Alpine Linux**, **FFmpeg** e **Virtual Threads**:
+
+```bash
+# Build e inicialização do contêiner local
+docker compose up --build -d
+
+# Verificação de logs e status
+docker compose logs -f
+```
+
+A aplicação responde em `http://localhost:8080` com consumo típico inferior a 256MB de RAM.
