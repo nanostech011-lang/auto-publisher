@@ -52,20 +52,23 @@ Você atua como um **Engenheiro de Software Staff / Arquiteto Backend Sênior**,
 ```
 com.autopublisher
 ├── domain                 // Modelos puros (Records/POJOs), Enums, Exceções de Negócio (ZERO dependências externas)
-│   ├── model              // PostSchedule, VideoMetadata, Platform, PublishStatus, PublishResult
+│   ├── model              // PostSchedule, VideoMetadata, Platform, PublishStatus, TenantContext, TenantConfig
 │   └── exception          // QuotaExceededException, MediaStreamingException, ValidationException
 ├── application            // Casos de Uso e Portas
 │   ├── port
-│   │   ├── in             // PublishScheduledPostsUseCase
-│   │   └── out            // ScheduleRepositoryPort, MediaStoragePort, SocialMediaPublisherPort
-│   └── usecase            // PublishScheduledPostsService (orquestrador das portas)
+│   │   ├── in             // PublishScheduledPostsUseCase, ManageTenantUseCase, DashboardOverview
+│   │   └── out            // ScheduleRepositoryPort, MediaStoragePort, SocialMediaPublisherPort, TenantRepositoryPort
+│   └── usecase            // PublishScheduledPostsService, TenantService, DashboardService, AiPipelineService
 └── infrastructure         // Implementação concreta das Portas e Tecnologias
     ├── adapter
-    │   ├── sheets         // GoogleSheetsAdapter (implementa ScheduleRepositoryPort)
-    │   ├── drive          // GoogleDriveAdapter (implementa MediaStoragePort)
-    │   └── youtube        // YouTubePublisherAdapter (implementa SocialMediaPublisherPort)
-    ├── controller         // JobTriggerController (Inbound Adapter HTTP)
-    └── config             // Beans do Spring, HttpClient, OAuth Credentials
+    │   ├── sheets         // GoogleSheetsAdapter (implementa ScheduleRepositoryPort com multi-tenancy)
+    │   ├── drive          // GoogleDriveAdapter (implementa MediaStoragePort com streaming zero-copy)
+    │   ├── youtube        // YouTubePublisherAdapter (implementa SocialMediaPublisherPort com cota e comentários)
+    │   ├── instagram      // InstagramPublisherAdapter (implementa SocialMediaPublisherPort via Graph API)
+    │   ├── tiktok         // TikTokPublisherAdapter (implementa SocialMediaPublisherPort via Posting API)
+    │   └── tenant         // InMemoryTenantRepositoryAdapter (implementa TenantRepositoryPort thread-safe)
+    ├── controller         // JobTriggerController, TenantController, DashboardApiController, HealthController
+    └── config             // ApiKeyAuthFilter (Virtual Threads Loom), DynamicGoogleClientProvider, GoogleApiConfig
 ```
 
 ### 3.2. Diretrizes Java 21
@@ -78,7 +81,7 @@ com.autopublisher
 
 ## 4. Contrato de Dados da Planilha (Google Sheets)
 
-A aba do Google Sheets deve se chamar estritamente **`Cronograma`** com as seguintes colunas (da coluna A à coluna P):
+A aba do Google Sheets deve se chamar estritamente **`Cronograma`** com as seguintes colunas (da coluna A à coluna Q):
 1. `A: ID` (Identificador único, ex: `POST-001`)
 2. `B: Data_Agendamento` (Data/hora planejada `YYYY-MM-DD HH:mm:ss`)
 3. `C: Plataforma` (`YOUTUBE_SHORTS`, `YOUTUBE_VIDEO`, `INSTAGRAM_REELS`, `TIKTOK`)
@@ -95,6 +98,7 @@ A aba do Google Sheets deve se chamar estritamente **`Cronograma`** com as segui
 14. `N: Data_Publicacao` (Timestamp da conclusão)
 15. `O: Log_Erro` (Mensagem descritiva de erro ou sucesso)
 16. `P: Tentativas` (Contador de retentativas 0 a 3)
+17. `Q: Primeiro_Comentario` (Texto do primeiro comentário fixado com link de afiliado/cupom - opcional)
 
 ---
 

@@ -72,7 +72,9 @@ Ao disponibilizar o projeto para outras pessoas (clientes, parceiros, alunos ou 
 * **Cotas 100% Individuais:** Cada usuário conta com suas próprias **10.000 unidades diárias da YouTube Data API v3** (até 6 vídeos/dia) sem concorrência ou divisão de cota.
 * **Custo R$ 0,00 Mantido:** Cada usuário consome a camada gratuita (*Always Free*) da sua própria conta do Google Cloud, sem custos de servidor para o mantenedor do projeto.
 
-### 4.2. Modelo SaaS Centralizado (Multi-Tenant)
-* **Como funciona:** Todas as pessoas utilizam a sua mesma URL central do Cloud Run.
-* **Requisitos de Evolução:** Podemos implementar o suporte **Multi-Tenant com banco de dados** (ex: PostgreSQL / Supabase / Firebase) para que você possa cadastrar clientes e gerar chaves individuais (`user_api_key`) por usuário, vinculando cada chave à respectiva planilha e canal social.
-* **Atenção à Cota:** Nesse formato compartilhado, a cota de 10.000 unidades do YouTube precisará ser gerida via OAuth individual por cliente ou solicitação de ampliação de cota junto ao Google.
+### 4.2. Modelo SaaS Centralizado (Multi-Tenant - Implementado no Épico 08)
+* **Como funciona:** Múltiplos clientes utilizam a mesma URL do Cloud Run / Docker com isolamento total de dados e segurança reforçada.
+* **Isolamento de Tenants:** Cada requisição autenticada por chave de API (`X-API-KEY: sec_live_...`) é associada ao respectivo `TenantConfig`. O contexto é propagado via `TenantContextHolder` para as Virtual Threads do Java 21 e limpo estritamente no encerramento da requisição.
+* **Resolução Dinâmica de Clientes:** O componente `DynamicGoogleClientProvider` instancia e mantém em cache clientes dedicados de Google Sheets, Google Drive e YouTube para cada tenant com base em suas próprias credenciais OAuth 2.0, garantindo que as postagens sejam debitadas na cota e no canal específico de cada cliente.
+* **Gestão Administrativa:** O administrador central gerencia a criação, desativação e rotação de chaves de tenants via API REST `/api/v1/tenants`, protegida pela Master Admin Key (`AUTOPUBLISHER_SECURITY_MASTER_API_KEY`).
+* **Health Check & Containers:** Endpoint `/api/v1/health` sem autenticação para monitoramento de integridade e orquestração de containers com Alpine Linux, FFmpeg nativo e Java 21 LTS com consumo $\le 256$MB de RAM.

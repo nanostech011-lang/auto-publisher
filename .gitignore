@@ -18,9 +18,9 @@ service-account*.json
 
 # Build e Compilação
 target/
-build/
-out/
-bin/
+/build/
+/out/
+/bin/
 *.class
 *.jar
 *.war

@@ -34,6 +34,7 @@ A aba principal deve se chamar rigorosamente **`Cronograma`**. A linha 1 contém
 | **N** | 13 | `Data_Publicacao` | Timestamp | Preenchido pelo sistema: Momento exato da conclusão do envio. |
 | **O** | 14 | `Log_Erro` | String | Mensagem de sucesso ou descrição da exceção em caso de falha. |
 | **P** | 15 | `Tentativas` | Inteiro | Número de retentativas executadas (0 a 3). |
+| **Q** | 16 | `Primeiro_Comentario` | String | Opcional. Texto do primeiro comentário automático fixado (links de afiliados/cupons). |
 
 ---
 

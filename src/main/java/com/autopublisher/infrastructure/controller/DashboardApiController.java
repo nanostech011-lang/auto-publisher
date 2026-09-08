@@ -11,6 +11,7 @@ import com.autopublisher.application.port.in.SystemCredentialsStatus;
 import com.autopublisher.application.usecase.AiPipelineService;
 import com.autopublisher.application.usecase.DashboardService;
 import com.autopublisher.domain.model.PostSchedule;
+import com.autopublisher.domain.model.TenantContextHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -102,6 +103,21 @@ public class DashboardApiController {
         return key == null || !expectedApiKey.trim().equals(key);
     }
 
+
+    @GetMapping("/tenant/me")
+    public ResponseEntity<?> getCurrentTenant() {
+        return TenantContextHolder.get()
+                .map(ctx -> ResponseEntity.ok(Map.of(
+                        "tenantId", ctx.tenantId(),
+                        "name", ctx.name(),
+                        "isMasterAdmin", ctx.isMasterAdmin()
+                )))
+                .orElseGet(() -> ResponseEntity.ok(Map.of(
+                        "tenantId", "default",
+                        "name", "Master Admin / Default Tenant",
+                        "isMasterAdmin", true
+                )));
+    }
     @GetMapping("/overview")
     public ResponseEntity<?> getOverview(
             @RequestHeader(value = "X-API-KEY", required = false) String providedHeaderKey,

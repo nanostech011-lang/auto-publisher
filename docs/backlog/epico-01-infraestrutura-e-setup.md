@@ -14,7 +14,7 @@
 * **Status:** Concluído
 * **Descrição:**  
   Como desenvolvedor do AutoPublisher,  
-  Quero inicializar o projeto com Spring Boot 3.x, Java 21 LTS e Maven (ou Gradle),  
+  Quero inicializar o projeto com Spring Boot 3.x, Java 21 LTS e Maven Wrapper (mvnw),  
   Para que possamos utilizar Virtual Threads e as bibliotecas oficiais do Google APIs de forma estável.
 
 * **Critérios de Aceitação:**

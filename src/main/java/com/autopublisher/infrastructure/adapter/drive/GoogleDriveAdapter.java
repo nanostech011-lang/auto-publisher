@@ -2,10 +2,12 @@ package com.autopublisher.infrastructure.adapter.drive;
 
 import com.autopublisher.application.port.out.MediaStoragePort;
 import com.autopublisher.domain.exception.MediaStreamingException;
+import com.autopublisher.infrastructure.config.DynamicGoogleClientProvider;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -21,9 +23,19 @@ public class GoogleDriveAdapter implements MediaStoragePort {
     private static final Logger log = LoggerFactory.getLogger(GoogleDriveAdapter.class);
 
     private final Drive driveService;
+    private DynamicGoogleClientProvider dynamicClientProvider;
 
     public GoogleDriveAdapter(Drive driveService) {
         this.driveService = driveService;
+    }
+
+    @Autowired(required = false)
+    public void setDynamicClientProvider(DynamicGoogleClientProvider dynamicClientProvider) {
+        this.dynamicClientProvider = dynamicClientProvider;
+    }
+
+    private Drive getActiveDrive() {
+        return (dynamicClientProvider != null) ? dynamicClientProvider.getDriveService() : driveService;
     }
 
     @Override
@@ -35,7 +47,7 @@ public class GoogleDriveAdapter implements MediaStoragePort {
         log.info("Abrindo conexao de streaming direto (Zero-Copy) para o arquivo do Drive: {}", fileId);
 
         try {
-            return driveService.files()
+            return getActiveDrive().files()
                     .get(fileId)
                     .executeMediaAsInputStream();
         } catch (IOException e) {
@@ -51,7 +63,7 @@ public class GoogleDriveAdapter implements MediaStoragePort {
         }
 
         try {
-            File fileMetadata = driveService.files()
+            File fileMetadata = getActiveDrive().files()
                     .get(fileId)
                     .setFields("id, name, size")
                     .execute();

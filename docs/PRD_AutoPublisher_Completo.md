@@ -147,6 +147,7 @@ A planilha do Google Sheets atua como a interface do criador e banco de dados op
 | **N** | `Data_Publicacao` | Timestamp (Preenchido pelo sistema) | `2026-09-03 18:31:42` |
 | **O** | `Log_Erro` | Texto (Preenchido em caso de erro) | `Upload completado com sucesso` ou detalhamento da exceção |
 | **P** | `Tentativas` | Inteiro | Contador de retentativas (0 a 3) |
+| **Q** | `Primeiro_Comentario` | Texto (Opcional) | Texto do primeiro comentário fixado automaticamente no vídeo (cupom/link de afiliado) |
 
 ---
 

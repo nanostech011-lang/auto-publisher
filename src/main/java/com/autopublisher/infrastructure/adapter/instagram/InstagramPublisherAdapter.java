@@ -1,13 +1,17 @@
 package com.autopublisher.infrastructure.adapter.instagram;
 
 import com.autopublisher.application.port.out.SocialMediaPublisherPort;
+import com.autopublisher.application.port.out.TenantRepositoryPort;
 import com.autopublisher.domain.model.Platform;
 import com.autopublisher.domain.model.PostSchedule;
 import com.autopublisher.domain.model.PublishResult;
+import com.autopublisher.domain.model.TenantConfig;
+import com.autopublisher.domain.model.TenantContextHolder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -23,7 +27,7 @@ import java.util.Optional;
 
 /**
  * Adaptador de infraestrutura para o Instagram Reels via Meta Graph API (implementa SocialMediaPublisherPort).
- * Executa o fluxo de upload resumível em duas fases (Container Creation -> Stream Upload -> Media Publish).
+ * Executa o fluxo de upload resumivel em duas fases (Container Creation -> Stream Upload -> Media Publish).
  */
 @Component
 public class InstagramPublisherAdapter implements SocialMediaPublisherPort {
@@ -35,6 +39,7 @@ public class InstagramPublisherAdapter implements SocialMediaPublisherPort {
     private final String apiVersion;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
+    private TenantRepositoryPort tenantRepository;
 
     public InstagramPublisherAdapter(
             @Value("${autopublisher.instagram.business-account-id:}") String businessAccountId,
@@ -50,7 +55,7 @@ public class InstagramPublisherAdapter implements SocialMediaPublisherPort {
                 .build();
     }
 
-    // Construtor adicional para injeção em testes unitários
+    // Construtor adicional para injecao em testes unitarios
     InstagramPublisherAdapter(
             String businessAccountId,
             String accessToken,
@@ -64,6 +69,33 @@ public class InstagramPublisherAdapter implements SocialMediaPublisherPort {
         this.objectMapper = objectMapper;
     }
 
+    @Autowired(required = false)
+    public void setTenantRepository(TenantRepositoryPort tenantRepository) {
+        this.tenantRepository = tenantRepository;
+    }
+
+    private String getActiveAccountId() {
+        if (tenantRepository != null && TenantContextHolder.get().isPresent()) {
+            String tenantId = TenantContextHolder.getRequiredTenantId();
+            return tenantRepository.findById(tenantId)
+                    .map(TenantConfig::instagramAccountId)
+                    .filter(id -> id != null && !id.isBlank())
+                    .orElse(businessAccountId);
+        }
+        return businessAccountId;
+    }
+
+    private String getActiveAccessToken() {
+        if (tenantRepository != null && TenantContextHolder.get().isPresent()) {
+            String tenantId = TenantContextHolder.getRequiredTenantId();
+            return tenantRepository.findById(tenantId)
+                    .map(TenantConfig::instagramAccessToken)
+                    .filter(t -> t != null && !t.isBlank())
+                    .orElse(accessToken);
+        }
+        return accessToken;
+    }
+
     @Override
     public boolean supports(Platform platform) {
         return platform == Platform.INSTAGRAM_REELS;
@@ -73,19 +105,22 @@ public class InstagramPublisherAdapter implements SocialMediaPublisherPort {
     public PublishResult publish(PostSchedule post, InputStream videoStream, Optional<InputStream> thumbnailStream) {
         log.info("Iniciando publicacao no Instagram Reels para o post ID: {}", post.id());
 
-        if (businessAccountId == null || businessAccountId.isBlank() || accessToken == null || accessToken.isBlank()) {
+        String activeAccountId = getActiveAccountId();
+        String activeToken = getActiveAccessToken();
+
+        if (activeAccountId == null || activeAccountId.isBlank() || activeToken == null || activeToken.isBlank()) {
             return PublishResult.failure("Credenciais do Instagram nao configuradas (business-account-id ou access-token ausentes).");
         }
 
         try {
-            // 1. Monta a legenda com título, descrição e tags
+            // 1. Monta a legenda com titulo, descricao e tags
             String caption = buildCaption(post);
 
-            // 2. Passo 1: Cria o contêiner de mídia resumível na Meta Graph API
-            String initUrl = String.format("https://graph.facebook.com/%s/%s/media", apiVersion, businessAccountId);
+            // 2. Passo 1: Cria o conteiner de midia resumivel na Meta Graph API
+            String initUrl = String.format("https://graph.facebook.com/%s/%s/media", apiVersion, activeAccountId);
             String formBody = String.format("media_type=REELS&upload_type=resumable&caption=%s&access_token=%s",
                     URLEncoder.encode(caption, StandardCharsets.UTF_8),
-                    URLEncoder.encode(accessToken, StandardCharsets.UTF_8));
+                    URLEncoder.encode(activeToken, StandardCharsets.UTF_8));
 
             HttpRequest initRequest = HttpRequest.newBuilder()
                     .uri(URI.create(initUrl))
@@ -110,10 +145,10 @@ public class InstagramPublisherAdapter implements SocialMediaPublisherPort {
 
             log.info("Container de Reels criado com sucesso! ID: {}. Iniciando streaming do video...", containerId);
 
-            // 3. Passo 2: Upload de dados binários diretamente via InputStream (Zero-Copy)
+            // 3. Passo 2: Upload de dados binarios diretamente via InputStream (Zero-Copy)
             HttpRequest uploadRequest = HttpRequest.newBuilder()
                     .uri(URI.create(uploadUri))
-                    .header("Authorization", "OAuth " + accessToken)
+                    .header("Authorization", "OAuth " + activeToken)
                     .header("offset", "0")
                     .header("Content-Type", "application/octet-stream")
                     .POST(HttpRequest.BodyPublishers.ofInputStream(() -> videoStream))
@@ -128,17 +163,17 @@ public class InstagramPublisherAdapter implements SocialMediaPublisherPort {
 
             log.info("Streaming concluido. Aguardando processamento da Meta para o container: {}", containerId);
 
-            // 4. Passo 3: Polling de status do container até FINISHED
-            boolean ready = waitForContainerReady(containerId);
+            // 4. Passo 3: Polling de status do container ate FINISHED
+            boolean ready = waitForContainerReady(containerId, activeToken);
             if (!ready) {
                 return PublishResult.failure("Timeout ou erro de processamento do video nos servidores da Meta.");
             }
 
             // 5. Passo 4: Publica o container (Media Publish)
-            String publishUrl = String.format("https://graph.facebook.com/%s/%s/media_publish", apiVersion, businessAccountId);
+            String publishUrl = String.format("https://graph.facebook.com/%s/%s/media_publish", apiVersion, activeAccountId);
             String publishBody = String.format("creation_id=%s&access_token=%s",
                     URLEncoder.encode(containerId, StandardCharsets.UTF_8),
-                    URLEncoder.encode(accessToken, StandardCharsets.UTF_8));
+                    URLEncoder.encode(activeToken, StandardCharsets.UTF_8));
 
             HttpRequest publishRequest = HttpRequest.newBuilder()
                     .uri(URI.create(publishUrl))
@@ -157,7 +192,7 @@ public class InstagramPublisherAdapter implements SocialMediaPublisherPort {
             String publishedMediaId = publishJson.path("id").asText();
 
             // 6. Passo 5: Busca o link permanente (permalink) do Reel publicado
-            String permalink = fetchPermalink(publishedMediaId);
+            String permalink = fetchPermalink(publishedMediaId, activeToken);
 
             log.info("Reels publicado com sucesso no Instagram! Media ID: {}, URL: {}", publishedMediaId, permalink);
             return PublishResult.success(publishedMediaId, permalink);
@@ -168,13 +203,13 @@ public class InstagramPublisherAdapter implements SocialMediaPublisherPort {
         }
     }
 
-    private boolean waitForContainerReady(String containerId) throws Exception {
+    private boolean waitForContainerReady(String containerId, String tokenToUse) throws Exception {
         int maxAttempts = 15;
         for (int i = 0; i < maxAttempts; i++) {
-            Thread.sleep(2000); // 2 segundos entre verificações
+            Thread.sleep(2000); // 2 segundos entre verificacoes
 
             String statusUrl = String.format("https://graph.facebook.com/%s/%s?fields=status_code&access_token=%s",
-                    apiVersion, containerId, URLEncoder.encode(accessToken, StandardCharsets.UTF_8));
+                    apiVersion, containerId, URLEncoder.encode(tokenToUse, StandardCharsets.UTF_8));
 
             HttpRequest req = HttpRequest.newBuilder().uri(URI.create(statusUrl)).GET().build();
             HttpResponse<String> res = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
@@ -193,10 +228,10 @@ public class InstagramPublisherAdapter implements SocialMediaPublisherPort {
         return false;
     }
 
-    private String fetchPermalink(String mediaId) {
+    private String fetchPermalink(String mediaId, String tokenToUse) {
         try {
             String permalinkUrl = String.format("https://graph.facebook.com/%s/%s?fields=permalink&access_token=%s",
-                    apiVersion, mediaId, URLEncoder.encode(accessToken, StandardCharsets.UTF_8));
+                    apiVersion, mediaId, URLEncoder.encode(tokenToUse, StandardCharsets.UTF_8));
 
             HttpRequest req = HttpRequest.newBuilder().uri(URI.create(permalinkUrl)).GET().build();
             HttpResponse<String> res = httpClient.send(req, HttpResponse.BodyHandlers.ofString());

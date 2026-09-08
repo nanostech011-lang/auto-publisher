@@ -190,3 +190,21 @@ docker compose logs -f
 ```
 
 A aplicação responde em `http://localhost:8080` com consumo típico inferior a 256MB de RAM.
+
+
+---
+
+## 🐳 Execução de Alta Performance com Docker
+
+O AutoPublisher Pro conta com um Dockerfile multi-stage otimizado com Java 21, FFmpeg headless nativo e fontes TrueType para renderização de legendas:
+
+```bash
+# Build e inicialização em segundo plano
+docker compose up -d --build
+
+# Verificação de liveness e status
+curl http://localhost:8080/api/v1/health
+
+# Visualização de logs
+docker compose logs -f
+```

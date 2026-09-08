@@ -67,11 +67,11 @@ O backlog está organizado para viabilizar um MVP funcional focado em **monetiza
 | US-07.2 | Monitor de Status, Busca e Filtros | Must | Baixa | Concluído | [epico-07](epico-07-interface-do-usuario.md#us-072) |
 | US-07.3 | Modal de Agendamento com Auto-Detecção de Drive ID | Must | Média | Concluído | [epico-07](epico-07-interface-do-usuario.md#us-073) |
 | US-07.4 | Central de Chaves & Credenciais All-in-One com Gerador .env | Must | Média | Concluído | [epico-07](epico-07-interface-do-usuario.md#us-074) |
-| **EP-08** | **SaaS Multi-Tenant e Gestão de Usuários (Fase Futura)** | **Could** | **Alta** | **Planejado** | [epico-08-saas-multi-tenant.md](epico-08-saas-multi-tenant.md) |
-| US-08.1 | Persistência com Banco de Dados Relacional Multi-Tenant | Could | Alta | Planejado | [epico-08](epico-08-saas-multi-tenant.md#us-081) |
-| US-08.2 | Isolamento de Planilhas e Recursos por Tenant | Could | Média | Planejado | [epico-08](epico-08-saas-multi-tenant.md#us-082) |
-| US-08.3 | Gestão Descentralizada de Cotas OAuth 2.0 por Cliente | Could | Alta | Planejado | [epico-08](epico-08-saas-multi-tenant.md#us-083) |
-| US-08.4 | Painel Administrativo de Gestão de Clientes | Could | Média | Planejado | [epico-08](epico-08-saas-multi-tenant.md#us-084) |
+| **EP-08** | **SaaS Multi-Tenant e Gestão de Usuários** | **Should** | **Alta** | **Concluído** | [epico-08-saas-multi-tenant.md](epico-08-saas-multi-tenant.md) |
+| US-08.1 | Persistência e Repositório de Tenants com Suporte Multi-Tenant | Should | Alta | Concluído | [epico-08](epico-08-saas-multi-tenant.md#us-081) |
+| US-08.2 | Isolamento de Planilhas e Recursos por Tenant | Should | Média | Concluído | [epico-08](epico-08-saas-multi-tenant.md#us-082) |
+| US-08.3 | Gestão Descentralizada de Credenciais por Cliente | Should | Alta | Concluído | [epico-08](epico-08-saas-multi-tenant.md#us-083) |
+| US-08.4 | API de Gestão Administrativa de Clientes | Should | Média | Concluído | [epico-08](epico-08-saas-multi-tenant.md#us-084) |
 | **EP-09** | **Pipeline de Geração de Vídeos Dark por IA** | **Should** | **Alta** | **Concluído** | [epico-09-pipeline-geracao-conteudo-ia.md](epico-09-pipeline-geracao-conteudo-ia.md) |
 | US-09.1 | Motor de Roteirização Estruturada & SEO (Script Engine) | Should | Média | Concluído | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-091) |
 | US-09.2 | Síntese de Voz Neural e Legendas Dinâmicas (Edge-TTS) | Should | Média | Concluído | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-092) |

@@ -1399,6 +1399,20 @@ try {
                 const key = getApiKey();
                 if (key) headers['X-API-KEY'] = key;
 
+                // Identifica o Tenant ativo
+                try {
+                    const tenantRes = await fetch('/api/v1/dashboard/tenant/me', { headers });
+                    if (tenantRes.ok) {
+                        const tenantData = await tenantRes.json();
+                        const tBadge = document.getElementById('activeTenantName');
+                        if (tBadge) {
+                            tBadge.innerText = tenantData.name || ('Tenant: ' + tenantData.tenantId);
+                        }
+                    }
+                } catch (te) {
+                    console.debug('Tenant fetch error', te);
+                }
+
                 const response = await fetch('/api/v1/dashboard/overview', { headers });
                 if (response.status === 401) {
                     showToast('Não autorizado. Clique em "Chaves & Integrações".', 'error');

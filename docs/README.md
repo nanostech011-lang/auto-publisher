@@ -13,7 +13,7 @@ Bem-vindo à documentação oficial do **AutoPublisher Pro**, um microsserviço 
 *   **Finalidade do Produto:** Objetivos de negócio, canais de monetização e regras de SEO.
 *   **Arquitetura e Stack:** Clean Architecture, Ports & Adapters, Java 21 Virtual Threads e contêiner Alpine.
 *   **Requisitos Funcionais e Não Funcionais:** Regras de streaming zero-copy, autenticação e tolerância a falhas.
-*   **Contrato do Google Sheets:** Esquema detalhado das 16 colunas da planilha de operação.
+*   **Contrato do Google Sheets:** Esquema detalhado das 17 colunas da planilha (A a Q) de operação.
 *   **Orçamento de Cotas:** Economia de 10.000 unidades diárias da YouTube Data API v3 (até 6 vídeos/dia gratuitos).
 
 ### 2. [Detalhes Operacionais e Estrutura de Custos](Detalhes_Operacional.md)
@@ -41,7 +41,7 @@ Gestão ágil de demandas dividida em 9 épicos detalhados com critérios de ace
 *   [**Épico 05:** Gatilho Serverless e Deploy em Produção (Cloud Run + Scheduler)](backlog/epico-05-trigger-serverless-e-deploy.md)
 *   [**Épico 06:** Expansão Multiplataforma (Instagram Reels e TikTok)](backlog/epico-06-expansao-multiplataforma.md)
 *   [**Épico 07:** Interface Web do Usuário e Central de Credenciais](backlog/epico-07-interface-do-usuario.md)
-*   [**Épico 08:** SaaS Multi-Tenant e Gestão de Usuários](backlog/epico-08-saas-multi-tenant.md)
+*   [**Épico 08:** SaaS Multi-Tenant e Gestão de Usuários (Concluído)](backlog/epico-08-saas-multi-tenant.md)
 *   [**Épico 09:** Pipeline de Geração de Vídeos Dark por IA](backlog/epico-09-pipeline-geracao-conteudo-ia.md)
 
 ### 6. [Pipeline de Automação de Conteúdo por IA](PRD_Pipeline_Automacao_Conteudo.md)

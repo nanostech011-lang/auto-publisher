@@ -64,13 +64,22 @@ Nenhuma tarefa é considerada "Pronta" (*Done*) se violar:
 - [x] **Gerenciamento de Disco Efêmero:** Arquivos temporários de renderização gerados em `pipeline/scratch/` e `pipeline/output/` devem ser ignorados pelo `.gitignore` para evitar inchaço do repositório Git.
 - [x] **Configuração Baseada em Perfis de Canais:** Toda parametrização de nicho, voz, estilo visual e monetização deve ser 100% declarativa em `pipeline/config/channels/{canal}.json`.
 
+### 2.9. Arquitetura SaaS Multi-Tenant (Épico 08)
+- [x] **Isolamento Estrito por Tenant:** Autenticação por chave de API (`sec_live_...`), propagação via `TenantContextHolder` com cleanup garantido em Virtual Threads do Java 21.
+- [x] **Resolução Dinâmica de Clientes:** `DynamicGoogleClientProvider` instanciando clientes dedicados de Sheets, Drive e YouTube por tenant com cache seguro em memória.
+- [x] **API Administrativa:** Endpoints REST em `/api/v1/tenants` com proteção exclusiva por Master Admin Key.
+
+### 2.10. Health Check & Orquestração de Containers
+- [x] **Liveness & Readiness Probes:** Endpoint `/api/v1/health` sem autenticação respondendo 200 OK com status da aplicação para Docker, Kubernetes e Cloud Run.
+- [x] **Runtime Otimizado:** Imagem Alpine com fontes TrueType (`font-liberation`, `font-noto`), FFmpeg nativo, non-root user e flags JVM (`-XX:+UseSerialGC`, `MaxRAMPercentage=50.0`).
+
 ---
 
 ## 3. Checklist Rápido de Pré-Merge / Pré-Deploy
 
 ```markdown
 [x] O código compila sem warnings com Java 21?
-[x] Todos os testes unitários passaram (`mvn test` ou `gradle test`)?
+[x] Todos os testes unitários passaram (`./mvnw test`)?
 [x] Nenhuma credencial foi commitada no Git?
 [x] O consumo de memória foi mantido via InputStream direto?
 [x] O campo `selfDeclaredMadeForKids: false` está garantido?

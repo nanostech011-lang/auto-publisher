@@ -1,13 +1,17 @@
 package com.autopublisher.infrastructure.adapter.tiktok;
 
 import com.autopublisher.application.port.out.SocialMediaPublisherPort;
+import com.autopublisher.application.port.out.TenantRepositoryPort;
 import com.autopublisher.domain.model.Platform;
 import com.autopublisher.domain.model.PostSchedule;
 import com.autopublisher.domain.model.PublishResult;
+import com.autopublisher.domain.model.TenantConfig;
+import com.autopublisher.domain.model.TenantContextHolder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -23,7 +27,7 @@ import java.util.Optional;
 
 /**
  * Adaptador de infraestrutura para o TikTok Content Posting API (implementa SocialMediaPublisherPort).
- * Executa publicação direta e streaming de vídeo com suporte a hashtags de engajamento.
+ * Executa publicacao direta e streaming de video com suporte a hashtags de engajamento.
  */
 @Component
 public class TikTokPublisherAdapter implements SocialMediaPublisherPort {
@@ -33,6 +37,7 @@ public class TikTokPublisherAdapter implements SocialMediaPublisherPort {
     private final String accessToken;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
+    private TenantRepositoryPort tenantRepository;
 
     public TikTokPublisherAdapter(
             @Value("${autopublisher.tiktok.access-token:}") String accessToken,
@@ -44,7 +49,7 @@ public class TikTokPublisherAdapter implements SocialMediaPublisherPort {
                 .build();
     }
 
-    // Construtor adicional para injeção de mocks em testes unitários
+    // Construtor adicional para injecao de mocks em testes unitarios
     TikTokPublisherAdapter(
             String accessToken,
             HttpClient httpClient,
@@ -52,6 +57,22 @@ public class TikTokPublisherAdapter implements SocialMediaPublisherPort {
         this.accessToken = accessToken;
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;
+    }
+
+    @Autowired(required = false)
+    public void setTenantRepository(TenantRepositoryPort tenantRepository) {
+        this.tenantRepository = tenantRepository;
+    }
+
+    private String getActiveAccessToken() {
+        if (tenantRepository != null && TenantContextHolder.get().isPresent()) {
+            String tenantId = TenantContextHolder.getRequiredTenantId();
+            return tenantRepository.findById(tenantId)
+                    .map(TenantConfig::tiktokAccessToken)
+                    .filter(t -> t != null && !t.isBlank())
+                    .orElse(accessToken);
+        }
+        return accessToken;
     }
 
     @Override
@@ -63,12 +84,13 @@ public class TikTokPublisherAdapter implements SocialMediaPublisherPort {
     public PublishResult publish(PostSchedule post, InputStream videoStream, Optional<InputStream> thumbnailStream) {
         log.info("Iniciando publicacao no TikTok para o post ID: {}", post.id());
 
-        if (accessToken == null || accessToken.isBlank()) {
+        String activeToken = getActiveAccessToken();
+        if (activeToken == null || activeToken.isBlank()) {
             return PublishResult.failure("Token de acesso do TikTok nao configurado (TIKTOK_ACCESS_TOKEN ausente).");
         }
 
         try {
-            // 1. Monta o título enriquecido com hashtags
+            // 1. Monta o titulo enriquecido com hashtags
             String fullTitle = buildTitleWithTags(post);
 
             // 2. Passo 1: Inicializa o post na TikTok Content Posting API v2
@@ -84,7 +106,7 @@ public class TikTokPublisherAdapter implements SocialMediaPublisherPort {
 
             Map<String, Object> sourceInfo = new HashMap<>();
             sourceInfo.put("source", "FILE_UPLOAD");
-            sourceInfo.put("chunk_size", 10485760); // 10MB chunk padrão
+            sourceInfo.put("chunk_size", 10485760); // 10MB chunk padrao
             sourceInfo.put("total_chunk_count", 1);
             sourceInfo.put("video_size", 10485760);
 
@@ -96,7 +118,7 @@ public class TikTokPublisherAdapter implements SocialMediaPublisherPort {
 
             HttpRequest initRequest = HttpRequest.newBuilder()
                     .uri(URI.create(initUrl))
-                    .header("Authorization", "Bearer " + accessToken)
+                    .header("Authorization", "Bearer " + activeToken)
                     .header("Content-Type", "application/json; charset=UTF-8")
                     .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                     .build();
@@ -119,7 +141,7 @@ public class TikTokPublisherAdapter implements SocialMediaPublisherPort {
 
             log.info("Inicializacao do TikTok confirmada! Publish ID: {}. Despachando stream do video...", publishId);
 
-            // 3. Passo 2: Upload de dados binários via streaming direto (Zero-Copy)
+            // 3. Passo 2: Upload de dados binarios via streaming direto (Zero-Copy)
             HttpRequest uploadRequest = HttpRequest.newBuilder()
                     .uri(URI.create(uploadUrl))
                     .header("Content-Type", "video/mp4")
