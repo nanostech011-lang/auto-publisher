@@ -83,8 +83,15 @@ public class AiPipelineService {
      * Gera ou recupera a pre-visualizacao do roteiro estruturado (com suporte a analise de video do YouTube).
      */
     public Map<String, Object> previewScript(String channelId, String topic, Integer scriptIndex, String sourceUrl) {
+        return previewScript(channelId, topic, scriptIndex, sourceUrl, null);
+    }
+
+    /**
+     * Gera ou recupera a pre-visualizacao do roteiro estruturado com diretriz visual personalizada.
+     */
+    public Map<String, Object> previewScript(String channelId, String topic, Integer scriptIndex, String sourceUrl, String visualDirective) {
         if (sourceUrl != null && !sourceUrl.isBlank()) {
-            return analyzeYouTubeVideo(sourceUrl, channelId);
+            return analyzeYouTubeVideo(sourceUrl, channelId, visualDirective);
         }
 
         String finalChannel = (channelId != null && !channelId.isBlank()) ? channelId.trim() : "psicosegredo";
@@ -167,14 +174,22 @@ public class AiPipelineService {
      * Analisa o conteudo de um video do YouTube e gera um roteiro adaptado nos 4 blocos de retencao.
      */
     public Map<String, Object> analyzeYouTubeVideo(String sourceUrl, String channelId) {
+        return analyzeYouTubeVideo(sourceUrl, channelId, null);
+    }
+
+    /**
+     * Analisa o conteudo de um video do YouTube com diretriz visual personalizada.
+     */
+    public Map<String, Object> analyzeYouTubeVideo(String sourceUrl, String channelId, String visualDirective) {
         String finalChannel = (channelId != null && !channelId.isBlank()) ? channelId.trim() : "psicosegredo";
         try {
             List<String> command = List.of(
                     "node",
                     "-e",
-                    "import('./pipeline/src/script_generator.js').then(m => m.generateScript({ channelId: process.argv[1], sourceUrl: process.argv[2] })).then(r => console.log('JSON_START' + JSON.stringify(r) + 'JSON_END')).catch(e => { console.error(e); process.exit(1); });",
+                    "import('./pipeline/src/script_generator.js').then(m => m.generateScript({ channelId: process.argv[1], sourceUrl: process.argv[2], visualDirective: process.argv[3] })).then(r => console.log('JSON_START' + JSON.stringify(r) + 'JSON_END')).catch(e => { console.error(e); process.exit(1); });",
                     finalChannel,
-                    sourceUrl
+                    sourceUrl,
+                    visualDirective != null ? visualDirective : ""
             );
 
             ProcessBuilder pb = new ProcessBuilder(command);
@@ -209,6 +224,7 @@ public class AiPipelineService {
                 "channelName", "@" + finalChannel,
                 "scriptId", "yt_fallback",
                 "topic", "Análise de Conteúdo Viral",
+                "visualDirective", visualDirective,
                 "title", "A Verdade Oculta que Quase Ninguém Percebeu #Shorts",
                 "wordCount", 154,
                 "estimatedDurationSeconds", 68,
@@ -234,6 +250,7 @@ public class AiPipelineService {
         String platform = request.getPlatformOrDefault();
         String topic = request.topic();
         String sourceUrl = request.getSourceUrl();
+        String visualDirective = request.getVisualDirective();
         int scriptIndex = request.getScriptIndexOrDefault();
 
         List<String> logs = Collections.synchronizedList(new ArrayList<>());
@@ -260,13 +277,13 @@ public class AiPipelineService {
 
         // Execucao assincrona em thread do sistema
         Thread.ofVirtual().name("ai-pipeline-" + jobId).start(() -> {
-            runProcess(jobId, channel, platform, topic, scriptIndex, sourceUrl, logs);
+            runProcess(jobId, channel, platform, topic, scriptIndex, sourceUrl, visualDirective, logs);
         });
 
         return initialStatus;
     }
 
-    private void runProcess(String jobId, String channel, String platform, String topic, int scriptIndex, String sourceUrl, List<String> logs) {
+    private void runProcess(String jobId, String channel, String platform, String topic, int scriptIndex, String sourceUrl, String visualDirective, List<String> logs) {
         log.info("Iniciando processo do pipeline para Job ID: {} (Canal: {})", jobId, channel);
         logs.add("[" + LocalDateTime.now().toString().substring(11, 19) + "] [INFO] Iniciando pipeline de geracao automatizada...");
 
@@ -289,6 +306,11 @@ public class AiPipelineService {
             if (sourceUrl != null && !sourceUrl.isBlank()) {
                 command.add("--url");
                 command.add(sourceUrl.trim());
+            }
+
+            if (visualDirective != null && !visualDirective.isBlank()) {
+                command.add("--visual-directive");
+                command.add(visualDirective.trim());
             }
 
             ProcessBuilder pb = new ProcessBuilder(command);

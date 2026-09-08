@@ -2,17 +2,22 @@ package com.autopublisher.application.port.in;
 
 /**
  * Requisicao para disparo do pipeline de geracao de video por IA.
- * Suporta canais customizados, selecao de plataforma e link de video do YouTube.
+ * Suporta canais customizados, selecao de plataforma, link de video do YouTube e diretriz visual das imagens.
  */
 public record PipelineRunRequest(
         String channelId,
         Integer scriptIndex,
         String topic,
         String platform,
-        String sourceUrl
+        String sourceUrl,
+        String visualDirective
 ) {
     public PipelineRunRequest(String channelId, Integer scriptIndex, String topic, String platform) {
-        this(channelId, scriptIndex, topic, platform, null);
+        this(channelId, scriptIndex, topic, platform, null, null);
+    }
+
+    public PipelineRunRequest(String channelId, Integer scriptIndex, String topic, String platform, String sourceUrl) {
+        this(channelId, scriptIndex, topic, platform, sourceUrl, null);
     }
 
     public String getChannelIdOrDefault() {
@@ -29,5 +34,9 @@ public record PipelineRunRequest(
 
     public String getSourceUrl() {
         return (sourceUrl != null && !sourceUrl.trim().isEmpty()) ? sourceUrl.trim() : null;
+    }
+
+    public String getVisualDirective() {
+        return (visualDirective != null && !visualDirective.trim().isEmpty()) ? visualDirective.trim() : null;
     }
 }

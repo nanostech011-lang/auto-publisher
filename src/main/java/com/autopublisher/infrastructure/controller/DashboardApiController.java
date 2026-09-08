@@ -288,9 +288,12 @@ public class DashboardApiController {
         String channelId = (String) body.get("channelId");
         String topic = (String) body.get("topic");
         String sourceUrl = (String) body.get("sourceUrl");
+        String visualDirective = (String) body.get("visualDirective");
         Integer scriptIndex = body.get("scriptIndex") != null ? ((Number) body.get("scriptIndex")).intValue() : 0;
 
-        Map<String, Object> scriptPreview = aiPipelineService.previewScript(channelId, topic, scriptIndex, sourceUrl);
+        Map<String, Object> scriptPreview = (visualDirective != null && !visualDirective.isBlank())
+                ? aiPipelineService.previewScript(channelId, topic, scriptIndex, sourceUrl, visualDirective)
+                : aiPipelineService.previewScript(channelId, topic, scriptIndex, sourceUrl);
         return ResponseEntity.ok(scriptPreview);
     }
 
@@ -307,11 +310,14 @@ public class DashboardApiController {
 
         String url = (String) body.get("url");
         String channelId = (String) body.get("channelId");
+        String visualDirective = (String) body.get("visualDirective");
         if (url == null || url.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Campo 'url' e obrigatorio."));
         }
 
-        Map<String, Object> analysis = aiPipelineService.analyzeYouTubeVideo(url, channelId);
+        Map<String, Object> analysis = (visualDirective != null && !visualDirective.isBlank())
+                ? aiPipelineService.analyzeYouTubeVideo(url, channelId, visualDirective)
+                : aiPipelineService.analyzeYouTubeVideo(url, channelId);
         return ResponseEntity.ok(analysis);
     }
 

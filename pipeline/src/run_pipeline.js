@@ -125,19 +125,18 @@ async function main() {
   });
   console.log(`${videoClips.length} takes visuais gerados.`);
 
-  const generatedThumbImage = path.join(scratchDir, 'scene_1_generated.jpg');
-  const persianThumbImage = path.resolve(`pipeline/assets/scenes/${options.channel}/guerreiros_persas/scene_1.jpg`);
-  const procrastinThumbImage = path.resolve(`pipeline/assets/scenes/${options.channel}/procrastinacao/scene_1.jpg`);
-  const allText = ((options.visualDirective || '') + ' ' + scriptData.title + ' ' + (scriptData.topic || '')).toLowerCase();
-
   let thumbBaseImage = null;
-  if (fs.existsSync(generatedThumbImage)) {
-    thumbBaseImage = generatedThumbImage;
-  } else if ((allText.includes('persa') || allText.includes('guerreiro')) && fs.existsSync(persianThumbImage)) {
-    thumbBaseImage = persianThumbImage;
-  } else if (allText.includes('procrastin') && fs.existsSync(procrastinThumbImage)) {
-    thumbBaseImage = procrastinThumbImage;
-  } else {
+  // Prioridade absoluta: buscar primeira imagem gerada com sucesso pela IA na run atual
+  for (let i = 1; i <= (videoClips.length || 15); i++) {
+    const candidate = path.join(scratchDir, `scene_${i}_generated.jpg`);
+    if (fs.existsSync(candidate) && fs.statSync(candidate).size > 5000) {
+      thumbBaseImage = candidate;
+      console.log(`Usando imagem exclusiva gerada para a thumbnail: scene_${i}_generated.jpg`);
+      break;
+    }
+  }
+
+  if (!thumbBaseImage) {
     thumbBaseImage = path.resolve(`pipeline/assets/scenes/${options.channel}/scene_1.jpg`);
   }
   const thumbPath = path.join(outputDir, 'thumbnail.png');

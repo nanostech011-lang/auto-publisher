@@ -121,7 +121,7 @@ export async function analyzeAndAdaptYouTubeVideo({ url, channelProfile = {}, vi
 
   // 5 Cenas visuais (proporção 9:16) geradas dinamicamente com base no tema e diretriz visual
   const visualAesthetic = channelProfile.visual_profile?.aesthetic || 'Cinematic Dark Minimalist';
-  const scenes = generateThematicScenes(baseTitle, summaryInsight, visualAesthetic, visualDirective);
+  const scenes = generateThematicScenes(baseTitle, summaryInsight, visualAesthetic, visualDirective, narrationText);
 
   return {
     source: 'youtube',
@@ -188,42 +188,253 @@ function extractKeyInsight(transcriptText, fallbackTopic) {
 /**
  * Gera descrições e prompts de cenas cinematográficas 9:16 personalizados para o tema do vídeo
  */
-export function generateThematicScenes(baseTitle, summaryInsight, visualAesthetic = 'Cinematic Dark Minimalist', visualDirective = null) {
-  // Prioridade Máxima: Se o usuário especificou uma diretriz visual customizada (ex: "guerreiros persas")
-  if (visualDirective && typeof visualDirective === 'string' && visualDirective.trim().length > 0) {
-    const cleanDirective = visualDirective.replace(/^(quero\s+gerar\s+imagens\s+de\s+|gerar\s+imagens\s+de\s+|imagens\s+de\s+)/i, '').trim();
+/**
+ * Extrai sentenças rítmicas da narração para sincronização de cortes visuais (3 a 5 segundos por beat)
+ */
+export function extractNarrationBeats(narrationText) {
+  if (!narrationText || typeof narrationText !== 'string') return [];
+
+  // Quebra por pontuações fortes (. ! ?)
+  const rawSentences = narrationText.split(/[.!?]+/).map(s => s.trim()).filter(s => s.length > 5);
+  const beats = [];
+
+  for (const sentence of rawSentences) {
+    const words = sentence.split(/\s+/);
+    // Divide sentenças longas em pausas naturais
+    if (words.length > 15) {
+      const parts = sentence.split(/[,;:]+|\s+(?:quando|porque|enquanto|mas|onde)\s+/i)
+        .map(p => p.trim())
+        .filter(p => p.length > 10);
+      
+      if (parts.length > 1) {
+        let current = '';
+        for (const part of parts) {
+          if ((current + ' ' + part).trim().split(/\s+/).length < 7) {
+            current = (current + ' ' + part).trim();
+          } else {
+            if (current) beats.push(current);
+            current = part;
+          }
+        }
+        if (current) beats.push(current);
+        continue;
+      }
+    }
+    beats.push(sentence);
+  }
+
+  // Agrupa frases muito pequenas com a vizinha para evitar takes de menos de 5 palavras
+  const consolidated = [];
+  let buffer = '';
+  for (const b of beats) {
+    const bWords = b.split(/\s+/).length;
+    if (bWords < 5) {
+      buffer = (buffer + ' ' + b).trim();
+    } else {
+      if (buffer) {
+        consolidated.push((buffer + ' ' + b).trim());
+        buffer = '';
+      } else {
+        consolidated.push(b);
+      }
+    }
+  }
+  if (buffer) {
+    if (consolidated.length > 0) {
+      consolidated[consolidated.length - 1] += ' ' + buffer;
+    } else {
+      consolidated.push(buffer);
+    }
+  }
+
+  return consolidated.length >= 6 ? consolidated : rawSentences;
+}
+
+/**
+ * Deduz a intenção dramática da frase da narração para enriquecer a cena visual
+ */
+export function deduceActionIntent(phrase) {
+  const p = phrase.toLowerCase();
+
+  if (p.includes('olho') || p.includes('olhar') || p.includes('contato visual') || p.includes('repar') || p.includes('perceb') || p.includes('viu') || p.includes('olhando')) {
+    return {
+      type: 'gaze_focus',
+      actionEn: 'intense focused eyes holding a direct, unflinching piercing stare, holding direct eye contact',
+      actionPt: 'olhar compenetrado e contato visual penetrante em primeiro plano'
+    };
+  }
+
+  if (p.includes('amígdala') || p.includes('cérebro') || p.includes('mente') || p.includes('química') || p.includes('dopamina') || p.includes('neurociência') || p.includes('biológica') || p.includes('pensam')) {
+    return {
+      type: 'inner_mind',
+      actionEn: 'deep contemplative mental focus, strategic intellect, subtle glowing neural energy or glowing ancient map',
+      actionPt: 'concentração mental profunda e inteligência estratégica'
+    };
+  }
+
+  if (p.includes('silêncio') || p.includes('vácuo') || p.includes('pausa') || p.includes('confront') || p.includes('standoff') || p.includes('espera') || p.includes('nada')) {
+    return {
+      type: 'tense_silence',
+      actionEn: 'two figures in tense silent standoff, dramatic shadows, mysterious atmospheric room with volumetric dust',
+      actionPt: 'impasse tenso e silêncio absoluto na penumbra'
+    };
+  }
+
+  if (p.includes('ansiedade') || p.includes('insegurança') || p.includes('pressão') || p.includes('desconforto') || p.includes('medo') || p.includes('tensão') || p.includes('ameaça')) {
+    return {
+      type: 'battle_tension',
+      actionEn: 'high tension anticipation before battle, swirling smoke and dust, dramatic rim shadows, pulse of adrenaline',
+      actionPt: 'alta tensão e expectativa sob pressão externa'
+    };
+  }
+
+  if (p.includes('falar') || p.includes('entrega') || p.includes('detalhe') || p.includes('esconder') || p.includes('mentir') || p.includes('verdade') || p.includes('revela')) {
+    return {
+      type: 'revelation',
+      actionEn: 'a moment of critical revelation, subtle micro-expression in dim dramatic lighting, secret unveiled',
+      actionPt: 'momento de revelação crítica e desmascaramento'
+    };
+  }
+
+  if (p.includes('regra') || p.includes('hack') || p.includes('prática') || p.includes('decisão') || p.includes('controle') || p.includes('passo') || p.includes('agir') || p.includes('comece')) {
+    return {
+      type: 'decisive_action',
+      actionEn: 'disciplined warrior hands firmly gripping an ancient gold-inlaid weapon hilt or parchment, unwavering resolve, side rim lighting',
+      actionPt: 'mãos firmes em ação decidida e postura de disciplina inabalável'
+    };
+  }
+
+  if (p.includes('siga') || p.includes('canal') || p.includes('poder') || p.includes('domina') || p.includes('vitória') || p.includes('antes que') || p.includes('armadura')) {
+    return {
+      type: 'triumphant_horizon',
+      actionEn: 'an epic silhouette of a victorious commander standing atop a rocky citadel overlooking a golden sunrise horizon, triumph and mastery',
+      actionPt: 'líder vitorioso no horizonte ao nascer do sol celebrando a conquista'
+    };
+  }
+
+  // Fallback cinematográfico
+  return {
+    type: 'atmospheric_stand',
+    actionEn: 'imposing figure standing firm in dramatic chiaroscuro lighting, cinematic atmospheric smoke, vertical 9:16',
+    actionPt: 'figura imponente em iluminação de alto contraste chiaroscuro'
+  };
+}
+
+function optimizeDirectiveForPrompt(directive) {
+  if (!directive) return '';
+  return directive
+    .replace(/guerreiros?\s+persas?/gi, 'ancient Persian warriors')
+    .replace(/guerreir[oa]s?/gi, 'elite warriors')
+    .replace(/armaduras?\s+douradas?/gi, 'ornate golden battle armor')
+    .replace(/armaduras?/gi, 'battle armor')
+    .replace(/escudos?/gi, 'bronze engraved shields')
+    .replace(/espadas?/gi, 'steel swords')
+    .replace(/ouro\s+e\s+bronze/gi, 'gold and bronze')
+    .replace(/estoicismo|est[oó]ic[oa]s?/gi, 'stoic philosophers marble sculptures')
+    .replace(/antig[oa]s?/gi, 'ancient historical')
+    .replace(/est[eé]tica\s+aquem[eê]nida/gi, 'Achaemenid Persian empire aesthetic')
+    .replace(/chiaroscuro\s+dram[aá]tico/gi, 'dramatic chiaroscuro lighting')
+    .replace(/alta\s+resolu[cç][aã]o\s+8k/gi, '8k masterpiece, photorealistic');
+}
+
+/**
+ * Gera descrições e prompts de cenas cinematográficas 9:16 personalizados para o tema do vídeo (Visual Beats)
+ */
+export function generateThematicScenes(baseTitle, summaryInsight, visualAesthetic = 'Cinematic Dark Minimalist', visualDirective = null, narrationText = null) {
+  const cleanDirective = (visualDirective && typeof visualDirective === 'string' && visualDirective.trim().length > 0)
+    ? visualDirective.replace(/^(quero\s+gerar\s+imagens\s+de\s+|gerar\s+imagens\s+de\s+|imagens\s+de\s+)/i, '').trim()
+    : null;
+
+  const directiveEn = cleanDirective ? optimizeDirectiveForPrompt(cleanDirective) : null;
+
+  // Se temos a narração completa, criamos os Visual Beats sincronizados frase a frase
+  if (narrationText && typeof narrationText === 'string' && narrationText.trim().length > 50) {
+    const phrases = extractNarrationBeats(narrationText);
+    const motionTypes = ['push_in', 'pan_left_right', 'reveal_zoom_out', 'pan_right_left', 'atmospheric_drift'];
+    const totalWords = narrationText.trim().split(/\s+/).length;
+    const totalDurationEst = (totalWords / 135) * 60;
+
+    const scenes = phrases.map((phrase, idx) => {
+      const phraseWords = phrase.trim().split(/\s+/).length;
+      const beatDuration = Math.max(3.2, Number(((phraseWords / totalWords) * totalDurationEst).toFixed(1)));
+      const intent = deduceActionIntent(phrase);
+      const motion = motionTypes[idx % motionTypes.length];
+
+      let prompt = '';
+      let visualDesc = '';
+
+      if (cleanDirective) {
+        prompt = `Cinematic vertical 9:16 photography of ${directiveEn}, ${intent.actionEn}, highly detailed, ${visualAesthetic}, dramatic chiaroscuro lighting, volumetric dust particles, 85mm lens, photorealistic 8k`;
+        visualDesc = `${cleanDirective}: ${intent.actionPt}`;
+      } else {
+        prompt = `Cinematic vertical 9:16 photography representing "${phrase.slice(0, 45)}", ${intent.actionEn}, highly detailed, ${visualAesthetic}, dramatic chiaroscuro lighting, 85mm lens, photorealistic 8k`;
+        visualDesc = `${intent.actionPt} (inspirado em "${phrase.slice(0, 35)}...")`;
+      }
+
+      return {
+        id: idx + 1,
+        duration: beatDuration,
+        prompt,
+        phrase: phrase,
+        motionType: motion,
+        keywords: cleanDirective ? [cleanDirective, intent.type] : [intent.type, 'cinematic dark'],
+        visualDescription: visualDesc
+      };
+    });
+
+    if (scenes.length >= 6) {
+      return scenes;
+    }
+  }
+
+  // Fallback caso não haja narração longa: gera 6 takes temáticos calibrados
+  const motionTypes = ['push_in', 'pan_left_right', 'reveal_zoom_out', 'pan_right_left', 'atmospheric_drift', 'push_in'];
+  if (cleanDirective) {
     return [
       {
         id: 1,
-        duration: 5,
-        prompt: `Cinematic close-up portrait of fierce ${cleanDirective} in ornate dark armor, intense eyes staring with determination, dramatic chiaroscuro lighting, ${visualAesthetic}, vertical 9:16`,
+        duration: 4.5,
+        motionType: motionTypes[0],
+        prompt: `Cinematic vertical 9:16 close-up portrait of fierce ${cleanDirective} in ornate dark armor, intense eyes staring with determination, dramatic chiaroscuro lighting, ${visualAesthetic}, 8k`,
         keywords: [cleanDirective, 'close up', 'dramatic portrait'],
         visualDescription: `${cleanDirective} com olhar focado e postura imponente em primeiro plano`
       },
       {
         id: 2,
-        duration: 18,
+        duration: 5.5,
+        motionType: motionTypes[1],
         prompt: `${cleanDirective} standing in strategic disciplined formation, ancient council and strategy planning, atmospheric dust and volumetric rays of light, ${visualAesthetic}, vertical 9:16`,
         keywords: [cleanDirective, 'strategic formation', 'discipline'],
         visualDescription: `${cleanDirective} em formação tática representando estratégia e disciplina mental`
       },
       {
         id: 3,
-        duration: 18,
+        duration: 5.0,
+        motionType: motionTypes[2],
+        prompt: `Close-up on ${cleanDirective} face showing intense inner focus amid chaotic battlefield smoke, emotional control, chiaroscuro, vertical 9:16`,
+        keywords: [cleanDirective, 'inner focus', 'smoke dark'],
+        visualDescription: `${cleanDirective} mantendo foco absoluto e autocontrole diante da tempestade`
+      },
+      {
+        id: 4,
+        duration: 5.0,
+        motionType: motionTypes[3],
         prompt: `Dramatic cinematic atmosphere of ${cleanDirective}, ancient shields and banners in dark fog, dramatic hourglass or passing time, tension and challenge, ${visualAesthetic}, vertical 9:16`,
         keywords: [cleanDirective, 'challenge battlefield', 'hourglass fog'],
         visualDescription: `${cleanDirective} em momento de alta tensão e superação do tempo`
       },
       {
-        id: 4,
-        duration: 14,
+        id: 5,
+        duration: 4.5,
+        motionType: motionTypes[4],
         prompt: `Close-up shot of disciplined ${cleanDirective} hands firmly gripping weapons or parchment with unwavering resolve, dramatic side rim light, ${visualAesthetic}, vertical 9:16`,
         keywords: [cleanDirective, 'hands action', 'resolute execution'],
         visualDescription: `Mãos de ${cleanDirective} executando a decisão prática com determinação`
       },
       {
-        id: 5,
-        duration: 13,
+        id: 6,
+        duration: 5.5,
+        motionType: motionTypes[5],
         prompt: `A legendary ${cleanDirective} silhouette standing victorious on a high cliff overlooking an ancient horizon at golden sunrise, triumphant atmosphere, ${visualAesthetic}, vertical 9:16`,
         keywords: [cleanDirective, 'victory sunrise', 'triumph cliff'],
         visualDescription: `${cleanDirective} vitorioso no horizonte celebrando o autodomínio`
@@ -233,145 +444,46 @@ export function generateThematicScenes(baseTitle, summaryInsight, visualAestheti
 
   const lower = (baseTitle + ' ' + (summaryInsight || '')).toLowerCase();
 
-  // Caso 1: Procrastinação, Foco, Dopamina, Vício em Telas
-  if (lower.includes('procrastin') || lower.includes('foco') || lower.includes('dopamina') || lower.includes('preguiç') || lower.includes('motivação')) {
-    return [
-      {
-        id: 1,
-        duration: 5,
-        prompt: `Cinematic close-up portrait of an exhausted person staring at a glowing smartphone screen in complete darkness, blue light reflecting on tired eyes, dark moody atmospheric lighting, vertical 9:16`,
-        keywords: ['exhausted person phone dark', 'screen glow', 'dopamine scroll']
-      },
-      {
-        id: 2,
-        duration: 18,
-        prompt: `Glowing 3D dopamine chemical molecular structure floating beside a glowing human brain with neural synapses firing, dark background, electric cyan and gold light, vertical 9:16`,
-        keywords: ['dopamine 3D molecule', 'glowing neural network', 'brain chemistry']
-      },
-      {
-        id: 3,
-        duration: 18,
-        prompt: `A dramatic dark hourglass with glowing blue and gold sand falling into darkness, atmospheric lighting, time running out, procrastination concept, vertical 9:16`,
-        keywords: ['dark hourglass sand', 'time passing', 'discipline ticking']
-      },
-      {
-        id: 4,
-        duration: 14,
-        prompt: `Close-up shot of determined hands firmly closing a smartphone and picking up a pen on a clean minimalist desk, dramatic rim lighting, action focus, vertical 9:16`,
-        keywords: ['hands closing phone', 'action taking', 'discipline focus']
-      },
-      {
-        id: 5,
-        duration: 13,
-        prompt: `A silhouette of a confident person standing tall facing a glowing golden sunrise over a modern city skyline, victorious atmosphere, mental mastery, vertical 9:16`,
-        keywords: ['victorious silhouette sunrise', 'mental mastery', 'success path']
-      }
-    ];
-  }
-
-  // Caso 2: Silêncio, Psicologia Escura, Mentiras, Linguagem Corporal
-  if (lower.includes('silêncio') || lower.includes('mentir') || lower.includes('linguagem') || lower.includes('confront')) {
-    return [
-      {
-        id: 1,
-        duration: 5,
-        prompt: `Cinematic close-up of intense human eyes looking directly into the camera, extreme dark background, dramatic chiaroscuro lighting, vertical 9:16`,
-        keywords: ['eyes close up', 'dark gaze', 'man thinking']
-      },
-      {
-        id: 2,
-        duration: 18,
-        prompt: `Dark aesthetic silhouette of two people sitting across a table, tense standoff, shadowy ambient lighting, minimalist room, vertical 9:16`,
-        keywords: ['silhouette discussion', 'dark meeting', 'tense conversation']
-      },
-      {
-        id: 3,
-        duration: 18,
-        prompt: `Glowing 3D human brain on a pure black background, neural pathways firing with rapid electric blue synapses, amygdala glowing red, vertical 9:16`,
-        keywords: ['human brain glowing', 'neural network', 'synapses electric']
-      },
-      {
-        id: 4,
-        duration: 14,
-        prompt: `Close-up shot of hands fidgeting with nervousness in dim lighting, subtle sweat, shadow covering face, psychological tension, vertical 9:16`,
-        keywords: ['nervous hands fidgeting', 'anxiety dark', 'stress shadow']
-      },
-      {
-        id: 5,
-        duration: 13,
-        prompt: `A glowing golden key hovering inside a minimalist dark silhouette of a mind, volumetric light rays, sleek neon blue rim lighting, vertical 9:16`,
-        keywords: ['glowing golden key', 'mind silhouette', 'light rays dark']
-      }
-    ];
-  }
-
-  // Caso 3: Finanças, Riqueza, Investimentos
-  if (lower.includes('dinheiro') || lower.includes('riqueza') || lower.includes('invest') || lower.includes('milion') || lower.includes('pobre')) {
-    return [
-      {
-        id: 1,
-        duration: 5,
-        prompt: `Cinematic money dissolving into glowing dust in dark atmospheric lighting, financial inflation concept, vertical 9:16`,
-        keywords: ['cash dust', 'money ticking', 'financial trap']
-      },
-      {
-        id: 2,
-        duration: 18,
-        prompt: `Modern city skyline at night with glowing emerald green financial charts and laser data lines, high-tech dark atmosphere, vertical 9:16`,
-        keywords: ['modern city night data', 'financial charts', 'wealth skyscraper']
-      },
-      {
-        id: 3,
-        duration: 18,
-        prompt: `Digital golden coins multiplying exponentially in a high-tech dark space, compound interest visual, vertical 9:16`,
-        keywords: ['compound interest gold', 'multiplying wealth', 'financial asset']
-      },
-      {
-        id: 4,
-        duration: 14,
-        prompt: `Confident hands analyzing investment graphs on a sleek dark tablet, dramatic rim lighting, wealth creation, vertical 9:16`,
-        keywords: ['investor hands tablet', 'strategic wealth', 'financial mastery']
-      },
-      {
-        id: 5,
-        duration: 13,
-        prompt: `A solitary visionary silhouette overlooking an expansive horizon at dawn with golden light rays, financial freedom, vertical 9:16`,
-        keywords: ['visionary horizon dawn', 'financial freedom', 'wealth victory']
-      }
-    ];
-  }
-
-  // Caso 4: Geral / Temático Dinâmico
   return [
     {
       id: 1,
-      duration: 5,
+      duration: 4.5,
+      motionType: 'push_in',
       prompt: `Cinematic dramatic hook close-up illustrating "${baseTitle.slice(0, 40)}", intense eyes and face in chiaroscuro lighting, ${visualAesthetic}, vertical 9:16`,
-      keywords: ['dramatic hook', 'intense gaze', 'curiosity']
+      keywords: ['dramatic hook', 'intense gaze', 'curiosity'],
+      visualDescription: 'Close-up provocativo de alto contraste para o gancho inicial'
     },
     {
       id: 2,
-      duration: 18,
+      duration: 5.5,
+      motionType: 'pan_left_right',
       prompt: `Moody conceptual visualization of deep psychology and human behavior regarding "${baseTitle.slice(0, 40)}", shadowy aesthetic, vertical 9:16`,
-      keywords: ['psychology concept', 'deep analysis', 'brain mind']
+      keywords: ['psychology concept', 'deep analysis', 'brain mind'],
+      visualDescription: 'Representação visual da mecânica científica e psicológica'
     },
     {
       id: 3,
-      duration: 18,
+      duration: 5.0,
+      motionType: 'reveal_zoom_out',
       prompt: `Dynamic abstract visual representing key breakthrough insight on "${baseTitle.slice(0, 40)}", volumetric glowing light rays, vertical 9:16`,
-      keywords: ['breakthrough insight', 'light beam', 'truth revealed']
+      keywords: ['breakthrough insight', 'light beam', 'truth revealed'],
+      visualDescription: 'Revelação visual do insight oculto com raios volumétricos'
     },
     {
       id: 4,
-      duration: 14,
+      duration: 5.0,
+      motionType: 'pan_right_left',
       prompt: `Close-up shot of hands taking precise disciplined action, subtle rim lighting, practical hack execution, vertical 9:16`,
-      keywords: ['hands decisive action', 'practical execution', 'clarity']
+      keywords: ['hands decisive action', 'practical execution', 'clarity'],
+      visualDescription: 'Mãos em ação decidida executando a regra prática'
     },
     {
       id: 5,
-      duration: 13,
-      prompt: `A silhouette of a confident person walking into a bright golden doorway, triumph and success, vertical 9:16`,
-      keywords: ['victory silhouette', 'door of light', 'triumph']
+      duration: 5.5,
+      motionType: 'atmospheric_drift',
+      prompt: `A silhouette of a confident person standing on an expansive golden sunrise horizon, triumph and success, vertical 9:16`,
+      keywords: ['victory silhouette', 'sunrise horizon', 'triumph'],
+      visualDescription: 'Silhueta triunfante no horizonte ao amanhecer para o CTA'
     }
   ];
 }

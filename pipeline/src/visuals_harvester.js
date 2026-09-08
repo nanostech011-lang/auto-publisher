@@ -36,7 +36,6 @@ export function createProceduralDarkScene({
   const scheme = schemes[colorSchemeIndex % schemes.length];
 
   return new Promise((resolve, reject) => {
-    // Filtro complexo: Gera fundo escuro com gradiente radial pulsante, ruído sutil de fumaça e movimento lento de zoom
     const filterComplex = [
       `color=c=${scheme.base}:s=1080x1920:d=${durationSeconds}:r=30[bg]`,
       `color=c=${scheme.glow}:s=1080x1920:d=${durationSeconds}:r=30[glow]`,
@@ -56,42 +55,79 @@ export function createProceduralDarkScene({
         `-t ${durationSeconds}`
       ])
       .output(outputPath)
-      .on('end', () => {
-        resolve(outputPath);
-      })
-      .on('error', err => {
-        reject(err);
-      })
+      .on('end', () => resolve(outputPath))
+      .on('error', err => reject(err))
       .run();
   });
 }
 
 /**
- * Cria uma cena com efeito Ken Burns (camera zoom dinamico) a partir de uma imagem estatica 9:16
+ * Cria um clipe de video com movimento de camera de cinema (Ken Burns avancado / Motion Engine)
+ * Suporta arquivos de imagem (.jpg, .png) e videoclipes reais (.mp4).
  */
-export function createSceneFromImage({
-  imagePath,
+export function createCinematicMotionClip({
+  assetPath,
   durationSeconds,
   outputPath,
-  zoomDirection = 'in'
+  motionType = 'push_in'
 }) {
   const dir = path.dirname(outputPath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
 
-  // Zoom lento e elegante: zoom-in ou zoom-out
-  const zoomFilter = zoomDirection === 'in'
-    ? "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(pzoom+0.0015,1.22)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30"
-    : "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='if(lte(pzoom,1.0),1.22,max(1.001,pzoom-0.0015))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30";
+  const isVideo = assetPath.toLowerCase().endsWith('.mp4') || assetPath.toLowerCase().endsWith('.webm');
+
+  // Se já for um arquivo de vídeo (ex: b-roll real), recorta em 9:16 e loopa se necessário
+  if (isVideo) {
+    return new Promise((resolve, reject) => {
+      ffmpeg()
+        .input(assetPath)
+        .inputOptions(['-stream_loop -1'])
+        .outputOptions([
+          `-t ${durationSeconds}`,
+          '-vf scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920',
+          '-c:v libx264',
+          '-pix_fmt yuv420p',
+          '-preset fast'
+        ])
+        .output(outputPath)
+        .on('end', () => resolve(outputPath))
+        .on('error', err => reject(err))
+        .run();
+    });
+  }
+
+  // Motores de movimento cinematográfico diferenciados por tipo
+  let motionFilter = '';
+  const dSec = Math.max(1, Math.round(durationSeconds));
+
+  switch (motionType) {
+    case 'pan_left_right':
+      motionFilter = `scale=1240:2204:force_original_aspect_ratio=increase,crop=1240:2204,zoompan=z=1.14:d=1:x='(iw-iw/zoom)*(on/(30*${dSec}))':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
+      break;
+    case 'pan_right_left':
+      motionFilter = `scale=1240:2204:force_original_aspect_ratio=increase,crop=1240:2204,zoompan=z=1.14:d=1:x='(iw-iw/zoom)*(1-on/(30*${dSec}))':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
+      break;
+    case 'reveal_zoom_out':
+      motionFilter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='if(lte(pzoom,1.04),1.22,max(1.04,pzoom-0.0022))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30";
+      break;
+    case 'atmospheric_drift':
+      motionFilter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(pzoom+0.0016,1.18)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30";
+      break;
+    case 'push_in':
+    default:
+      motionFilter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(pzoom+0.0022,1.22)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30";
+      break;
+  }
 
   return new Promise((resolve, reject) => {
     ffmpeg()
-      .input(imagePath)
+      .input(assetPath)
       .inputOptions(['-loop 1'])
       .outputOptions([
         `-t ${durationSeconds}`,
-        `-vf ${zoomFilter}`,
+        `-vf ${motionFilter}`,
         '-c:v libx264',
         '-pix_fmt yuv420p',
         '-preset fast'
@@ -100,6 +136,19 @@ export function createSceneFromImage({
       .on('end', () => resolve(outputPath))
       .on('error', err => reject(err))
       .run();
+  });
+}
+
+/**
+ * Funcao legada para retrocompatibilidade
+ */
+export function createSceneFromImage({ imagePath, durationSeconds, outputPath, zoomDirection = 'in' }) {
+  const motion = zoomDirection === 'out' ? 'reveal_zoom_out' : 'push_in';
+  return createCinematicMotionClip({
+    assetPath: imagePath,
+    durationSeconds,
+    outputPath,
+    motionType: motion
   });
 }
 
@@ -153,24 +202,29 @@ export function createProceduralThumbnail({
 }
 
 /**
- * Gera imagem de inteligência artificial 9:16 altamente cinematográfica para o prompt da cena
+ * Gera imagem de IA 9:16 altamente cinematográfica usando Pollinations AI
  */
-export async function generateSceneImageFromPrompt({ prompt, outputPath }) {
+export async function generateSceneImageFromPrompt({ prompt, outputPath, seed = null, model = null }) {
   const dir = path.dirname(outputPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
+  const sceneSeed = seed !== null ? seed : Math.floor(Math.random() * 1000000);
   const cleanPrompt = encodeURIComponent(
-    `${prompt}, cinematic 8k, ultra photorealistic, dramatic chiaroscuro lighting, vertical 9:16`
+    `${prompt}, 85mm portrait, highly detailed, dramatic chiaroscuro lighting, vertical 9:16 aspect ratio`
   );
-  const seed = Math.floor(Math.random() * 1000000);
-  const url = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=720&height=1280&nologo=true&seed=${seed}`;
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000);
+  // 1ª Tentativa: Endpoint padrão acelerado da Pollinations (resposta em ~5-8s)
+  const urlPrimary = model
+    ? `https://image.pollinations.ai/prompt/${cleanPrompt}?width=768&height=1344&nologo=true&seed=${sceneSeed}&model=${model}`
+    : `https://image.pollinations.ai/prompt/${cleanPrompt}?width=768&height=1344&nologo=true&seed=${sceneSeed}`;
+
+  let controller = new AbortController();
+  let timeout = setTimeout(() => controller.abort(), 20000);
 
   try {
-    const res = await fetch(url, { signal: controller.signal });
+    const res = await fetch(urlPrimary, { signal: controller.signal });
     clearTimeout(timeout);
+
     if (res.ok) {
       const buffer = Buffer.from(await res.arrayBuffer());
       if (buffer.length > 5000) {
@@ -180,13 +234,36 @@ export async function generateSceneImageFromPrompt({ prompt, outputPath }) {
     }
   } catch (err) {
     clearTimeout(timeout);
-    console.warn(`[Visuals IA] Erro ao gerar imagem remota: ${err.message}`);
+    // Continua para o fallback de modelo alternativo
   }
+
+  // 2ª Tentativa (Fallback com modelo flux explícito ou sem parâmetro)
+  try {
+    const fallbackModelParam = model ? '' : '&model=flux';
+    const urlFallback = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=768&height=1344&nologo=true&seed=${sceneSeed}${fallbackModelParam}`;
+    controller = new AbortController();
+    timeout = setTimeout(() => controller.abort(), 25000);
+
+    const res = await fetch(urlFallback, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      const buffer = Buffer.from(await res.arrayBuffer());
+      if (buffer.length > 5000) {
+        fs.writeFileSync(outputPath, buffer);
+        return outputPath;
+      }
+    }
+  } catch (err) {
+    clearTimeout(timeout);
+    console.warn(`[Visuals IA] Aviso na geração remota: ${err.message}`);
+  }
+
   return null;
 }
 
 /**
- * Coleta ou gera todas as cenas necessárias para um roteiro
+ * Coleta ou gera todos os pequenos vídeos/takes necessários para o roteiro
  */
 export async function harvestVisualScenes({
   scenes,
@@ -195,70 +272,60 @@ export async function harvestVisualScenes({
 }) {
   const videoClips = [];
   const channelAssetsDir = path.resolve(`pipeline/assets/scenes/${channelId}`);
+  const fixedVideoSeed = Math.floor(Math.random() * 100000);
+
+  console.log(`Iniciando renderizacao de ${scenes.length} takes visuais dinâmicos...`);
 
   for (let i = 0; i < scenes.length; i++) {
     const scene = scenes[i];
     const clipPath = path.join(scratchDir, `scene_${i + 1}.mp4`);
     const sceneImgPath = path.join(scratchDir, `scene_${i + 1}_generated.jpg`);
+    const motionType = scene.motionType || (i % 2 === 0 ? 'push_in' : 'reveal_zoom_out');
 
-    let imageAsset = null;
+    let assetForClip = null;
 
-    // Detecta se há subpasta temática dedicada (ex: guerreiros_persas ou procrastinacao)
-    const allPrompts = scenes.map(s => s.prompt || '').join(' ').toLowerCase();
-    let themeSubdir = null;
-    if (allPrompts.includes('persian') || allPrompts.includes('persa') || allPrompts.includes('guerreir')) {
-      themeSubdir = 'guerreiros_persas';
-    } else if (allPrompts.includes('procrastin') || allPrompts.includes('exhausted') || allPrompts.includes('dopamine') || allPrompts.includes('hourglass')) {
-      themeSubdir = 'procrastinacao';
-    }
-
-    // 1. Prioridade A: Asset temático dedicado em alta resolução para o tópico exato
-    if (themeSubdir) {
-      const thematicJpg = path.join(channelAssetsDir, themeSubdir, `scene_${i + 1}.jpg`);
-      const thematicPng = path.join(channelAssetsDir, themeSubdir, `scene_${i + 1}.png`);
-      if (fs.existsSync(thematicJpg)) {
-        imageAsset = thematicJpg;
-        console.log(`Cena ${i + 1}: Usando visual temático calibrado (${themeSubdir}/scene_${i + 1}.jpg) de acordo com o roteiro!`);
-      } else if (fs.existsSync(thematicPng)) {
-        imageAsset = thematicPng;
-        console.log(`Cena ${i + 1}: Usando visual temático calibrado (${themeSubdir}/scene_${i + 1}.png) de acordo com o roteiro!`);
-      }
-    }
-
-    // 2. Prioridade B: Gerar imagem de IA sob demanda a partir da descrição do roteiro
-    if (!imageAsset && scene.prompt) {
-      console.log(`Cena ${i + 1}: Gerando imagem de IA exclusiva a partir da descrição do roteiro...`);
-      console.log(`  -> Descrição: "${scene.prompt.slice(0, 85)}..."`);
+    // 1. Gera imagem fresca e exclusiva de IA para esta cena específica com base no prompt
+    if (scene.prompt) {
+      console.log(`Cena ${i + 1}/${scenes.length} (${scene.duration}s) [Motion: ${motionType}]:`);
+      console.log(`  -> Prompt: "${scene.prompt.slice(0, 95)}..."`);
+      
+      const sceneSeed = fixedVideoSeed + (i * 17); // Semente coerente por vídeo
       const generated = await generateSceneImageFromPrompt({
         prompt: scene.prompt,
-        outputPath: sceneImgPath
+        outputPath: sceneImgPath,
+        seed: sceneSeed,
+        model: null
       });
+
       if (generated && fs.existsSync(generated)) {
-        imageAsset = generated;
-        console.log(`  -> Imagem de IA gerada com sucesso (${(fs.statSync(generated).size / 1024).toFixed(0)} KB)`);
+        assetForClip = generated;
+        const sizeKb = (fs.statSync(generated).size / 1024).toFixed(0);
+        console.log(`  -> Imagem de IA gerada com sucesso (${sizeKb} KB)`);
+      }
+      // Pequeno espaçamento para cadência estável da API gratuita
+      await new Promise(r => setTimeout(r, 800));
+    }
+
+    // 2. Fallback resiliente apenas se a IA remota oscilar (nunca interrompe o fluxo)
+    if (!assetForClip) {
+      const sceneJpg = path.join(channelAssetsDir, `scene_${(i % 5) + 1}.jpg`);
+      const scenePng = path.join(channelAssetsDir, `scene_${(i % 5) + 1}.png`);
+      assetForClip = fs.existsSync(sceneJpg) ? sceneJpg : (fs.existsSync(scenePng) ? scenePng : null);
+      if (assetForClip) {
+        console.log(`  -> Fallback resiliente para asset local (${path.basename(assetForClip)})`);
       }
     }
 
-    // 3. Fallback de contingência caso nada acima exista
-    if (!imageAsset) {
-      const sceneJpg = path.join(channelAssetsDir, `scene_${i + 1}.jpg`);
-      const scenePng = path.join(channelAssetsDir, `scene_${i + 1}.png`);
-      imageAsset = fs.existsSync(sceneJpg) ? sceneJpg : (fs.existsSync(scenePng) ? scenePng : null);
-      if (imageAsset) {
-        console.log(`Cena ${i + 1}: Fallback para asset existente (${path.basename(imageAsset)})...`);
-      }
-    }
-
-    if (imageAsset) {
-      console.log(`Cena ${i + 1}: Renderizando clipe 9:16 com movimento de câmera Ken Burns...`);
-      await createSceneFromImage({
-        imagePath: imageAsset,
+    // 3. Renderiza o pequeno vídeo clip com o movimento de câmera cinematográfico
+    if (assetForClip) {
+      await createCinematicMotionClip({
+        assetPath: assetForClip,
         durationSeconds: scene.duration,
         outputPath: clipPath,
-        zoomDirection: i % 2 === 0 ? 'in' : 'out'
+        motionType: motionType
       });
     } else {
-      console.log(`Cena ${i + 1}: Gerando cena procedural chiaroscuro...`);
+      console.log(`  -> Gerando cena procedural Chiaroscuro de contingência...`);
       await createProceduralDarkScene({
         durationSeconds: scene.duration,
         outputPath: clipPath,

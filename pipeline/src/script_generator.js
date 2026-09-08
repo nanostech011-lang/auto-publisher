@@ -165,7 +165,7 @@ export async function generateScript({
         { title: 'Hack Prático (45-58s)', text: hack },
         { title: 'CTA & Retenção (58-65s)', text: cta }
       ],
-      scenes: generateThematicScenes(topic, body, channel.visual_profile?.aesthetic, visualDirective),
+      scenes: generateThematicScenes(topic, body, channel.visual_profile?.aesthetic, visualDirective, fullNarration),
       metadata: {
         title: customTitle,
         description: `${customTitle}\n\n${ctaProfile.description_template || ''}\n\nTags: #${tags.slice(0, 5).join(' #')}`,
@@ -202,7 +202,7 @@ export async function generateScript({
       { title: 'Hack Prático (45-58s)', text: selectedScript.narrationText.slice(350, 500) },
       { title: 'CTA & Retenção (58-65s)', text: selectedScript.narrationText.slice(500) }
     ],
-    scenes: selectedScript.scenes,
+    scenes: (visualDirective && visualDirective.trim().length > 0) ? generateThematicScenes(selectedScript.topic, selectedScript.title, channel.visual_profile?.aesthetic, visualDirective, selectedScript.narrationText) : selectedScript.scenes,
     metadata: {
       title: selectedScript.title,
       description,
