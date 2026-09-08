@@ -1214,7 +1214,7 @@ try {
 
         // Gestão de API Key e Credenciais
         function getApiKey() {
-            return localStorage.getItem('auto_publisher_api_key') || '';
+            return localStorage.getItem('auto_publisher_api_key') || 'dev-local-api-key';
         }
 
         function initApiKey() {

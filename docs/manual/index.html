@@ -107,7 +107,9 @@
                 <a href="#deploy" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-cloud-arrow-up w-4 text-purple-400"></i> 8. Deploy Cloud (R$ 0,00)</a>
                 <a href="#dashboard" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-desktop w-4 text-purple-400"></i> 9. Dashboard Web</a>
                 <a href="#pipeline-ia" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-wand-magic-sparkles w-4 text-purple-400"></i> 10. Studio IA (Vídeos)</a>
-                <a href="#faq" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-circle-question w-4 text-purple-400"></i> 11. FAQ & Soluções</a>
+                <a href="#demo-e2e" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-pink-300 bg-pink-950/20 hover:bg-pink-950/40 border border-pink-900/30 transition-all font-semibold"><i class="fa-solid fa-circle-play w-4 text-pink-400"></i> 11. Demo E2E (YouTube + IA)</a>
+                <a href="#multi-tenant" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-building-user w-4 text-purple-400"></i> 12. SaaS Multi-Tenant & Docker</a>
+                <a href="#faq" class="flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-300 hover:bg-purple-950/40 hover:text-purple-300 transition-all"><i class="fa-solid fa-circle-question w-4 text-purple-400"></i> 13. FAQ & Soluções</a>
             </div>
         </aside>
 
@@ -934,10 +936,208 @@ pnpm --prefix pipeline pipeline --channel psicosegredo --topic "Como Ler Microex
                 </div>
             </section>
 
-            <!-- 11. FAQ & Troubleshooting -->
+            <!-- 11. Passo a Passo E2E Real: Repurposing de Vídeos do YouTube com IA & Diretriz Visual -->
+            <section id="demo-e2e" class="space-y-8 pt-6 border-t border-slate-800">
+                <div class="flex items-center justify-between flex-wrap gap-3">
+                    <div class="flex items-center gap-3">
+                        <span class="px-3 py-1 bg-pink-950 text-pink-400 rounded-lg text-sm font-bold font-mono">11</span>
+                        <h2 class="text-2xl md:text-3xl font-bold text-white">Demonstração E2E: Repurposing do YouTube com Diretriz Visual</h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs bg-emerald-950 text-emerald-300 px-3 py-1 rounded-full border border-emerald-800 font-mono font-bold flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-check"></i> Playwright & DevTools Validado
+                        </span>
+                        <span class="text-xs bg-purple-950 text-purple-300 px-3 py-1 rounded-full border border-purple-800 font-mono font-bold">1080x1920 H.264</span>
+                    </div>
+                </div>
+
+                <p class="text-sm text-slate-300 leading-relaxed">
+                    Abaixo está o registro visual completo da execução real realizada no ambiente local (<code class="text-purple-300 font-mono">http://localhost:8080/</code>). Utilizamos como fonte o vídeo do YouTube <code class="text-purple-300 font-mono">http://www.youtube.com/watch?v=r1CGPrMI8zs</code> e definimos a diretriz visual temática para gerar imagens cinematográficas personalizadas para as cenas.
+                </p>
+
+                <!-- Grid de Evidências Visuais Passo a Passo -->
+                <div class="space-y-8">
+
+                    <!-- Passo 1: Dashboard com Tenant Ativo -->
+                    <div class="bg-slate-900/60 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+                        <div class="px-5 py-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-6 h-6 rounded-full bg-purple-900 text-purple-300 font-mono font-bold text-xs flex items-center justify-center border border-purple-700">1</span>
+                                <h3 class="font-bold text-white text-sm">Dashboard Inicial • Reconhecimento de Tenant Ativo & Quota Guard</h3>
+                            </div>
+                            <span class="text-xs font-mono text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded border border-emerald-800/60">Tenant: default (Default Workspace)</span>
+                        </div>
+                        <div class="p-4 bg-slate-950/40">
+                            <img src="screenshots/01_dashboard_tenant.png" alt="Passo 1: Dashboard Inicial e Tenant Ativo" class="w-full h-auto rounded-xl border border-slate-800/80 shadow-md">
+                        </div>
+                        <div class="px-5 py-3 bg-slate-900/40 border-t border-slate-800/60 text-xs text-slate-400">
+                            Ao acessar a aplicação com a chave de API segura, o AutoPublisher Pro identifica o workspace do usuário (<code class="text-purple-300">default</code>), exibe os KPIs de publicações, o medidor do YouTube Quota Guard (10.000 unidades) e habilita os botões de ação do topo.
+                        </div>
+                    </div>
+
+                    <!-- Passo 2: Modal do Studio IA Expandido -->
+                    <div class="bg-slate-900/60 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+                        <div class="px-5 py-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-6 h-6 rounded-full bg-purple-900 text-purple-300 font-mono font-bold text-xs flex items-center justify-center border border-purple-700">2</span>
+                                <h3 class="font-bold text-white text-sm">Abertura do Studio IA • Janela Cinemática Expandida (96vw &times; 94vh)</h3>
+                            </div>
+                            <span class="text-xs font-mono text-pink-400 bg-pink-950/60 px-2.5 py-0.5 rounded border border-pink-800/60">Interface Upstream</span>
+                        </div>
+                        <div class="p-4 bg-slate-950/40">
+                            <img src="screenshots/02_studio_ia_modal.png" alt="Passo 2: Studio IA Modal Aberto" class="w-full h-auto rounded-xl border border-slate-800/80 shadow-md">
+                        </div>
+                        <div class="px-5 py-3 bg-slate-900/40 border-t border-slate-800/60 text-xs text-slate-400">
+                            O criador clica em <strong class="text-white">"Studio IA (Vídeos)"</strong> e visualiza o painel panorâmico. O ambiente traz a barra de seleção de destino (Shorts, TikTok, Reels), personalização de cores de karaokê e seleção do canal piloto.
+                        </div>
+                    </div>
+
+                    <!-- Passo 3: Preenchimento de Link do YouTube e Diretriz Visual -->
+                    <div class="bg-slate-900/60 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+                        <div class="px-5 py-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-6 h-6 rounded-full bg-purple-900 text-purple-300 font-mono font-bold text-xs flex items-center justify-center border border-purple-700">3</span>
+                                <h3 class="font-bold text-white text-sm">Entrada da URL & Diretriz Visual das Imagens de IA</h3>
+                            </div>
+                            <span class="text-xs font-mono text-sky-400 bg-sky-950/60 px-2.5 py-0.5 rounded border border-sky-800/60">Diretriz Temática</span>
+                        </div>
+                        <div class="p-4 bg-slate-950/40">
+                            <img src="screenshots/03_youtube_url_diretriz.png" alt="Passo 3: URL do YouTube e Diretriz Visual" class="w-full h-auto rounded-xl border border-slate-800/80 shadow-md">
+                        </div>
+                        <div class="px-5 py-3 bg-slate-900/40 border-t border-slate-800/60 text-xs text-slate-400 space-y-1.5">
+                            <p><strong class="text-white">URL Inserida:</strong> <code class="text-purple-300 font-mono">http://www.youtube.com/watch?v=r1CGPrMI8zs</code></p>
+                            <p><strong class="text-white">Diretriz Visual Customizada:</strong> <span class="text-amber-300 font-mono italic">"Guerreiros persas antigos em batalha épica, armaduras douradas, chiaroscuro cinematográfico 9:16"</span>. Essa instrução direciona o motor generativo a criar imagens condizentes com o tema escolhido pelo usuário.</p>
+                        </div>
+                    </div>
+
+                    <!-- Passo 4: Roteiro Modelado com os 4 Blocos e Diretriz Injetada -->
+                    <div class="bg-slate-900/60 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+                        <div class="px-5 py-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-6 h-6 rounded-full bg-purple-900 text-purple-300 font-mono font-bold text-xs flex items-center justify-center border border-purple-700">4</span>
+                                <h3 class="font-bold text-white text-sm">Roteiro Modelado em 4 Blocos com Diretrizes em Todas as Cenas</h3>
+                            </div>
+                            <span class="text-xs font-mono text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded border border-emerald-800/60">4 Blocos de Retenção</span>
+                        </div>
+                        <div class="p-4 bg-slate-950/40">
+                            <img src="screenshots/04_roteiro_modelado.png" alt="Passo 4: Roteiro Modelado com 4 Blocos" class="w-full h-auto rounded-xl border border-slate-800/80 shadow-md">
+                        </div>
+                        <div class="px-5 py-3 bg-slate-900/40 border-t border-slate-800/60 text-xs text-slate-400">
+                            Ao clicar em <strong class="text-white">"Analisar"</strong>, a IA transcreve o vídeo, extrai os pontos essenciais e formula o roteiro: <em>"Inteligência Emocional (na prática): A Verdade Revelada #Shorts"</em>. Cada um dos 4 blocos (Gancho, Ciência, Hack e CTA) recebe a instrução visual injetada com o estilo épico solicitado.
+                        </div>
+                    </div>
+
+                    <!-- Passo 5: Execução do Pipeline com Terminal ao Vivo -->
+                    <div class="bg-slate-900/60 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+                        <div class="px-5 py-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-6 h-6 rounded-full bg-purple-900 text-purple-300 font-mono font-bold text-xs flex items-center justify-center border border-purple-700">5</span>
+                                <h3 class="font-bold text-white text-sm">Esteira de Renderização em Tempo Real (Terminal Integrado)</h3>
+                            </div>
+                            <span class="text-xs font-mono text-amber-400 bg-amber-950/60 px-2.5 py-0.5 rounded border border-amber-800/60">Edge-TTS + FFmpeg + ASS</span>
+                        </div>
+                        <div class="p-4 bg-slate-950/40">
+                            <img src="screenshots/05_pipeline_execucao.png" alt="Passo 5: Pipeline Executando no Terminal" class="w-full h-auto rounded-xl border border-slate-800/80 shadow-md">
+                        </div>
+                        <div class="px-5 py-3 bg-slate-900/40 border-t border-slate-800/60 text-xs text-slate-400">
+                            O usuário aciona <strong class="text-white">"Gerar Vídeo Agora com IA"</strong>. O terminal exibe os passos: síntese de áudio com locução neural em português (<code class="text-purple-300">pt-BR-AntonioNeural</code>), criação de legendas dinâmicas em karaokê (<code class="text-purple-300">.ass</code>), geração de imagens temáticas e montagem no FFmpeg.
+                        </div>
+                    </div>
+
+                    <!-- Passo 6: Vídeo Final Concluído e Player Pronto -->
+                    <div class="bg-slate-900/60 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+                        <div class="px-5 py-3 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-6 h-6 rounded-full bg-emerald-900 text-emerald-300 font-mono font-bold text-xs flex items-center justify-center border border-emerald-700"><i class="fa-solid fa-check"></i></span>
+                                <h3 class="font-bold text-emerald-400 text-sm">Vídeo Gerado com 100% de Sucesso • Player e Manifesto Prontos</h3>
+                            </div>
+                            <span class="text-xs font-mono text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded border border-emerald-800/60">33.5 MB • 55s • MP4</span>
+                        </div>
+                        <div class="p-4 bg-slate-950/40">
+                            <img src="screenshots/06_video_concluido.png" alt="Passo 6: Vídeo Concluído com Player" class="w-full h-auto rounded-xl border border-slate-800/80 shadow-md">
+                        </div>
+                        <div class="px-5 py-3 bg-slate-900/40 border-t border-slate-800/60 text-xs text-slate-400 space-y-1.5">
+                            <p>O arquivo <code class="text-emerald-300 font-mono">video_final_9x16.mp4</code> foi renderizado com sucesso (33.5 MB, 1080x1920, H.264/AAC, duração de 55 segundos). O player HTML5 permite assistir ao vídeo imediatamente no painel, e o manifesto JSON gerado está pronto para gravação no Google Sheets e agendamento automático nas redes sociais.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- 12. SaaS Multi-Tenant & Containers Docker -->
+            <section id="multi-tenant" class="space-y-6 pt-6 border-t border-slate-800">
+                <div class="flex items-center justify-between flex-wrap gap-3">
+                    <div class="flex items-center gap-3">
+                        <span class="px-3 py-1 bg-purple-950 text-purple-400 rounded-lg text-sm font-bold font-mono">12</span>
+                        <h2 class="text-2xl md:text-3xl font-bold text-white">Arquitetura SaaS Multi-Tenant & Containers Docker</h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs bg-purple-950 text-purple-300 px-2.5 py-1 rounded-full border border-purple-800 font-mono font-bold">Java 21 Loom Virtual Threads</span>
+                        <span class="text-xs bg-sky-950 text-sky-300 px-2.5 py-1 rounded-full border border-sky-800 font-mono font-bold">Docker Compose</span>
+                    </div>
+                </div>
+
+                <p class="text-sm text-slate-300 leading-relaxed">
+                    A versão 2.0 Pro opera como uma <strong>plataforma SaaS nativa para múltiplos clientes e canais</strong>. Cada requisição é contextualizada através do cabeçalho <code class="text-purple-300 font-mono">X-API-KEY</code>, associando dinamicamente o tenant ao ciclo de vida da Virtual Thread do Java 21 sem vazamento de dados.
+                </p>
+
+                <!-- Cards de Recursos Multi-Tenant -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    <div class="bg-slate-900/70 p-4 rounded-xl border border-slate-800 space-y-2">
+                        <div class="font-bold text-purple-400 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-layer-group"></i> Isolamento de Dados
+                        </div>
+                        <p class="text-slate-400 leading-relaxed">
+                            Cada Tenant possui seu próprio ID de planilha Google Sheets (<code class="text-purple-300">spreadsheetId</code>), canais dedicados no YouTube, contas exclusivas no Instagram e TikTok e chaves de API independentes.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900/70 p-4 rounded-xl border border-slate-800 space-y-2">
+                        <div class="font-bold text-sky-400 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-microchip"></i> ThreadLocal com Virtual Threads
+                        </div>
+                        <p class="text-slate-400 leading-relaxed">
+                            O <code class="text-purple-300">TenantContext</code> gerencia o contexto de execução de forma estritamente isolada e não bloqueante, executando sobre as Virtual Threads do Project Loom e limpando o contexto com <code class="text-purple-300">try-finally</code> após cada requisição.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900/70 p-4 rounded-xl border border-slate-800 space-y-2">
+                        <div class="font-bold text-emerald-400 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-heart-pulse"></i> Monitoramento & Health Check
+                        </div>
+                        <p class="text-slate-400 leading-relaxed">
+                            Endpoint <code class="text-purple-300 font-mono">GET /api/v1/health</code> com status do microsserviço, confirmação de Virtual Threads ativas e tempo de atividade para orquestração no Kubernetes e Cloud Run.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Execução com Docker e Docker Compose -->
+                <div class="bg-slate-900/80 rounded-2xl border border-slate-800 p-6 space-y-4 text-xs">
+                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                        <i class="fa-brands fa-docker text-sky-400"></i> Executando com Docker Compose em Alta Performance
+                    </h3>
+                    <p class="text-slate-300 leading-relaxed">
+                        O projeto inclui um <code class="text-purple-300 font-mono">Dockerfile</code> multi-stage otimizado com Alpine Linux, OpenJDK 21, FFmpeg e fontes TrueType, garantindo imagens leves (&lt; 200MB) e inicialização ultrarrápida:
+                    </p>
+
+                    <pre class="bg-slate-950 p-4 rounded-xl text-xs text-slate-300 font-mono overflow-x-auto border border-slate-800 leading-relaxed"><code><span class="text-slate-500"># 1. Compilar e subir todos os serviços com Docker Compose</span>
+docker-compose up --build -d
+
+<span class="text-slate-500"># 2. Verificar os logs da aplicação com Virtual Threads ativas</span>
+docker-compose logs -f app
+
+<span class="text-slate-500"># 3. Testar a integridade do microsserviço</span>
+curl -X GET http://localhost:8080/api/v1/health
+
+<span class="text-slate-500"># 4. Verificar o Tenant autenticado</span>
+curl -X GET http://localhost:8080/api/v1/dashboard/tenant/me -H "X-API-KEY: dev-local-api-key"</code></pre>
+                </div>
+            </section>
+
+            <!-- 13. FAQ & Troubleshooting -->
             <section id="faq" class="space-y-6 pt-6 border-t border-slate-800">
                 <div class="flex items-center gap-3">
-                    <span class="px-3 py-1 bg-purple-950 text-purple-400 rounded-lg text-sm font-bold font-mono">11</span>
+                    <span class="px-3 py-1 bg-purple-950 text-purple-400 rounded-lg text-sm font-bold font-mono">13</span>
                     <h2 class="text-2xl md:text-3xl font-bold text-white">Solução de Problemas (FAQ)</h2>
                 </div>
 

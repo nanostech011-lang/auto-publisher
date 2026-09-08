@@ -41,6 +41,7 @@ public class InstagramPublisherAdapter implements SocialMediaPublisherPort {
     private final ObjectMapper objectMapper;
     private TenantRepositoryPort tenantRepository;
 
+    @Autowired
     public InstagramPublisherAdapter(
             @Value("${autopublisher.instagram.business-account-id:}") String businessAccountId,
             @Value("${autopublisher.instagram.access-token:}") String accessToken,

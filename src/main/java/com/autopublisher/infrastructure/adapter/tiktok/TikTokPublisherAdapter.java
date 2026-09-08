@@ -39,6 +39,7 @@ public class TikTokPublisherAdapter implements SocialMediaPublisherPort {
     private final ObjectMapper objectMapper;
     private TenantRepositoryPort tenantRepository;
 
+    @Autowired
     public TikTokPublisherAdapter(
             @Value("${autopublisher.tiktok.access-token:}") String accessToken,
             ObjectMapper objectMapper) {
