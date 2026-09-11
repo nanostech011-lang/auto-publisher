@@ -13,11 +13,11 @@ const VALIDATED_SCRIPTS_CATALOG = [
     title: 'O Truque do Silêncio e a Dopamina da Dúvida #Shorts',
     narrationText: 'Se você desconfia que alguém está mentindo ou escondendo algo de você, nunca confronte a pessoa na hora. Existe um truque da neurociência muito mais poderoso. Quando a pessoa terminar de falar, não diga absolutamente nada. Apenas faça uma pausa e continue mantendo contato visual direto nos olhos dela. O que acontece no cérebro humano nesse momento é fascinante: o cérebro detesta o vácuo de informação. O silêncio prolongado ativa a amígdala cerebral, gerando um pico imediato de ansiedade e insegurança. A pessoa subconscientemente assume que o seu silêncio significa que você já sabe da verdade. Para tentar preencher o vazio e aliviar o desconforto mental, ela começa a falar mais do que deveria e entrega detalhes que pretendia esconder. O silêncio sob controle sempre entrega mais poder do que qualquer argumento verbal. Siga o Psicosegredo para dominar sua mente antes que usem isso contra você.',
     scenes: [
-      { id: 1, duration: 5, prompt: 'Cinematic close-up of intense human eyes looking directly into the camera, extreme dark background, dramatic chiaroscuro lighting, subtle cyan and gold edge light, 8k resolution, vertical 9:16', keywords: ['eyes close up', 'dark gaze', 'man thinking'] },
-      { id: 2, duration: 15, prompt: 'Dark aesthetic silhouette of two people sitting across a table, tense standoff, shadowy ambient lighting, minimalist modern room, cinematic atmospheric smoke, vertical 9:16', keywords: ['silhouette discussion', 'dark meeting', 'tense conversation'] },
-      { id: 3, duration: 18, prompt: 'Glowing 3D human brain on a pure black background, neural pathways firing with rapid electric blue and gold synapses, focal point on deep brain amygdala glowing red, hyper-realistic, vertical 9:16', keywords: ['human brain glowing', 'neural network', 'synapses electric'] },
-      { id: 4, duration: 14, prompt: 'Close-up shot of a person mouth and hands fidgeting with nervousness in dim lighting, subtle sweat, shadow covering the face, cinematic tension, vertical 9:16', keywords: ['nervous hands fidgeting', 'anxiety dark', 'stress shadow'] },
-      { id: 5, duration: 13, prompt: 'A glowing gold key hovering inside a minimalist dark silhouette of a mind, volumetric light rays, sleek neon blue rim lighting, elegant dark psychology vibe, vertical 9:16', keywords: ['glowing golden key', 'mind silhouette', 'light rays dark'] }
+      { id: 1, duration: 5, phrase: 'Se você desconfia que alguém está mentindo ou escondendo algo de você, nunca confronte a pessoa na hora.', prompt: 'Cinematic close-up of intense human eyes looking directly into the camera, extreme dark background, dramatic chiaroscuro lighting, subtle cyan and gold edge light, 8k resolution, vertical 9:16', keywords: ['eyes close up', 'dark gaze', 'man thinking'] },
+      { id: 2, duration: 15, phrase: 'Existe um truque da neurociência muito mais poderoso. Quando a pessoa terminar de falar, não diga absolutamente nada. Apenas faça uma pausa e continue mantendo contato visual direto nos olhos dela.', prompt: 'Dark aesthetic silhouette of two people sitting across a table, tense standoff, shadowy ambient lighting, minimalist modern room, cinematic atmospheric smoke, vertical 9:16', keywords: ['silhouette discussion', 'dark meeting', 'tense conversation'] },
+      { id: 3, duration: 18, phrase: 'O que acontece no cérebro humano nesse momento é fascinante: o cérebro detesta o vácuo de informação. O silêncio prolongado ativa a amígdala cerebral, gerando um pico imediato de ansiedade e insegurança.', prompt: 'Glowing 3D human brain on a pure black background, neural pathways firing with rapid electric blue and gold synapses, focal point on deep brain amygdala glowing red, hyper-realistic, vertical 9:16', keywords: ['human brain glowing', 'neural network', 'synapses electric'] },
+      { id: 4, duration: 14, phrase: 'A pessoa subconscientemente assume que o seu silêncio significa que você já sabe da verdade. Para tentar preencher o vazio e aliviar o desconforto mental, ela começa a falar mais do que deveria e entrega detalhes que pretendia esconder.', prompt: 'Close-up shot of a person mouth and hands fidgeting with nervousness in dim lighting, subtle sweat, shadow covering the face, cinematic tension, vertical 9:16', keywords: ['nervous hands fidgeting', 'anxiety dark', 'stress shadow'] },
+      { id: 5, duration: 13, phrase: 'O silêncio sob controle sempre entrega mais poder do que qualquer argumento verbal. Siga o Psicosegredo para dominar sua mente antes que usem isso contra você.', prompt: 'A glowing gold key hovering inside a minimalist dark silhouette of a mind, volumetric light rays, sleek neon blue rim lighting, elegant dark psychology vibe, vertical 9:16', keywords: ['glowing golden key', 'mind silhouette', 'light rays dark'] }
     ]
   },
   {
@@ -27,11 +27,11 @@ const VALIDATED_SCRIPTS_CATALOG = [
     title: 'A Mentira da Falta de Motivação #Shorts',
     narrationText: 'Você não é preguiçoso, e a sua falta de ânimo para mudar de vida tem uma explicação biológica exata. A neurociência explica que a dopamina não é o neurotransmissor do prazer, mas sim da antecipação e da motivação para agir. Quando você passa o dia rolando vídeos curtos, seu cérebro recebe descargas rápidas de dopamina sem nenhum esforço real. Quando você tenta sentar para estudar, treinar ou construir um projeto difícil, sua mente interpreta aquilo como sofrimento extremo, simplesmente porque a recompensa demora a chegar. O nome disso não é incapacidade; é dessensibilização dos seus receptores dopaminérgicos. A regra prática para reiniciar esse circuito: a ação precisa vir antes da vontade. A dopamina só é liberada de forma sustentável depois que os primeiros 5 minutos de uma tarefa começam. Pare de esperar a motivação cair do céu. Force o primeiro movimento. Siga o Psicosegredo e aprenda a controlar sua química mental.',
     scenes: [
-      { id: 1, duration: 6, prompt: 'Cinematic silhouette of a tired person staring at a glowing phone screen in complete darkness, blue light reflecting on the face, chiaroscuro, vertical 9:16', keywords: ['tired person phone dark', 'screen glow shadow', 'dopamine screen'] },
-      { id: 2, duration: 14, prompt: 'Abstract glowing 3D dopamine chemical molecular structure floating in a dark atmospheric void, golden synapses firing, vertical 9:16', keywords: ['dopamine molecule 3D', 'glowing neural network', 'brain chemistry'] },
-      { id: 3, duration: 18, prompt: 'A dark hourglass with glowing electric blue sand falling into total darkness, cinematic dramatic lighting, vertical 9:16', keywords: ['hourglass dark sand', 'time passing cinematic', 'clock ticking'] },
-      { id: 4, duration: 14, prompt: 'Close-up of a person taking a deep breath and clenching fist in determination, dramatic rim light, dark moody background, vertical 9:16', keywords: ['determination clenched fist', 'man focus shadow', 'discipline'] },
-      { id: 5, duration: 14, prompt: 'A solitary confident silhouette walking forward into a tunnel of golden and cyan volumetric light, sleek dark minimalist aesthetic, vertical 9:16', keywords: ['silhouette walking light', 'victory dark aesthetic', 'success path'] }
+      { id: 1, duration: 6, phrase: 'Você não é preguiçoso, e a sua falta de ânimo para mudar de vida tem uma explicação biológica exata.', prompt: 'Cinematic silhouette of a tired person staring at a glowing phone screen in complete darkness, blue light reflecting on the face, chiaroscuro, vertical 9:16', keywords: ['tired person phone dark', 'screen glow shadow', 'dopamine screen'] },
+      { id: 2, duration: 14, phrase: 'A neurociência explica que a dopamina não é o neurotransmissor do prazer, mas sim da antecipação e da motivação para agir. Quando você passa o dia rolando vídeos curtos, seu cérebro recebe descargas rápidas de dopamina sem nenhum esforço real.', prompt: 'Abstract glowing 3D dopamine chemical molecular structure floating in a dark atmospheric void, golden synapses firing, vertical 9:16', keywords: ['dopamine molecule 3D', 'glowing neural network', 'brain chemistry'] },
+      { id: 3, duration: 18, phrase: 'Quando você tenta sentar para estudar, treinar ou construir um projeto difícil, sua mente interpreta aquilo como sofrimento extremo, simplesmente porque a recompensa demora a chegar. O nome disso não é incapacidade; é dessensibilização dos seus receptores dopaminérgicos.', prompt: 'A dark hourglass with glowing electric blue sand falling into total darkness, cinematic dramatic lighting, vertical 9:16', keywords: ['hourglass dark sand', 'time passing cinematic', 'clock ticking'] },
+      { id: 4, duration: 14, phrase: 'A regra prática para reiniciar esse circuito: a ação precisa vir antes da vontade. A dopamina só é liberada de forma sustentável depois que os primeiros 5 minutos de uma tarefa começam.', prompt: 'Close-up of a person taking a deep breath and clenching fist in determination, dramatic rim light, dark moody background, vertical 9:16', keywords: ['determination clenched fist', 'man focus shadow', 'discipline'] },
+      { id: 5, duration: 14, phrase: 'Pare de esperar a motivação cair do céu. Force o primeiro movimento. Siga o Psicosegredo e aprenda a controlar sua química mental.', prompt: 'A solitary confident silhouette walking forward into a tunnel of golden and cyan volumetric light, sleek dark minimalist aesthetic, vertical 9:16', keywords: ['silhouette walking light', 'victory dark aesthetic', 'success path'] }
     ]
   },
   {
@@ -41,11 +41,11 @@ const VALIDATED_SCRIPTS_CATALOG = [
     title: 'O Poder de Não Reagir a Nada #Shorts',
     narrationText: 'Marco Aurélio escreveu que você tem poder sobre a sua mente, não sobre os acontecimentos externos. Perceba isso, e você encontrará uma força inabalável. Quando alguém te ofende, te fecha no trânsito ou tenta te desestabilizar, essa pessoa está te entregando um convite para você perder o seu centro. Se você reage com raiva, você acabou de se tornar escravo da opinião e da fraqueza do outro. O silêncio estoico não é covardia; é o domínio supremo da energia. Toda vez que você sentir o impulso da fúria ou da frustração, congele por três segundos. Respire fundo e pergunte a si mesmo: isso estará sob meu controle daqui a cinco anos? Se a resposta for não, deixe ir. Domine sua mente antes que o mundo a controle. Siga a Filosofia Estoica e construa uma armadura psicológica impenetrável.',
     scenes: [
-      { id: 1, duration: 5, prompt: 'Dramatic close-up of a Roman marble statue in dark shadow with golden light, vertical 9:16', keywords: ['marcus aurelius statue', 'marble face dark', 'ancient philosopher'] },
-      { id: 2, duration: 18, prompt: 'Tense cinematic scene of chaotic shadows and storm lights passing around a still stone figure, vertical 9:16', keywords: ['chaos storm calm', 'rock in storm', 'peace in chaos'] },
-      { id: 3, duration: 17, prompt: 'Close-up of human eyes holding a calm and focused gaze in deep shadows, vertical 9:16', keywords: ['calm eyes stoic', 'focus discipline', 'deep breath'] },
-      { id: 4, duration: 14, prompt: 'A lone warrior standing steadfast on an ancient cliff during twilight, vertical 9:16', keywords: ['warrior twilight cliff', 'stoic strength', 'inner citadel'] },
-      { id: 5, duration: 14, prompt: 'Golden volumetric rays illuminating a marble temple entrance at sunrise, vertical 9:16', keywords: ['temple dawn gold', 'victory sunrise', 'inner peace'] }
+      { id: 1, duration: 5, phrase: 'Marco Aurélio escreveu que você tem poder sobre a sua mente, não sobre os acontecimentos externos. Perceba isso, e você encontrará uma força inabalável.', prompt: 'Dramatic close-up of a Roman marble statue in dark shadow with golden light, vertical 9:16', keywords: ['marcus aurelius statue', 'marble face dark', 'ancient philosopher'] },
+      { id: 2, duration: 18, phrase: 'Quando alguém te ofende, te fecha no trânsito ou tenta te desestabilizar, essa pessoa está te entregando um convite para você perder o seu centro. Se você reage com raiva, você acabou de se tornar escravo da opinião e da fraqueza do outro.', prompt: 'Tense cinematic scene of chaotic shadows and storm lights passing around a still stone figure, vertical 9:16', keywords: ['chaos storm calm', 'rock in storm', 'peace in chaos'] },
+      { id: 3, duration: 17, phrase: 'O silêncio estoico não é covardia; é o domínio supremo da energia. Toda vez que você sentir o impulso da fúria ou da frustração, congele por três segundos.', prompt: 'Close-up of human eyes holding a calm and focused gaze in deep shadows, vertical 9:16', keywords: ['calm eyes stoic', 'focus discipline', 'deep breath'] },
+      { id: 4, duration: 14, phrase: 'Respire fundo e pergunte a si mesmo: isso estará sob meu controle daqui a cinco anos? Se a resposta for não, deixe ir.', prompt: 'A lone warrior standing steadfast on an ancient cliff during twilight, vertical 9:16', keywords: ['warrior twilight cliff', 'stoic strength', 'inner citadel'] },
+      { id: 5, duration: 14, phrase: 'Domine sua mente antes que o mundo a controle. Siga a Filosofia Estoica e construa uma armadura psicológica impenetrável.', prompt: 'Golden volumetric rays illuminating a marble temple entrance at sunrise, vertical 9:16', keywords: ['temple dawn gold', 'victory sunrise', 'inner peace'] }
     ]
   },
   {
@@ -55,11 +55,11 @@ const VALIDATED_SCRIPTS_CATALOG = [
     title: 'O Erro Silencioso que Te Mantém Pobre #Shorts',
     narrationText: 'Se o seu dinheiro fica parado na conta corrente ou na poupança, você está ficando mais pobre todos os dias sem perceber. A inflação silenciosa devora o poder de compra de quem apenas trabalha pelo dinheiro. Os ricos não trabalham pelo dinheiro; eles constroem máquinas de fluxo que colocam o dinheiro para trabalhar por eles vinte e quatro horas por dia. Enquanto você troca horas do seu dia por um salário fixo, quem entende de ativos compra tempo e liberdade. A regra de ouro dos milionários: antes de pagar qualquer conta no início do mês, pague o seu futuro primeiro. Separe pelo menos vinte por cento de tudo o que entra e invista em ativos geradores de renda. Pare de ser passageiro da sua vida financeira. Siga a Mente Milionária e tome o volante do seu patrimônio agora.',
     scenes: [
-      { id: 1, duration: 5, prompt: 'Cinematic money hourglass with cash dissolving into dust in dark lighting, vertical 9:16', keywords: ['inflation cash dust', 'money ticking', 'financial trap'] },
-      { id: 2, duration: 18, prompt: 'Modern skyscraper skyline glowing with emerald green and cyan financial data lines, vertical 9:16', keywords: ['modern city night data', 'financial charts', 'wealth skyscraper'] },
-      { id: 3, duration: 16, prompt: 'Digital golden coins multiplying exponentially in a high-tech dark atmosphere, vertical 9:16', keywords: ['compound interest gold', 'multiplying wealth', 'financial asset'] },
-      { id: 4, duration: 15, prompt: 'Close-up of hands signing an executive investment agreement with luxury fountain pen, vertical 9:16', keywords: ['executive agreement hands', 'investment luxury', 'smart money'] },
-      { id: 5, duration: 14, prompt: 'A successful person looking at the sunrise over a metropolis from a penthouse terrace, vertical 9:16', keywords: ['penthouse sunrise freedom', 'wealthy freedom', 'lifestyle victory'] }
+      { id: 1, duration: 5, phrase: 'Se o seu dinheiro fica parado na conta corrente ou na poupança, você está ficando mais pobre todos os dias sem perceber.', prompt: 'Cinematic money hourglass with cash dissolving into dust in dark lighting, vertical 9:16', keywords: ['inflation cash dust', 'money ticking', 'financial trap'] },
+      { id: 2, duration: 18, phrase: 'A inflação silenciosa devora o poder de compra de quem apenas trabalha pelo dinheiro. Os ricos não trabalham pelo dinheiro; eles constroem máquinas de fluxo que colocam o dinheiro para trabalhar por eles vinte e quatro horas por dia.', prompt: 'Modern skyscraper skyline glowing with emerald green and cyan financial data lines, vertical 9:16', keywords: ['modern city night data', 'financial charts', 'wealth skyscraper'] },
+      { id: 3, duration: 16, phrase: 'Enquanto você troca horas do seu dia por um salário fixo, quem entende de ativos compra tempo e liberdade.', prompt: 'Digital golden coins multiplying exponentially in a high-tech dark atmosphere, vertical 9:16', keywords: ['compound interest gold', 'multiplying wealth', 'financial asset'] },
+      { id: 4, duration: 15, phrase: 'A regra de ouro dos milionários: antes de pagar qualquer conta no início do mês, pague o seu futuro primeiro. Separe pelo menos vinte por cento de tudo o que entra e invista em ativos geradores de renda.', prompt: 'Close-up of hands signing an executive investment agreement with luxury fountain pen, vertical 9:16', keywords: ['executive agreement hands', 'investment luxury', 'smart money'] },
+      { id: 5, duration: 14, phrase: 'Pare de ser passageiro da sua vida financeira. Siga a Mente Milionária e tome o volante do seu patrimônio agora.', prompt: 'A successful person looking at the sunrise over a metropolis from a penthouse terrace, vertical 9:16', keywords: ['penthouse sunrise freedom', 'wealthy freedom', 'lifestyle victory'] }
     ]
   }
 ];
@@ -104,13 +104,14 @@ export async function generateScript({
   scriptIndex = 0,
   sourceUrl = null,
   customProfile = null,
-  visualDirective = null
+  visualDirective = null,
+  geminiKey = null
 }) {
   const channel = customProfile || loadChannelProfile(channelId);
 
   // 1. Se foi fornecido um Link do YouTube, aciona o analisador de conteúdo
   if (sourceUrl && (sourceUrl.includes('youtube.com') || sourceUrl.includes('youtu.be'))) {
-    return await analyzeAndAdaptYouTubeVideo({ url: sourceUrl, channelProfile: channel, visualDirective });
+    return await analyzeAndAdaptYouTubeVideo({ url: sourceUrl, channelProfile: channel, visualDirective, geminiKey });
   }
 
   // 2. Se for busca por tema livre ou catálogo
@@ -137,12 +138,13 @@ export async function generateScript({
   // Se o usuário digitou um tema livre personalizado sem correspondência exata no catálogo
   if (topic && (!selectedScript || !selectedScript.topic.toLowerCase().includes(topic.toLowerCase()))) {
     const customTitle = `${topic.slice(0, 50)} #Shorts`;
-    const hook = `Se você quer entender ${topic.slice(0, 35)} de verdade, precisa ouvir isso agora.`;
-    const body = `A maioria das pessoas falha porque tenta resolver ${topic.toLowerCase()} de forma superficial. Quando olhamos para a estrutura fundamental, percebemos que pequenos ajustes nos hábitos e nas decisões diárias criam um efeito composto extraordinário. Não existe atalho mágico, mas sim consistência com método.`;
-    const hack = `Comece hoje aplicando a regra da clareza absoluta: elimine o excesso, foque no essencial e execute sem hesitação.`;
-    const cta = `Siga ${channel.name || '@seucanal'} para dominar este assunto todos os dias.`;
+    const hook = `Se você busca dominar ${topic.slice(0, 35)} com verdadeira maestria, existe um princípio silencioso que poucos têm a coragem de praticar no dia a dia.`;
+    const core1 = `A maioria das pessoas falha constantemente porque tenta buscar respostas fáceis e atalhos superficiais. Elas reagem a cada estímulo externo, esquecendo que o verdadeiro domínio nasce da calma interior e do controle rigoroso da própria atenção.`;
+    const core2 = `Quando você aprende a silenciar o ruído ao seu redor e constrói seus alicerces passo a passo, cada pequena decisão ganha um peso colossal através do efeito composto. Não é sobre pressa desordenada, é sobre direção clara e disciplina constante.`;
+    const hack = `A partir de hoje, aplique a regra de ouro da clareza absoluta: descarte qualquer distração irrelevante, proteja a sua serenidade como seu bem mais precioso e aja com firmeza serena.`;
+    const cta = `Deixe seu like se essa reflexão fortaleceu sua mente, inscreva-se no canal para dominar sua jornada e comente abaixo qual o seu maior desafio.`;
 
-    const fullNarration = `${hook} ${body} ${hack} ${cta}`;
+    const fullNarration = `${hook} ${core1} ${core2} ${hack} ${cta}`;
     const wordCount = fullNarration.trim().split(/\s+/).length;
 
     const pubProfile = channel.publishing_profile || {};
@@ -161,11 +163,11 @@ export async function generateScript({
       rewardsEligible: true,
       blocks: [
         { title: 'Gancho (0-3s)', text: hook },
-        { title: 'Foco Central (3-45s)', text: body },
+        { title: 'Foco Central (3-45s)', text: `${core1} ${core2}` },
         { title: 'Hack Prático (45-58s)', text: hack },
         { title: 'CTA & Retenção (58-65s)', text: cta }
       ],
-      scenes: generateThematicScenes(topic, body, channel.visual_profile?.aesthetic, visualDirective, fullNarration),
+      scenes: await generateThematicScenes(topic, `${core1} ${core2}`, channel.visual_profile?.aesthetic, visualDirective, fullNarration, geminiKey),
       metadata: {
         title: customTitle,
         description: `${customTitle}\n\n${ctaProfile.description_template || ''}\n\nTags: #${tags.slice(0, 5).join(' #')}`,
@@ -202,7 +204,7 @@ export async function generateScript({
       { title: 'Hack Prático (45-58s)', text: selectedScript.narrationText.slice(350, 500) },
       { title: 'CTA & Retenção (58-65s)', text: selectedScript.narrationText.slice(500) }
     ],
-    scenes: (visualDirective && visualDirective.trim().length > 0) ? generateThematicScenes(selectedScript.topic, selectedScript.title, channel.visual_profile?.aesthetic, visualDirective, selectedScript.narrationText) : selectedScript.scenes,
+    scenes: (visualDirective && visualDirective.trim().length > 0) ? await generateThematicScenes(selectedScript.topic, selectedScript.title, channel.visual_profile?.aesthetic, visualDirective, selectedScript.narrationText, geminiKey) : selectedScript.scenes,
     metadata: {
       title: selectedScript.title,
       description,

@@ -124,3 +124,39 @@ Implementação do pipeline autônomo de produção (*Upstream*) que transforma 
   - [x] Script executável unificado `run_pipeline.js` acionado via `pnpm pipeline`.
   - [x] Suporte a argumentos CLI `--channel <id>`, `--script <idx>`, `--topic <tema>`, `--platform <plataforma>`.
   - [x] Feedback em tempo real no console com duração, resolução e status de elegibilidade ao TikTok Rewards.
+
+---
+
+### US-09.7: Geração em Lote e Grade Semanal de Postagens (--batch N)
+* **ID:** `US-09.7`
+* **Status:** Concluído
+* **Descrição:**  
+  Como operador de canal autônomo,  
+  Quero gerar múltiplos vídeos em lote e agendá-los de forma escalonada no calendário de publicação,  
+  Para preencher a grade semanal inteira de conteúdo em uma única sessão.
+
+* **Critérios de Aceitação:**
+  - [x] Suporte a argumento CLI `--batch <N>` e requisição REST via `POST /api/v1/dashboard/pipeline/run` com campo `batchCount`.
+  - [x] Agendamento escalonado inteligente no `publisher_ingestor.js`: vídeo 1 para daqui a 45 minutos (primeira publicação imediata) e vídeos 2 a N escalonados nos dias subsequentes sempre no horário nobre (18:00 BRT).
+  - [x] Orquestração em loop no `run_pipeline.js` garantindo isolamento de diretórios temporários (`ephemeral_runs/{postId}`) e relatórios de progresso individuais.
+  - [x] Resiliência a falhas individuais no lote sem abortar os demais vídeos da fila.
+
+---
+
+### US-09.8: Conector de Vídeo IA Google Veo 2 e Resolução Nativa 1080x1920 Full HD
+* **ID:** `US-09.8`
+* **Status:** Concluído
+* **Descrição:**  
+  Como diretor de arte automatizado,  
+  Quero gerar takes de vídeo reais com IA via Google Veo 2 / Video FX e imagens em alta resolução 1080x1920 Full HD com sincronia labial/fonética exata,  
+  Para maximizar o impacto visual, a taxa de retenção dos espectadores e a conversão de monetização.
+
+* **Critérios de Aceitação:**
+  - [x] Conector dedicado `ai_video_connector.js` compatível com a API Google Veo 2 (`veo-2.0-generate-001:predictLongRunning`) com polling assíncrono de operações e fallback resiliente.
+  - [x] Modo visual configurável (`visualMode: 'hybrid' | 'video' | 'image'`):
+    * Modo `hybrid`: gancho inicial (0-3s) gerado como vídeo IA dinâmico de altíssimo impacto visual; cenas subsequentes renderizadas com imagens Full HD e Ken Burns suave a 30fps.
+    * Modo `video`: todas as cenas renderizadas com vídeos gerados por IA.
+    * Modo `image`: todos os takes com imagens estáticas animadas em movimento cinematográfico.
+  - [x] Resolução nativa vertical 1080x1920 Full HD com filtros de interpolação `flags=bicubic` e `-framerate 30` no FFmpeg, eliminando tremulações e artefatos de compressão.
+  - [x] Alinhador fonético `scene_aligner.js` com L-Cut cinematográfico (100ms pré-roll) e snap em pausas de fala, garantindo transição sem cortes no meio de palavras.
+  - [x] Mixagem de áudio com atenuação dinâmica (*ducking*) da trilha de fundo e fade-out suave ao término da narração.

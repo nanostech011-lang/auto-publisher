@@ -1,7 +1,7 @@
 # Épico 05: Gatilho Serverless e Deploy em Produção
 
 * **Identificador:** `EP-05`
-* **Status:** Pronto para Iniciar
+* **Status:** Concluído
 * **Prioridade:** Must Have
 * **Objetivo:** Expor o endpoint REST de disparo protegido por chave de API, configurar o contêiner no Google Cloud Run com escala a zero e orquestrar o acionamento pontual via Google Cloud Scheduler, garantindo o custo operacional de R$ 0,00/mês.
 

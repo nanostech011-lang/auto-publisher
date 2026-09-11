@@ -3,6 +3,9 @@ import path from 'path';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 import ffprobeInstaller from '@ffprobe-installer/ffprobe';
+import { generateHighQualitySceneImage } from './ai_image_connector.js';
+import { generateCinematicTake } from './ai_video_connector.js';
+import { fetchAndPrepareStockBroll } from './stock_video_connector.js';
 
 const ffmpegBinary = process.env.FFMPEG_PATH || (fs.existsSync('/usr/bin/ffmpeg') ? '/usr/bin/ffmpeg' : ffmpegInstaller.path);
 const ffprobeBinary = process.env.FFPROBE_PATH || (fs.existsSync('/usr/bin/ffprobe') ? '/usr/bin/ffprobe' : ffprobeInstaller.path);
@@ -62,14 +65,120 @@ export function createProceduralDarkScene({
 }
 
 /**
+ * Constrói filtros procedurais de alta fidelidade para micro-animações estilo Cinemagraph / GIF vivo.
+ * Transforma imagens estáticas em tomadas dinâmicas com labaredas, faíscas, vagalumes, estrelas e poeira solar.
+ */
+export function buildCinemagraphAtmosphericFilters({ fxType, durationSeconds }) {
+  if (!fxType || fxType === 'none') return [];
+
+  const filters = [];
+
+  switch (fxType) {
+    case 'fire_embers':
+      // Modulação térmica suave na luz (flicker de fogueira)
+      filters.push("eq=contrast='1.0+0.04*sin(2*PI*t*2.8)':brightness='0.02*sin(2*PI*t*3.4)':gamma_r='1.04+0.04*sin(2*PI*t*2.1)'");
+      // Brasas com fade-in e fade-out senoidal suave, eliminando qualquer salto ou teletransporte perceptível
+      filters.push("drawtext=text='.':fontsize=48:fontcolor=0xFFA500:x='w*0.48+40*sin(t*3.8)':y='h*0.85-mod(t*110,h*0.45)':alpha='0.85*sin(PI*mod(t*110,h*0.45)/(h*0.45))':shadowcolor=0xFF4500:shadowx=0:shadowy=0");
+      filters.push("drawtext=text='.':fontsize=36:fontcolor=0xFFD700:x='w*0.53-45*sin(t*4.2)':y='h*0.80-mod(t*130+120,h*0.45)':alpha='0.85*sin(PI*mod(t*130+120,h*0.45)/(h*0.45))':shadowcolor=0xFF8C00:shadowx=0:shadowy=0");
+      filters.push("drawtext=text='.':fontsize=28:fontcolor=0xFFE082:x='w*0.44+60*cos(t*3.1)':y='h*0.75-mod(t*95+60,h*0.40)':alpha='0.80*sin(PI*mod(t*95+60,h*0.40)/(h*0.40))':shadowcolor=0xFF6D00:shadowx=0:shadowy=0");
+      break;
+
+    case 'fireflies':
+      // Respiração suave da penumbra
+      filters.push("eq=contrast='1.0+0.02*sin(2*PI*t*1.2)':brightness='0.015*sin(2*PI*t*1.5)'");
+      // Vagalumes com orbes bioluminescentes verde-dourados e pulso orgânico suave
+      filters.push("drawtext=text='*':fontsize=28:fontcolor=0xE0FFA0:x='w*0.35+80*sin(t*1.6)':y='h*0.55-mod(t*25,h*0.3)+40*cos(t*1.2)':alpha='0.80*sin(PI*mod(t*25,h*0.3)/(h*0.3))*(0.6+0.4*sin(t*2.2))':shadowcolor=0x80FFA0:shadowx=0:shadowy=0");
+      filters.push("drawtext=text='*':fontsize=24:fontcolor=0xC8FF64:x='w*0.65-70*cos(t*1.4)':y='h*0.62-mod(t*20+80,h*0.3)+35*sin(t*1.5)':alpha='0.80*sin(PI*mod(t*20+80,h*0.3)/(h*0.3))*(0.6+0.4*sin(t*2.8+1.0))':shadowcolor=0x64DD17:shadowx=0:shadowy=0");
+      filters.push("drawtext=text='*':fontsize=22:fontcolor=0xFFF59D:x='w*0.50+60*sin(t*1.1+1.5)':y='h*0.45-mod(t*30+150,h*0.3)+45*cos(t*1.4)':alpha='0.75*sin(PI*mod(t*30+150,h*0.3)/(h*0.3))*(0.6+0.4*sin(t*1.9+2.0))':shadowcolor=0xFFD54F:shadowx=0:shadowy=0");
+      break;
+
+    case 'twinkling_stars':
+      // Cintilação atmosférica noturna pura
+      filters.push("eq=contrast='1.02+0.02*sin(2*PI*t*1.0)'");
+      filters.push("drawtext=text='*':fontsize=26:fontcolor=0xFFFFFF:x='w*0.22':y='h*0.14':alpha='0.1+0.9*pow(abs(sin(t*2.5)),2)':shadowcolor=0x80D8FF:shadowx=0:shadowy=0");
+      filters.push("drawtext=text='*':fontsize=22:fontcolor=0xFFF9C4:x='w*0.78':y='h*0.11':alpha='0.15+0.85*pow(abs(sin(t*3.2+1.2)),2)':shadowcolor=0xFFD54F:shadowx=0:shadowy=0");
+      filters.push("drawtext=text='*':fontsize=20:fontcolor=0xE0F7FA:x='w*0.50':y='h*0.18':alpha='0.1+0.9*pow(abs(sin(t*2.0+2.2)),2)':shadowcolor=0x40C4FF:shadowx=0:shadowy=0");
+      filters.push("drawtext=text='*':fontsize=24:fontcolor=0xFFFFFF:x='w*0.36':y='h*0.24':alpha='0.2+0.8*pow(abs(sin(t*3.8+0.7)),2)':shadowcolor=0x80D8FF:shadowx=0:shadowy=0");
+      break;
+
+    case 'sunbeams_dust':
+      // Tremulação de luz solar filtrada (Komorebi)
+      filters.push("eq=brightness='0.015*sin(2*PI*t*1.2)':gamma='1.02+0.02*sin(2*PI*t*0.8)'");
+      // Partículas de poeira solar com fade contínuo
+      filters.push("drawtext=text='.':fontsize=40:fontcolor=0xFFE082:x='w*0.42+45*sin(t*1.2)':y='h*0.45-mod(t*25,h*0.35)':alpha='0.75*sin(PI*mod(t*25,h*0.35)/(h*0.35))':shadowcolor=0xFFD54F:shadowx=0:shadowy=0");
+      filters.push("drawtext=text='.':fontsize=34:fontcolor=0xFFF8E1:x='w*0.62+40*cos(t*1.5+0.8)':y='h*0.52-mod(t*20+70,h*0.35)':alpha='0.70*sin(PI*mod(t*20+70,h*0.35)/(h*0.35))':shadowcolor=0xFFECB3:shadowx=0:shadowy=0");
+      filters.push("drawtext=text='.':fontsize=30:fontcolor=0xFFD54F:x='w*0.50+55*sin(t*0.9+1.5)':y='h*0.58-mod(t*30+130,h*0.35)':alpha='0.65*sin(PI*mod(t*30+130,h*0.35)/(h*0.35))':shadowcolor=0xFFA000:shadowx=0:shadowy=0");
+      break;
+
+    case 'anime_aura_sparks':
+      // Pulso de energia espiritual de batalha
+      filters.push("eq=contrast='1.03+0.05*sin(2*PI*t*3.5)':gamma_b='1.02+0.04*sin(2*PI*t*4.0)'");
+      filters.push("drawtext=text='*':fontsize=28:fontcolor=0x00E5FF:x='w*0.50+75*sin(t*5.5)':y='h*0.65-mod(t*160,h*0.40)':alpha='0.85*sin(PI*mod(t*160,h*0.40)/(h*0.40))':shadowcolor=0x00B0FF:shadowx=0:shadowy=0");
+      filters.push("drawtext=text='*':fontsize=26:fontcolor=0xFFD700:x='w*0.45-65*cos(t*4.8)':y='h*0.60-mod(t*140+90,h*0.40)':alpha='0.85*sin(PI*mod(t*140+90,h*0.40)/(h*0.40))':shadowcolor=0xFFAB00:shadowx=0:shadowy=0");
+      break;
+  }
+
+  return filters;
+}
+
+/**
+ * Detecta inteligentemente o efeito de micro-animação Cinemagraph ideal para a cena
+ * com base no texto falado, prompt gerado, estilo visual e índice sequencial da tomada.
+ * Garante que o mesmo efeito NUNCA se repita de forma consecutiva.
+ */
+export function detectSceneCinemagraphFX({ phrase = '', prompt = '', aesthetic = '', sceneIndex = 0, totalScenes = 8, lastFX = null }) {
+  const p = (phrase || '').toLowerCase();
+  const pr = (prompt || '').toLowerCase();
+  const idx = Math.max(0, Number(sceneIndex) || 0);
+
+  let detected = null;
+
+  // 1. Detecção semântica prioritária por palavras-chave na FRASE falada ou no PROMPT gerado
+  if (/aura|ki|energia|rel[aâ]mpago|lightning|shonen/i.test(p) || (/anime|shonen|ufotable/i.test(aesthetic) && /aura|energia|fa[ií]sca|poder|combate/i.test(p))) {
+    detected = 'anime_aura_sparks';
+  } else if (/fogo|fogueira|brasa|chama|lareira|queimar|bonfire|campfire|flame|ember|hearth|torch/i.test(p) || /campfire|bonfire|hearth|fireplace|flame|ember/i.test(pr)) {
+    detected = 'fire_embers';
+  } else if (/vagalume|vaga-lume|pirilampo|luciola|firefl|bioluminescent/i.test(p) || /firefl|bioluminescent/i.test(pr)) {
+    detected = 'fireflies';
+  } else if (/estrela|star|c[eé]u\s+estrelado|constela[cç]|twilight\s+sky|night\s+sky|starlight|meia-noite/i.test(p) || /starry\s+night|twinkling\s+stars|starlight|constellation/i.test(pr)) {
+    detected = 'twinkling_stars';
+  } else if (/sol|sunlight|komorebi|raio|luz\s+filtrada|dust\s+motes|p[oó]len|p[oó]\s+dourad|manh[aã]|dawn/i.test(p) || /komorebi|sunbeam|golden\s+pollen|dust\s+motes/i.test(pr)) {
+    detected = 'sunbeams_dust';
+  }
+
+  // 2. Rotação artística balanceada sem repetição consecutiva
+  const isGhibli = /ghibli|moebius|cozy|medieval|floresta/i.test(aesthetic);
+  const isAnime = /anime|shonen|ufotable|manga/i.test(aesthetic);
+
+  const ghibliRotation = ['sunbeams_dust', 'fire_embers', 'fireflies', 'twinkling_stars', 'fire_embers', 'fireflies', 'sunbeams_dust', 'twinkling_stars'];
+  const animeRotation = ['anime_aura_sparks', 'sunbeams_dust', 'fire_embers', 'anime_aura_sparks', 'twinkling_stars', 'fire_embers', 'anime_aura_sparks'];
+  const defaultRotation = ['sunbeams_dust', 'fire_embers', 'fireflies', 'twinkling_stars', 'fire_embers', 'sunbeams_dust'];
+
+  const palette = isGhibli ? ghibliRotation : (isAnime ? animeRotation : defaultRotation);
+
+  let chosen = detected || palette[idx % palette.length];
+
+  // 3. Regra Mandatória Anti-Repetição Consecutiva: se chosen === lastFX, muda para o próximo efeito da paleta
+  if (lastFX && chosen === lastFX) {
+    const nextIdx = (idx + 1) % palette.length;
+    chosen = palette[nextIdx] === lastFX ? palette[(nextIdx + 1) % palette.length] : palette[nextIdx];
+  }
+
+  return chosen;
+}
+
+/**
  * Cria um clipe de video com movimento de camera de cinema (Ken Burns avancado / Motion Engine)
- * Suporta arquivos de imagem (.jpg, .png) e videoclipes reais (.mp4).
+ * Suporta arquivos de imagem (.jpg, .png) e videoclipes reais (.mp4), aplicando Cinemagraph FX procedural.
+ * Garante transições 100% contínuas e suaves sem nenhum salto, corte abrupto ou retorno ao início.
  */
 export function createCinematicMotionClip({
   assetPath,
   durationSeconds,
   outputPath,
-  motionType = 'push_in'
+  motionType = 'push_in',
+  isHookScene = false,
+  cinemagraphFX = null
 }) {
   const dir = path.dirname(outputPath);
   if (!fs.existsSync(dir)) {
@@ -77,6 +186,12 @@ export function createCinematicMotionClip({
   }
 
   const isVideo = assetPath.toLowerCase().endsWith('.mp4') || assetPath.toLowerCase().endsWith('.webm');
+  const dSec = Math.max(1, Number(durationSeconds) || 3);
+  const fadeOutStart = Math.max(0.2, (dSec - 0.15)).toFixed(2);
+  // Transição sutil de 150ms: sem corte brusco, preservando sincronia fonética exata
+  const transitionFade = isHookScene
+    ? `,fade=t=out:st=${fadeOutStart}:d=0.15`
+    : `,fade=t=in:st=0:d=0.15,fade=t=out:st=${fadeOutStart}:d=0.15`;
 
   // Se já for um arquivo de vídeo (ex: b-roll real), recorta em 9:16 e loopa se necessário
   if (isVideo) {
@@ -86,7 +201,7 @@ export function createCinematicMotionClip({
         .inputOptions(['-stream_loop -1'])
         .outputOptions([
           `-t ${durationSeconds}`,
-          '-vf scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920',
+          `-vf scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920${transitionFade}`,
           '-c:v libx264',
           '-pix_fmt yuv420p',
           '-preset fast'
@@ -98,36 +213,50 @@ export function createCinematicMotionClip({
     });
   }
 
-  // Motores de movimento cinematográfico diferenciados por tipo
+  // Motores de movimento cinematográfico de alta fidelidade operando sobre matriz 2x (2160x3840)
+  // Utilizam funções monotônicas contínuas baseadas no frame de saída (on) normalizado pela duração exata (dSec)
+  // ELIMINA COMPLETAMENTE qualquer jitter, salto ou reset ("volta ao início")
   let motionFilter = '';
-  const dSec = Math.max(1, Math.round(durationSeconds));
 
   switch (motionType) {
     case 'pan_left_right':
-      motionFilter = `scale=1240:2204:force_original_aspect_ratio=increase,crop=1240:2204,zoompan=z=1.14:d=1:x='(iw-iw/zoom)*(on/(30*${dSec}))':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
+      motionFilter = `scale=2160:3840:flags=bicubic:force_original_aspect_ratio=increase,crop=2160:3840,zoompan=z=1.12:d=1:x='(iw-iw/zoom)*min(1,on/(30*${dSec}))':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
       break;
     case 'pan_right_left':
-      motionFilter = `scale=1240:2204:force_original_aspect_ratio=increase,crop=1240:2204,zoompan=z=1.14:d=1:x='(iw-iw/zoom)*(1-on/(30*${dSec}))':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
+      motionFilter = `scale=2160:3840:flags=bicubic:force_original_aspect_ratio=increase,crop=2160:3840,zoompan=z=1.12:d=1:x='(iw-iw/zoom)*max(0,1-on/(30*${dSec}))':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
       break;
     case 'reveal_zoom_out':
-      motionFilter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='if(lte(pzoom,1.04),1.22,max(1.04,pzoom-0.0022))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30";
+      // Zoom out contínuo e suave de 1.15 até 1.03 proporcional à duração do take (SEM RESET)
+      motionFilter = `scale=2160:3840:flags=bicubic:force_original_aspect_ratio=increase,crop=2160:3840,zoompan=z='max(1.03,1.15-(0.12*on/(30*${dSec})))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
       break;
     case 'atmospheric_drift':
-      motionFilter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(pzoom+0.0016,1.18)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30";
+      // Respiração cinematográfica suave e contínua
+      motionFilter = `scale=2160:3840:flags=bicubic:force_original_aspect_ratio=increase,crop=2160:3840,zoompan=z='min(1.14,1.03+(0.09*on/(30*${dSec})))':d=1:x='iw/2-(iw/zoom/2)+(iw*0.015)*sin(2*PI*on/(30*${dSec}))':y='ih/2-(ih/zoom/2)+(ih*0.012)*cos(2*PI*on/(30*${dSec}))':s=1080x1920:fps=30`;
       break;
     case 'push_in':
     default:
-      motionFilter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(pzoom+0.0022,1.22)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30";
+      // Zoom in contínuo e suave de 1.03 até 1.16 proporcional à duração do take (SEM RESET)
+      motionFilter = `scale=2160:3840:flags=bicubic:force_original_aspect_ratio=increase,crop=2160:3840,zoompan=z='min(1.16,1.03+(0.13*on/(30*${dSec})))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
       break;
   }
+
+  // Gera filtros procedurais de micro-animação viva estilo Cinemagraph / GIF vivo
+  const fxFilters = buildCinemagraphAtmosphericFilters({
+    fxType: cinemagraphFX,
+    durationSeconds: dSec
+  });
+
+  const fullFilter = fxFilters.length > 0
+    ? `${motionFilter},${fxFilters.join(',')}${transitionFade}`
+    : `${motionFilter}${transitionFade}`;
 
   return new Promise((resolve, reject) => {
     ffmpeg()
       .input(assetPath)
-      .inputOptions(['-loop 1'])
+      .inputOptions(['-framerate 30', '-loop 1'])
       .outputOptions([
         `-t ${durationSeconds}`,
-        `-vf ${motionFilter}`,
+        `-vf ${fullFilter}`,
         '-c:v libx264',
         '-pix_fmt yuv420p',
         '-preset fast'
@@ -158,41 +287,78 @@ export function createSceneFromImage({ imagePath, durationSeconds, outputPath, z
 export function createProceduralThumbnail({
   title,
   outputPath,
-  baseImagePath = null
+  baseImagePath = null,
+  subtitle = null
 }) {
   const dir = path.dirname(outputPath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
 
-  const cleanTitle = title.replace(/[#]/g, '').replace(/"/g, '').slice(0, 45).toUpperCase();
+  // Sanitiza e formata o título
+  const cleanTitle = (title || '')
+    .replace(/[#]/g, '')
+    .replace(/"/g, '')
+    .replace(/'/g, '')
+    .replace(/:/g, ' - ')
+    .trim()
+    .toUpperCase();
+
+  // Divide em até 2 linhas inteligentes se for longo
+  const words = cleanTitle.split(/\s+/).filter(Boolean);
+  let line1 = '';
+  let line2 = '';
+  const maxLineChars = 24;
+
+  for (const word of words) {
+    if ((line1 + ' ' + word).trim().length <= maxLineChars && !line2) {
+      line1 = (line1 + ' ' + word).trim();
+    } else {
+      line2 = (line2 + ' ' + word).trim();
+    }
+  }
+
+  if (line2.length > maxLineChars + 8) {
+    line2 = line2.slice(0, maxLineChars + 5) + '...';
+  }
+
+  const cleanSub = (subtitle || 'SUPERE SEUS LIMITES').replace(/'/g, '').slice(0, 32).toUpperCase();
 
   return new Promise((resolve, reject) => {
     const command = ffmpeg();
+    const filters = [];
 
     if (baseImagePath && fs.existsSync(baseImagePath)) {
-      command
-        .input(baseImagePath)
-        .complexFilter([
-          `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`,
-          `[bg]drawbox=y=ih*0.36:color=black@0.70:width=iw:height=ih*0.26:t=fill[box]`,
-          `[box]drawtext=text='${cleanTitle}':fontsize=46:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2-40:borderw=4:bordercolor=black[v1]`,
-          `[v1]drawtext=text='NEUROCIENCIA PRATICA':fontsize=34:fontcolor=0x00E5FF:x=(w-text_w)/2:y=(h-text_h)/2+50:borderw=3:bordercolor=black[final]`
-        ], 'final');
+      command.input(baseImagePath);
+      filters.push(`scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]`);
+      filters.push(`[bg]drawbox=y=ih*0.34:color=black@0.78:width=iw:height=ih*0.32:t=fill[box]`);
+
+      if (line2) {
+        filters.push(`[box]drawtext=text='${line1}':fontsize=54:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2-75:borderw=5:bordercolor=black[t1]`);
+        filters.push(`[t1]drawtext=text='${line2}':fontsize=54:fontcolor=0xFFD700:x=(w-text_w)/2:y=(h-text_h)/2-5:borderw=5:bordercolor=black[t2]`);
+        filters.push(`[t2]drawtext=text='${cleanSub}':fontsize=32:fontcolor=0x00E5FF:x=(w-text_w)/2:y=(h-text_h)/2+75:borderw=3:bordercolor=black[final]`);
+      } else {
+        filters.push(`[box]drawtext=text='${line1}':fontsize=58:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2-40:borderw=5:bordercolor=black[t1]`);
+        filters.push(`[t1]drawtext=text='${cleanSub}':fontsize=34:fontcolor=0x00E5FF:x=(w-text_w)/2:y=(h-text_h)/2+45:borderw=3:bordercolor=black[final]`);
+      }
     } else {
-      command
-        .input('color=c=0x080A12:s=1080x1920:d=1:r=1')
-        .inputFormat('lavfi')
-        .complexFilter([
-          `color=c=0xFFD700:s=1080x1920:d=1[glow]`,
-          `[glow]format=rgba,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='255*exp(-((X-540)*(X-540)+(Y-960)*(Y-960))/(1080*400))'[radial]`,
-          `[0:v][radial]overlay=0:0[bg]`,
-          `[bg]drawtext=text='${cleanTitle}':fontsize=68:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2-120:borderw=5:bordercolor=black[v1]`,
-          `[v1]drawtext=text='NEUROCIENCIA PRATICA':fontsize=36:fontcolor=0x00E5FF:x=(w-text_w)/2:y=(h-text_h)/2+80:borderw=3:bordercolor=black[final]`
-        ], 'final');
+      command.input('color=c=0x080A12:s=1080x1920:d=1:r=1').inputFormat('lavfi');
+      filters.push(`color=c=0xFFD700:s=1080x1920:d=1[glow]`);
+      filters.push(`[glow]format=rgba,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='255*exp(-((X-540)*(X-540)+(Y-960)*(Y-960))/(1080*400))'[radial]`);
+      filters.push(`[0:v][radial]overlay=0:0[bg]`);
+
+      if (line2) {
+        filters.push(`[bg]drawtext=text='${line1}':fontsize=64:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2-110:borderw=5:bordercolor=black[t1]`);
+        filters.push(`[t1]drawtext=text='${line2}':fontsize=64:fontcolor=0xFFD700:x=(w-text_w)/2:y=(h-text_h)/2-35:borderw=5:bordercolor=black[t2]`);
+        filters.push(`[t2]drawtext=text='${cleanSub}':fontsize=36:fontcolor=0x00E5FF:x=(w-text_w)/2:y=(h-text_h)/2+60:borderw=3:bordercolor=black[final]`);
+      } else {
+        filters.push(`[bg]drawtext=text='${line1}':fontsize=70:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2-70:borderw=5:bordercolor=black[t1]`);
+        filters.push(`[t1]drawtext=text='${cleanSub}':fontsize=36:fontcolor=0x00E5FF:x=(w-text_w)/2:y=(h-text_h)/2+40:borderw=3:bordercolor=black[final]`);
+      }
     }
 
     command
+      .complexFilter(filters, 'final')
       .outputOptions(['-vframes 1'])
       .output(outputPath)
       .on('end', () => resolve(outputPath))
@@ -202,64 +368,31 @@ export function createProceduralThumbnail({
 }
 
 /**
- * Gera imagem de IA 9:16 altamente cinematográfica usando Pollinations AI
+ * Gera imagem de IA 9:16 altamente cinematográfica usando conector profissional (Google Imagen 3 / Fallback Flux)
  */
-export async function generateSceneImageFromPrompt({ prompt, outputPath, seed = null, model = null }) {
-  const dir = path.dirname(outputPath);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-
-  const sceneSeed = seed !== null ? seed : Math.floor(Math.random() * 1000000);
-  const cleanPrompt = encodeURIComponent(
-    `${prompt}, 85mm portrait, highly detailed, dramatic chiaroscuro lighting, vertical 9:16 aspect ratio`
-  );
-
-  // 1ª Tentativa: Endpoint padrão acelerado da Pollinations (resposta em ~5-8s)
-  const urlPrimary = model
-    ? `https://image.pollinations.ai/prompt/${cleanPrompt}?width=768&height=1344&nologo=true&seed=${sceneSeed}&model=${model}`
-    : `https://image.pollinations.ai/prompt/${cleanPrompt}?width=768&height=1344&nologo=true&seed=${sceneSeed}`;
-
-  let controller = new AbortController();
-  let timeout = setTimeout(() => controller.abort(), 20000);
-
-  try {
-    const res = await fetch(urlPrimary, { signal: controller.signal });
-    clearTimeout(timeout);
-
-    if (res.ok) {
-      const buffer = Buffer.from(await res.arrayBuffer());
-      if (buffer.length > 5000) {
-        fs.writeFileSync(outputPath, buffer);
-        return outputPath;
-      }
-    }
-  } catch (err) {
-    clearTimeout(timeout);
-    // Continua para o fallback de modelo alternativo
-  }
-
-  // 2ª Tentativa (Fallback com modelo flux explícito ou sem parâmetro)
-  try {
-    const fallbackModelParam = model ? '' : '&model=flux';
-    const urlFallback = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=768&height=1344&nologo=true&seed=${sceneSeed}${fallbackModelParam}`;
-    controller = new AbortController();
-    timeout = setTimeout(() => controller.abort(), 25000);
-
-    const res = await fetch(urlFallback, { signal: controller.signal });
-    clearTimeout(timeout);
-
-    if (res.ok) {
-      const buffer = Buffer.from(await res.arrayBuffer());
-      if (buffer.length > 5000) {
-        fs.writeFileSync(outputPath, buffer);
-        return outputPath;
-      }
-    }
-  } catch (err) {
-    clearTimeout(timeout);
-    console.warn(`[Visuals IA] Aviso na geração remota: ${err.message}`);
-  }
-
-  return null;
+export async function generateSceneImageFromPrompt({
+  prompt,
+  outputPath,
+  seed = null,
+  spokenPhrase = '',
+  visualDirective = '',
+  channelAesthetic = 'Cinematic Dark Minimalist',
+  blockType = 'body',
+  motionType = 'push_in',
+  apiKey = null
+}) {
+  const res = await generateHighQualitySceneImage({
+    prompt,
+    spokenPhrase,
+    visualDirective,
+    channelAesthetic,
+    blockType,
+    motionType,
+    outputPath,
+    seed,
+    apiKey
+  });
+  return res ? res.outputPath : null;
 }
 
 /**
@@ -268,43 +401,119 @@ export async function generateSceneImageFromPrompt({ prompt, outputPath, seed = 
 export async function harvestVisualScenes({
   scenes,
   scratchDir,
-  channelId = 'psicosegredo'
+  channelId = 'psicosegredo',
+  apiKey = null,
+  visualMode = 'hybrid', // 'hybrid' | 'video' | 'image'
+  visualDirective = null
 }) {
   const videoClips = [];
   const channelAssetsDir = path.resolve(`pipeline/assets/scenes/${channelId}`);
   const fixedVideoSeed = Math.floor(Math.random() * 100000);
+  const usedPrompts = new Set();
+  let lastCinemagraphFX = null;
 
-  console.log(`Iniciando renderizacao de ${scenes.length} takes visuais dinâmicos...`);
+  console.log(`Iniciando renderizacao de ${scenes.length} takes visuais dinâmicos (Modo: ${visualMode.toUpperCase()})...`);
 
   for (let i = 0; i < scenes.length; i++) {
     const scene = scenes[i];
     const clipPath = path.join(scratchDir, `scene_${i + 1}.mp4`);
     const sceneImgPath = path.join(scratchDir, `scene_${i + 1}_generated.jpg`);
     const motionType = scene.motionType || (i % 2 === 0 ? 'push_in' : 'reveal_zoom_out');
+    const isHook = (i === 0);
 
     let assetForClip = null;
 
-    // 1. Gera imagem fresca e exclusiva de IA para esta cena específica com base no prompt
-    if (scene.prompt) {
-      console.log(`Cena ${i + 1}/${scenes.length} (${scene.duration}s) [Motion: ${motionType}]:`);
-      console.log(`  -> Prompt: "${scene.prompt.slice(0, 95)}..."`);
-      
-      const sceneSeed = fixedVideoSeed + (i * 17); // Semente coerente por vídeo
-      const generated = await generateSceneImageFromPrompt({
-        prompt: scene.prompt,
-        outputPath: sceneImgPath,
-        seed: sceneSeed,
-        model: null
+    // Garantia estrita de não-repetição de prompts
+    let scenePrompt = scene.prompt;
+    if (scenePrompt && usedPrompts.has(scenePrompt)) {
+      scenePrompt = `${scenePrompt}, unique composition variation angle #${i + 1}, distinct perspective`;
+    }
+    if (scenePrompt) usedPrompts.add(scenePrompt);
+
+    const effectiveAesthetic = scene.aesthetic || visualDirective || 'Cinematic Dark Minimalist';
+    const effectiveDirective = visualDirective || scene.visualDirective || '';
+
+    // Detecção inteligente de micro-animação Cinemagraph (living GIF)
+    const cinemagraphFX = scene.cinemagraphFX || detectSceneCinemagraphFX({
+      phrase: scene.phrase || '',
+      prompt: scenePrompt || '',
+      aesthetic: effectiveAesthetic,
+      sceneIndex: i,
+      totalScenes: scenes.length,
+      lastFX: lastCinemagraphFX
+    });
+    lastCinemagraphFX = cinemagraphFX;
+
+    console.log(`Cena ${i + 1}/${scenes.length} (${scene.duration}s) [Motion: ${motionType} | Cinemagraph: ${cinemagraphFX}]:`);
+    if (scenePrompt) {
+      console.log(`  -> Prompt Base: "${scenePrompt.slice(0, 90)}..."`);
+    }
+
+    // 1. Tenta geração de clipe de vídeo direto via IA (Google Veo 2 / Video AI) se aplicável
+    if (visualMode === 'video' || (visualMode === 'hybrid' && isHook)) {
+      console.log(`  -> Tentando geração de clipe dinâmico de vídeo IA (Google Veo 2)...`);
+      const videoTake = await generateCinematicTake({
+        prompt: scenePrompt,
+        durationSeconds: scene.duration,
+        outputPath: clipPath,
+        visualMode: visualMode,
+        isHookScene: isHook,
+        apiKey: apiKey
       });
 
-      if (generated && fs.existsSync(generated)) {
-        assetForClip = generated;
-        const sizeKb = (fs.statSync(generated).size / 1024).toFixed(0);
-        console.log(`  -> Imagem de IA gerada com sucesso (${sizeKb} KB)`);
+      if (videoTake.success && videoTake.isRealVideo && fs.existsSync(clipPath) && fs.statSync(clipPath).size > 20000) {
+        console.log(`  -> Clipes de vídeo gerado com sucesso via ${videoTake.provider}!`);
+        videoClips.push(clipPath);
+        continue;
       }
-      // Pequeno espaçamento para cadência estável da API gratuita
-      await new Promise(r => setTimeout(r, 800));
     }
+
+    // 2. Tentativa de B-Roll de Stock Video Real (Pexels / Pixabay) para cenas com ação humana/cotidiana
+    const shouldAttemptStock = visualMode !== 'image' && !isHook && (
+      scene.suggestedType === 'stock_video' ||
+      Boolean(scene.stockQuery) ||
+      (scene.phrase && /olh|olhar|olhos|pessoa|homem|mulher|trabalh|estud|andand|caminh|celular|escritório|livro|dinheiro/i.test(scene.phrase))
+    );
+
+    if (shouldAttemptStock) {
+      const stockQuery = scene.stockQuery || (scene.keywords && scene.keywords[0]) || 'cinematic dark psychology';
+      console.log(`  -> Consultando B-Roll de vídeo real (Pexels/Pixabay) para: "${stockQuery}"...`);
+      const stockResult = await fetchAndPrepareStockBroll({
+        query: stockQuery,
+        outputPath: clipPath,
+        durationSeconds: scene.duration,
+        isHookScene: isHook
+      });
+
+      if (stockResult.success && fs.existsSync(clipPath) && fs.statSync(clipPath).size > 20480) {
+        console.log(`  -> B-Roll real integrado com sucesso via ${stockResult.provider}!`);
+        videoClips.push(clipPath);
+        continue;
+      }
+    }
+
+    // 3. Geração de Imagem Ultra HD 1080x1920 (Google Imagen 3 / Flux HD) para Motion Engine 2x
+    const sceneSeed = fixedVideoSeed + (i * 1039) + 77; // Semente estritamente única por take
+    const blockType = i === 0 ? 'hook' : (i >= scenes.length - 2 ? 'cta' : (i >= Math.floor(scenes.length * 0.65) ? 'hack' : 'body'));
+
+    const generated = await generateHighQualitySceneImage({
+      prompt: scenePrompt,
+      spokenPhrase: scene.phrase || '',
+      visualDirective: effectiveDirective,
+      channelAesthetic: effectiveAesthetic,
+      blockType: scene.blockType || blockType,
+      motionType: motionType,
+      outputPath: sceneImgPath,
+      seed: sceneSeed,
+      apiKey: apiKey
+    });
+
+    if (generated && fs.existsSync(generated.outputPath)) {
+      assetForClip = generated.outputPath;
+      console.log(`  -> Imagem pronta via ${generated.provider} (${generated.sizeKb} KB)`);
+    }
+    // Espaçamento de 1.2s para cadência estável da API sem congestionar fila do IP
+    await new Promise(r => setTimeout(r, 1200));
 
     // 2. Fallback resiliente apenas se a IA remota oscilar (nunca interrompe o fluxo)
     if (!assetForClip) {
@@ -316,13 +525,15 @@ export async function harvestVisualScenes({
       }
     }
 
-    // 3. Renderiza o pequeno vídeo clip com o movimento de câmera cinematográfico
+    // 3. Renderiza o pequeno vídeo clip com o movimento de câmera cinematográfico e Cinemagraph FX
     if (assetForClip) {
       await createCinematicMotionClip({
         assetPath: assetForClip,
         durationSeconds: scene.duration,
         outputPath: clipPath,
-        motionType: motionType
+        motionType: motionType,
+        isHookScene: isHook,
+        cinemagraphFX: cinemagraphFX
       });
     } else {
       console.log(`  -> Gerando cena procedural Chiaroscuro de contingência...`);

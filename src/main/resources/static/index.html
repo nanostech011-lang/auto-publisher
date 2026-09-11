@@ -312,7 +312,7 @@
 
             <!-- Chips de Status Rápido & Abas -->
             <div class="px-5 pt-3 pb-0 bg-slate-950/50 border-b border-slate-800 shrink-0 space-y-2.5">
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono">
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-[11px] font-mono">
                     <button type="button" onclick="switchCredTab('tab-security')" id="chipApi" class="bg-slate-900/80 hover:bg-slate-900 p-2 rounded-lg border border-slate-800 hover:border-purple-500/50 flex items-center gap-2 transition-colors text-left">
                         <span class="w-2 h-2 rounded-full bg-slate-500 shrink-0" id="dotApi"></span>
                         <span class="truncate text-slate-300">API Key</span>
@@ -329,6 +329,10 @@
                         <span class="w-2 h-2 rounded-full bg-slate-500 shrink-0" id="dotSocial"></span>
                         <span class="truncate text-slate-300">Meta & TikTok</span>
                     </button>
+                    <button type="button" onclick="switchCredTab('tab-gemini')" id="chipGemini" class="bg-slate-900/80 hover:bg-slate-900 p-2 rounded-lg border border-slate-800 hover:border-pink-500/50 flex items-center gap-2 transition-colors text-left">
+                        <span class="w-2 h-2 rounded-full bg-slate-500 shrink-0" id="dotGemini"></span>
+                        <span class="truncate text-slate-300">Google Imagen 3</span>
+                    </button>
                 </div>
 
                 <!-- Abas do Modal -->
@@ -344,6 +348,9 @@
                     </button>
                     <button onclick="switchCredTab('tab-social')" id="btnTabSocial" class="px-3.5 py-2 text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
                         <i class="fa-brands fa-instagram text-pink-400"></i> Instagram & TikTok
+                    </button>
+                    <button onclick="switchCredTab('tab-gemini')" id="btnTabGemini" class="px-3.5 py-2 text-slate-400 hover:text-white flex items-center gap-1.5 whitespace-nowrap">
+                        <i class="fa-solid fa-wand-magic-sparkles text-pink-400"></i> Google Imagen 3 (IA)
                     </button>
                 </div>
             </div>
@@ -528,6 +535,40 @@ try {
                     </div>
                 </div>
 
+                <!-- ABA 5: Google AI / Imagen 3 -->
+                <div id="tab-gemini" class="space-y-4 hidden">
+                    <div class="p-3.5 bg-gradient-to-r from-purple-950/40 to-pink-950/30 rounded-xl border border-purple-800/40 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-pink-400 flex items-center gap-2 text-xs">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Google Imagen 3 & Gemini API
+                            </span>
+                            <span class="text-[10px] bg-pink-500/20 text-pink-300 border border-pink-500/30 px-2 py-0.5 rounded-full font-mono font-semibold">
+                                Modelo imagen-3.0-generate-002
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 leading-relaxed">
+                            Gera cenas visuais 9:16 fotorrealistas de alta fidelidade para os vídeos Dark com base nas diretrizes visuais do roteiro.
+                            Obtenha sua chave gratuita no Google AI Studio. Se não configurada, a esteira utiliza automaticamente o fallback de alta qualidade <strong>Flux HD</strong>.
+                        </p>
+                    </div>
+
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between gap-3 p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 hover:border-pink-500/60 hover:text-white transition-colors">
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-key text-pink-400"></i> Obter API Key no Google AI Studio</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-slate-500"></i>
+                    </a>
+
+                    <div>
+                        <label class="block font-semibold text-slate-300 mb-1">Google AI / Gemini API Key (GEMINI_API_KEY)</label>
+                        <div class="relative">
+                            <input type="password" id="inputGeminiApiKey" placeholder="AIzaSy..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 pr-10 text-slate-200 focus:outline-none focus:border-pink-500 font-mono">
+                            <button type="button" onclick="toggleVisibility('inputGeminiApiKey', 'eyeGemini')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
+                                <i class="fa-solid fa-eye" id="eyeGemini"></i>
+                            </button>
+                        </div>
+                        <p class="text-[10px] text-slate-500 mt-1">Utilizada para o conector oficial Google Imagen 3 e gerador inteligente de prompts cinematográficos em inglês.</p>
+                    </div>
+                </div>
+
             </div>
 
             <!-- Footer do Modal (Fixed) -->
@@ -676,6 +717,7 @@ try {
                             <h3 class="text-base font-bold text-white">Studio IA • Pipeline Upstream de Criação</h3>
                             <span class="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded-full font-mono font-bold">TikTok Rewards Ready (&ge; 60s)</span>
                             <span class="text-[10px] bg-purple-950 text-purple-300 border border-purple-800/80 px-2 py-0.5 rounded-full font-mono font-bold hidden sm:inline">Streaming Zero-Copy</span>
+                            <span id="badgeStudioVisualEngine" class="text-[10px] bg-pink-950 text-pink-300 border border-pink-800/80 px-2 py-0.5 rounded-full font-mono font-bold flex items-center gap-1.5"><i class="fa-solid fa-wand-magic-sparkles text-pink-400"></i> Google Imagen 3 / Flux</span>
                         </div>
                         <p class="text-xs text-slate-400 mt-0.5">Extraia e repurpose vídeos do YouTube ou crie roteiros virais do zero com locução neural e legendas em karaokê.</p>
                     </div>
@@ -803,6 +845,8 @@ try {
                                     </div>
                                     <!-- Chips de sugestão rápida de estilo -->
                                     <div class="flex flex-wrap gap-1 pt-0.5">
+                                        <button type="button" onclick="setVisualDirective('Fantasia medieval relaxante estilo Studio Ghibli e Moebius, cavaleiro em armadura descansando na floresta ensolarada, pintura gouache')" class="text-[9px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 px-1.5 py-0.5 rounded transition-colors">🌿 Medieval Lofi & Ghibli</button>
+                                        <button type="button" onclick="setVisualDirective('Anime dark motivacional estilo Ufotable, guerreiro superando limites, traço mangá épico')" class="text-[9px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 px-1.5 py-0.5 rounded transition-colors">🔥 Anime Dark Shonen</button>
                                         <button type="button" onclick="setVisualDirective('Guerreiros persas antigos em armaduras épicas')" class="text-[9px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 px-1.5 py-0.5 rounded transition-colors">⚔️ Guerreiros Persas</button>
                                         <button type="button" onclick="setVisualDirective('Filosofia estoica com estátuas de mármore e Roma Antiga')" class="text-[9px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 px-1.5 py-0.5 rounded transition-colors">🏛️ Estoicos & Mármore</button>
                                         <button type="button" onclick="setVisualDirective('Cyberpunk dark futurista com hologramas e néon')" class="text-[9px] bg-slate-900 hover:bg-slate-800 text-purple-300 hover:text-purple-200 border border-slate-800 px-1.5 py-0.5 rounded transition-colors">⚡ Cyberpunk Néon</button>
@@ -900,6 +944,25 @@ try {
                                     <span class="text-purple-300 font-semibold ml-1">9:16 • 1080x1920</span>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Card 3: Motor Visual & Modelo de IA -->
+                        <div class="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800/90 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-5 h-5 rounded-full bg-pink-900/80 text-pink-300 font-mono font-bold text-[10px] flex items-center justify-center border border-pink-700/60">3</span>
+                                    <label class="font-bold text-white flex items-center gap-1.5">
+                                        <i class="fa-solid fa-film text-pink-400"></i>
+                                        <span>Modo Visual & IA</span>
+                                    </label>
+                                </div>
+                                <span class="text-[9px] text-pink-400 font-mono font-bold">Google Veo 2 / Imagen 3</span>
+                            </div>
+                            <select id="studioVisualModeSelect" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-pink-500 font-semibold text-xs cursor-pointer">
+                                <option value="hybrid" selected>🌟 Modo Híbrido: Vídeo IA no Gancho + Imagens 9:16 (Recomendado)</option>
+                                <option value="video">🎥 Vídeo IA Total: Google Veo 2 em todos os takes</option>
+                                <option value="image">🖼️ Imagens Full HD 9:16: Google Imagen 3 + Motion 60fps</option>
+                            </select>
                         </div>
 
                     </div>
@@ -1250,8 +1313,8 @@ try {
         }
 
         function switchCredTab(tabId) {
-            const tabs = ['tab-security', 'tab-sheets', 'tab-youtube', 'tab-social'];
-            const btns = ['btnTabSecurity', 'btnTabSheets', 'btnTabYoutube', 'btnTabSocial'];
+            const tabs = ['tab-security', 'tab-sheets', 'tab-youtube', 'tab-social', 'tab-gemini'];
+            const btns = ['btnTabSecurity', 'btnTabSheets', 'btnTabYoutube', 'btnTabSocial', 'btnTabGemini'];
             
             tabs.forEach(t => {
                 const el = document.getElementById(t);
@@ -1310,6 +1373,8 @@ try {
             if (driveVideosEl) driveVideosEl.value = localStorage.getItem('DRIVE_FOLDER_ID_VIDEOS') || '';
             const pexelsEl = document.getElementById('inputPexelsApiKey');
             if (pexelsEl) pexelsEl.value = localStorage.getItem('PEXELS_API_KEY') || '';
+            const geminiEl = document.getElementById('inputGeminiApiKey');
+            if (geminiEl) geminiEl.value = localStorage.getItem('GEMINI_API_KEY') || '';
         }
 
         async function loadServerCredentials() {
@@ -1330,6 +1395,11 @@ try {
 
                     const dotSocial = document.getElementById('dotSocial');
                     if (dotSocial) dotSocial.className = (data.instagramReady || data.tiktokReady) ? 'w-2 h-2 rounded-full bg-emerald-400' : 'w-2 h-2 rounded-full bg-slate-500';
+
+                    const dotGemini = document.getElementById('dotGemini');
+                    if (dotGemini) dotGemini.className = data.geminiConfigured ? 'w-2 h-2 rounded-full bg-emerald-400' : 'w-2 h-2 rounded-full bg-slate-500';
+                    const chipGemini = document.getElementById('chipGemini');
+                    if (chipGemini) chipGemini.title = data.geminiConfigured ? 'Google Imagen 3: Configurada (' + data.maskedGeminiKey + ')' : 'Google Imagen 3: Não Configurada (Fallback Flux Ativo)';
                 }
             } catch (e) {
                 console.log('Não foi possível checar credenciais do servidor:', e);
@@ -1350,6 +1420,7 @@ try {
             const ttToken = document.getElementById('inputTtToken').value.trim();
             const driveVideos = document.getElementById('inputDriveFolderVideos') ? document.getElementById('inputDriveFolderVideos').value.trim() : '';
             const pexelsKey = document.getElementById('inputPexelsApiKey') ? document.getElementById('inputPexelsApiKey').value.trim() : '';
+            const geminiKey = document.getElementById('inputGeminiApiKey') ? document.getElementById('inputGeminiApiKey').value.trim() : '';
 
             if (apiKey) localStorage.setItem('auto_publisher_api_key', apiKey);
             else localStorage.removeItem('auto_publisher_api_key');
@@ -1366,6 +1437,8 @@ try {
             localStorage.setItem('TIKTOK_ACCESS_TOKEN', ttToken);
             localStorage.setItem('DRIVE_FOLDER_ID_VIDEOS', driveVideos);
             localStorage.setItem('PEXELS_API_KEY', pexelsKey);
+            if (geminiKey) localStorage.setItem('GEMINI_API_KEY', geminiKey);
+            else localStorage.removeItem('GEMINI_API_KEY');
 
             initApiKey();
             closeCredentialsModal();
@@ -1385,7 +1458,8 @@ try {
                 instagramAccountId: document.getElementById('inputIgAccountId').value.trim(),
                 metaAccessToken: document.getElementById('inputMetaToken').value.trim(),
                 tiktokEnabled: document.getElementById('inputTtEnabled').checked,
-                tiktokAccessToken: document.getElementById('inputTtToken').value.trim()
+                tiktokAccessToken: document.getElementById('inputTtToken').value.trim(),
+                geminiApiKey: document.getElementById('inputGeminiApiKey') ? document.getElementById('inputGeminiApiKey').value.trim() : ''
             };
         }
 
@@ -2111,6 +2185,17 @@ try {
         function openStudioModal() {
             document.getElementById('modalStudioAi').classList.remove('hidden');
             document.getElementById('modalStudioAi').classList.add('flex');
+            const hasGemini = !!(localStorage.getItem('GEMINI_API_KEY'));
+            const visualBadge = document.getElementById('badgeStudioVisualEngine');
+            if (visualBadge) {
+                if (hasGemini) {
+                    visualBadge.className = 'text-[10px] bg-pink-950 text-pink-300 border border-pink-700/80 px-2 py-0.5 rounded-full font-mono font-bold flex items-center gap-1.5 shadow-sm shadow-pink-600/20';
+                    visualBadge.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles text-pink-400"></i> Google Imagen 3 (Ativo)';
+                } else {
+                    visualBadge.className = 'text-[10px] bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-full font-mono font-bold flex items-center gap-1.5';
+                    visualBadge.innerHTML = '<i class="fa-solid fa-paintbrush text-amber-400"></i> Fallback Flux HD (Gratuito)';
+                }
+            }
             updateStudioFooterSummary();
             loadStudioScriptPreview();
         }
@@ -2588,10 +2673,11 @@ try {
             const sourceUrl = studioCurrentMode === 'youtube' ? (document.getElementById('studioYoutubeUrlInput')?.value.trim() || null) : null;
             const visualDirective = document.getElementById('studioVisualDirectiveInput')?.value.trim() || null;
             const platform = document.querySelector('input[name="studioPlatformRadio"]:checked')?.value || 'YOUTUBE_SHORTS';
+            const visualMode = document.getElementById('studioVisualModeSelect')?.value || 'hybrid';
 
             const termLogs = document.getElementById('studioTerminalLogs');
             termLogs.innerHTML = '';
-            appendStudioLog(`Iniciando Esteira de IA para o canal "${channel}" (${platform})...`);
+            appendStudioLog(`Iniciando Esteira de IA para o canal "${channel}" (${platform}) [Modo: ${visualMode.toUpperCase()}]...`);
             if (sourceUrl) {
                 appendStudioLog(`Fonte de Origem: YouTube (${sourceUrl})`);
             } else if (customTopic) {
@@ -2600,6 +2686,7 @@ try {
             if (visualDirective) {
                 appendStudioLog(`🎨 Diretriz Visual Solicitada: "${visualDirective}"`);
             }
+            appendStudioLog(`🎬 Motor Visual Configurado: ${visualMode === 'video' ? 'Google Veo 2 / Video FX' : (visualMode === 'hybrid' ? 'Híbrido (Veo 2 no Gancho + Imagen 3 HD)' : 'Google Imagen 3 Full HD + Motion')}`);
 
             try {
                 const headers = { 'Content-Type': 'application/json' };
@@ -2615,7 +2702,8 @@ try {
                         topic: customTopic,
                         sourceUrl: sourceUrl,
                         visualDirective: visualDirective,
-                        platform: platform
+                        platform: platform,
+                        visualMode: visualMode
                     })
                 });
 

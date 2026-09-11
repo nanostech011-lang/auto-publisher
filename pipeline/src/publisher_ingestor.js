@@ -13,7 +13,9 @@ export async function ingestGeneratedPost({
   scheduledTime = null,
   platform = 'YOUTUBE_SHORTS',
   driveVideoId = null,
-  driveThumbnailId = null
+  driveThumbnailId = null,
+  batchIndex = 0,
+  totalBatch = 1
 }) {
   const metadata = scriptData.metadata || {};
 
@@ -23,8 +25,20 @@ export async function ingestGeneratedPost({
 
   const postId = `POST-AUTO-${Date.now()}`;
 
-  // Se nao especificado, agenda para daqui a 30 minutos
-  const finalScheduleTime = scheduledTime || new Date(Date.now() + 30 * 60 * 1000).toISOString().replace('T', ' ').substring(0, 19);
+  // Se nao especificado, calcula data escalonada:
+  // Se batchIndex === 0: daqui a 45 minutos. Se batchIndex > 0: nos dias seguintes às 18:00 (horário nobre)
+  let finalScheduleTime = scheduledTime;
+  if (!finalScheduleTime) {
+    const targetDate = new Date();
+    if (batchIndex === 0) {
+      targetDate.setTime(targetDate.getTime() + 45 * 60 * 1000);
+    } else {
+      targetDate.setDate(targetDate.getDate() + batchIndex);
+      targetDate.setHours(18, 0, 0, 0);
+    }
+    const pad = (n) => String(n).padStart(2, '0');
+    finalScheduleTime = `${targetDate.getFullYear()}-${pad(targetDate.getMonth() + 1)}-${pad(targetDate.getDate())} ${pad(targetDate.getHours())}:${pad(targetDate.getMinutes())}:${pad(targetDate.getSeconds())}`;
+  }
 
   const payload = {
     id: postId,

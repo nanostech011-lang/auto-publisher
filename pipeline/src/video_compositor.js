@@ -48,15 +48,39 @@ export async function composeFinalVideo({
       .inputOptions(['-f concat', '-safe 0'])
       .input(audioPath);
 
+    const hasBgMusic = bgMusicPath && fs.existsSync(bgMusicPath);
+    if (hasBgMusic) {
+      command.input(bgMusicPath).inputOptions(['-stream_loop -1']);
+      console.log(`[FFmpeg Compositor] Trilha sonora de fundo integrada: ${path.basename(bgMusicPath)}`);
+    }
+
+    // Pipeline de pós-produção cinematográfica:
+    // 1. Color grading (vinheta suave + curva de contraste sutil + grão analógico 35mm)
+    // 2. Queima de legendas com nitidez máxima por cima do vídeo graduado
     const complexFilters = [
-      `[0:v]subtitles='${escapedAssPath}'[v_out]`
+      `[0:v]vignette=angle=PI/5:mode=forward,curves=r='0/0 0.2/0.18 0.5/0.49 0.8/0.82 1/1':g='0/0 0.2/0.19 0.5/0.50 0.8/0.81 1/1':b='0/0.02 0.2/0.21 0.5/0.51 0.8/0.80 1/0.98',noise=alls=4:allf=t[graded]`,
+      `[graded]subtitles='${escapedAssPath}'[v_out]`
     ];
+
+    let audioMap = '-map [a_out]';
+    if (hasBgMusic) {
+      const fadeOutStart = Math.max(1, (totalDurationSeconds || 60) - 2.5);
+      complexFilters.push(
+        `[1:a]loudnorm=I=-14:TP=-1:LRA=11,volume=1.0[a_voice]`,
+        `[2:a]volume=0.12,afade=t=out:st=${fadeOutStart}:d=2.5[a_bg]`,
+        `[a_voice][a_bg]amix=inputs=2:duration=first:dropout_transition=2[a_out]`
+      );
+    } else {
+      complexFilters.push(
+        `[1:a]loudnorm=I=-14:TP=-1:LRA=11[a_out]`
+      );
+    }
 
     command
       .complexFilter(complexFilters)
       .outputOptions([
         '-map [v_out]',
-        '-map 1:a',
+        audioMap,
         '-c:v libx264',
         '-pix_fmt yuv420p',
         '-preset fast',

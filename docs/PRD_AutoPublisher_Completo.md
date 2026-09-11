@@ -217,24 +217,24 @@ com.autopublisher
 ## 9. Plano de Execução e Milestones
 
 ### Épico 1: Infraestrutura e Configuração de Contas
-- [ ] Configuração do projeto no Google Cloud Console com as APIs ativadas (Sheets, Drive, YouTube Data v3).
-- [ ] Criação de credenciais OAuth 2.0 Web/Desktop e geração guiada do primeiro `REFRESH_TOKEN` offline.
-- [ ] Setup do repositório Spring Boot 3 + Java 21 com Dockerfile multi-stage.
+- [x] Configuração do projeto no Google Cloud Console com as APIs ativadas (Sheets, Drive, YouTube Data v3).
+- [x] Criação de credenciais OAuth 2.0 Web/Desktop e geração guiada do primeiro `REFRESH_TOKEN` offline.
+- [x] Setup do repositório Spring Boot 3 + Java 21 com Dockerfile multi-stage.
 
 ### Épico 2: Núcleo de Domínio e Portas
-- [ ] Criação dos modelos de domínio (`PostSchedule`, `VideoMetadata`, `PublishResult`).
-- [ ] Definição das interfaces das portas de entrada e saída.
+- [x] Criação dos modelos de domínio (`PostSchedule`, `VideoMetadata`, `PublishResult`).
+- [x] Definição das interfaces das portas de entrada e saída.
 
 ### Épico 3: Adaptadores de Integração
-- [ ] Implementação do `GoogleSheetsAdapter` (leitura estruturada e atualização cirúrgica de status).
-- [ ] Implementação do `GoogleDriveAdapter` (streaming via `InputStream`).
-- [ ] Implementação do `YouTubePublisherAdapter` (Resumable Upload, injeção de metadata e thumbnail).
+- [x] Implementação do `GoogleSheetsAdapter` (leitura estruturada e atualização cirúrgica de status).
+- [x] Implementação do `GoogleDriveAdapter` (streaming via `InputStream`).
+- [x] Implementação do `YouTubePublisherAdapter` (Resumable Upload, injeção de metadata e thumbnail).
 
 ### Épico 4: Orquestração e Validação de Monetização
-- [ ] Implementação do Caso de Uso principal com tratamento de quota `quotaExceeded` e retry.
-- [ ] Testes de integração ponta a ponta com planilha e canal de testes do YouTube.
-- [ ] Criação do endpoint de trigger com validação de token seguro.
+- [x] Implementação do Caso de Uso principal com tratamento de quota `quotaExceeded` e retry.
+- [x] Testes de integração ponta a ponta com planilha e canal de testes do YouTube.
+- [x] Criação do endpoint de trigger com validação de token seguro.
 
 ### Épico 5: Deploy e Automação Serverless
-- [ ] Build e deploy da imagem Docker no Google Cloud Run (min-instances=0, 512MB RAM).
-- [ ] Configuração do Google Cloud Scheduler para disparar a cada 30 ou 60 minutos.
+- [x] Build e deploy da imagem Docker no Google Cloud Run (min-instances=0, 512MB RAM).
+- [x] Configuração do Google Cloud Scheduler para disparar a cada 30 ou 60 minutos.

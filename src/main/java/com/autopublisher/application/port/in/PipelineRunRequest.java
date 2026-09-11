@@ -10,14 +10,19 @@ public record PipelineRunRequest(
         String topic,
         String platform,
         String sourceUrl,
-        String visualDirective
+        String visualDirective,
+        String visualMode
 ) {
     public PipelineRunRequest(String channelId, Integer scriptIndex, String topic, String platform) {
-        this(channelId, scriptIndex, topic, platform, null, null);
+        this(channelId, scriptIndex, topic, platform, null, null, "hybrid");
     }
 
     public PipelineRunRequest(String channelId, Integer scriptIndex, String topic, String platform, String sourceUrl) {
-        this(channelId, scriptIndex, topic, platform, sourceUrl, null);
+        this(channelId, scriptIndex, topic, platform, sourceUrl, null, "hybrid");
+    }
+
+    public PipelineRunRequest(String channelId, Integer scriptIndex, String topic, String platform, String sourceUrl, String visualDirective) {
+        this(channelId, scriptIndex, topic, platform, sourceUrl, visualDirective, "hybrid");
     }
 
     public String getChannelIdOrDefault() {
@@ -38,5 +43,9 @@ public record PipelineRunRequest(
 
     public String getVisualDirective() {
         return (visualDirective != null && !visualDirective.trim().isEmpty()) ? visualDirective.trim() : null;
+    }
+
+    public String getVisualModeOrDefault() {
+        return (visualMode != null && !visualMode.trim().isEmpty()) ? visualMode.trim().toLowerCase() : "hybrid";
     }
 }

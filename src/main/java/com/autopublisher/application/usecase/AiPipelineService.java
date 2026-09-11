@@ -30,11 +30,16 @@ public class AiPipelineService {
     private static final Logger log = LoggerFactory.getLogger(AiPipelineService.class);
 
     private final ObjectMapper objectMapper;
+    private final String geminiApiKey;
     private final Map<String, PipelineJobStatus> jobRepository = new ConcurrentHashMap<>();
     private final Map<String, List<String>> jobLogs = new ConcurrentHashMap<>();
 
-    public AiPipelineService(ObjectMapper objectMapper) {
+    public AiPipelineService(
+            ObjectMapper objectMapper,
+            @org.springframework.beans.factory.annotation.Value("${autopublisher.ai.gemini-api-key:}") String geminiApiKey
+    ) {
         this.objectMapper = objectMapper;
+        this.geminiApiKey = geminiApiKey;
     }
 
     /**
@@ -194,6 +199,9 @@ public class AiPipelineService {
 
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.directory(new File("."));
+            if (geminiApiKey != null && !geminiApiKey.isBlank()) {
+                pb.environment().put("GEMINI_API_KEY", geminiApiKey.trim());
+            }
             Process process = pb.start();
 
             StringBuilder out = new StringBuilder();
@@ -251,6 +259,7 @@ public class AiPipelineService {
         String topic = request.topic();
         String sourceUrl = request.getSourceUrl();
         String visualDirective = request.getVisualDirective();
+        String visualMode = request.getVisualModeOrDefault();
         int scriptIndex = request.getScriptIndexOrDefault();
 
         List<String> logs = Collections.synchronizedList(new ArrayList<>());
@@ -277,15 +286,15 @@ public class AiPipelineService {
 
         // Execucao assincrona em thread do sistema
         Thread.ofVirtual().name("ai-pipeline-" + jobId).start(() -> {
-            runProcess(jobId, channel, platform, topic, scriptIndex, sourceUrl, visualDirective, logs);
+            runProcess(jobId, channel, platform, topic, scriptIndex, sourceUrl, visualDirective, visualMode, logs);
         });
 
         return initialStatus;
     }
 
-    private void runProcess(String jobId, String channel, String platform, String topic, int scriptIndex, String sourceUrl, String visualDirective, List<String> logs) {
-        log.info("Iniciando processo do pipeline para Job ID: {} (Canal: {})", jobId, channel);
-        logs.add("[" + LocalDateTime.now().toString().substring(11, 19) + "] [INFO] Iniciando pipeline de geracao automatizada...");
+    private void runProcess(String jobId, String channel, String platform, String topic, int scriptIndex, String sourceUrl, String visualDirective, String visualMode, List<String> logs) {
+        log.info("Iniciando processo do pipeline para Job ID: {} (Canal: {}, Modo Visual: {})", jobId, channel, visualMode);
+        logs.add("[" + LocalDateTime.now().toString().substring(11, 19) + "] [INFO] Iniciando pipeline de geracao automatizada (Modo Visual: " + visualMode + ")...");
 
         try {
             List<String> command = new ArrayList<>();
@@ -297,6 +306,11 @@ public class AiPipelineService {
             command.add(platform);
             command.add("--script");
             command.add(String.valueOf(scriptIndex));
+
+            if (visualMode != null && !visualMode.isBlank()) {
+                command.add("--visual-mode");
+                command.add(visualMode.trim());
+            }
 
             if (topic != null && !topic.isBlank()) {
                 command.add("--topic");
@@ -313,9 +327,17 @@ public class AiPipelineService {
                 command.add(visualDirective.trim());
             }
 
+            if (geminiApiKey != null && !geminiApiKey.isBlank()) {
+                command.add("--gemini-key");
+                command.add(geminiApiKey.trim());
+            }
+
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.directory(new File("."));
             pb.redirectErrorStream(true);
+            if (geminiApiKey != null && !geminiApiKey.isBlank()) {
+                pb.environment().put("GEMINI_API_KEY", geminiApiKey.trim());
+            }
 
             Process process = pb.start();
 

@@ -141,7 +141,8 @@ class DashboardApiControllerTest {
                         .header("X-API-KEY", API_KEY))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.apiKeyConfigured").value(true))
-                .andExpect(jsonPath("$.maskedApiKey").isNotEmpty());
+                .andExpect(jsonPath("$.maskedApiKey").isNotEmpty())
+                .andExpect(jsonPath("$.geminiConfigured").exists());
     }
 
     @Test
@@ -159,7 +160,8 @@ class DashboardApiControllerTest {
                         "ig_account_1",
                         "meta_token_abc",
                         true,
-                        "tiktok_token_xyz"
+                        "tiktok_token_xyz",
+                        "AIzaSyTestKey"
                 );
 
         mockMvc.perform(post("/api/v1/dashboard/credentials/generate-env")
@@ -168,7 +170,8 @@ class DashboardApiControllerTest {
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.envContent").value(org.hamcrest.Matchers.containsString("AUTO_PUBLISHER_API_KEY=my-secret-key")))
-                .andExpect(jsonPath("$.envContent").value(org.hamcrest.Matchers.containsString("YOUTUBE_CLIENT_ID=client_123")));
+                .andExpect(jsonPath("$.envContent").value(org.hamcrest.Matchers.containsString("YOUTUBE_CLIENT_ID=client_123")))
+                .andExpect(jsonPath("$.envContent").value(org.hamcrest.Matchers.containsString("GEMINI_API_KEY=AIzaSyTestKey")));
     }
 
     @Test

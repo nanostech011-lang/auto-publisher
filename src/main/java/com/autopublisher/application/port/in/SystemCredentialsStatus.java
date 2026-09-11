@@ -20,7 +20,10 @@ public record SystemCredentialsStatus(
         boolean instagramReady,
         boolean tiktokEnabled,
         boolean tiktokTokenConfigured,
-        boolean tiktokReady
+        boolean tiktokReady,
+        boolean geminiConfigured,
+        String maskedGeminiKey,
+        boolean geminiReady
 ) {
     public static String mask(String secret) {
         if (secret == null || secret.trim().isEmpty()) {

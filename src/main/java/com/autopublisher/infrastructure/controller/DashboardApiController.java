@@ -58,6 +58,7 @@ public class DashboardApiController {
     private final String metaAccessToken;
     private final boolean tiktokEnabled;
     private final String tiktokAccessToken;
+    private final String geminiApiKey;
 
     public DashboardApiController(
             DashboardService dashboardService,
@@ -73,7 +74,8 @@ public class DashboardApiController {
             @Value("${autopublisher.instagram.business-account-id:}") String instagramAccountId,
             @Value("${autopublisher.instagram.access-token:}") String metaAccessToken,
             @Value("${autopublisher.tiktok.enabled:false}") boolean tiktokEnabled,
-            @Value("${autopublisher.tiktok.access-token:}") String tiktokAccessToken
+            @Value("${autopublisher.tiktok.access-token:}") String tiktokAccessToken,
+            @Value("${autopublisher.ai.gemini-api-key:}") String geminiApiKey
     ) {
         this.dashboardService = dashboardService;
         this.publishUseCase = publishUseCase;
@@ -89,6 +91,7 @@ public class DashboardApiController {
         this.metaAccessToken = metaAccessToken;
         this.tiktokEnabled = tiktokEnabled;
         this.tiktokAccessToken = tiktokAccessToken;
+        this.geminiApiKey = geminiApiKey;
     }
 
 
@@ -160,6 +163,8 @@ public class DashboardApiController {
         boolean hasTtToken = tiktokAccessToken != null && !tiktokAccessToken.trim().isEmpty();
         boolean ttReady = tiktokEnabled && hasTtToken;
 
+        boolean hasGemini = geminiApiKey != null && !geminiApiKey.trim().isEmpty();
+
         SystemCredentialsStatus status = new SystemCredentialsStatus(
                 hasApiKey,
                 SystemCredentialsStatus.mask(expectedApiKey),
@@ -176,7 +181,10 @@ public class DashboardApiController {
                 igReady,
                 tiktokEnabled,
                 hasTtToken,
-                ttReady
+                ttReady,
+                hasGemini,
+                SystemCredentialsStatus.mask(geminiApiKey),
+                hasGemini
         );
 
         return ResponseEntity.ok(status);

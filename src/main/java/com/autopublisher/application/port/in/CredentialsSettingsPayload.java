@@ -14,7 +14,8 @@ public record CredentialsSettingsPayload(
         String instagramAccountId,
         String metaAccessToken,
         Boolean tiktokEnabled,
-        String tiktokAccessToken
+        String tiktokAccessToken,
+        String geminiApiKey
 ) {
     /**
      * Gera o conteudo textual pronto para o arquivo .env
@@ -37,6 +38,8 @@ public record CredentialsSettingsPayload(
                 "META_ACCESS_TOKEN=" + (metaAccessToken != null ? metaAccessToken.trim() : "") + "\n\n" +
                 "# TikTok Content Posting API v2\n" +
                 "TIKTOK_ENABLED=" + (Boolean.TRUE.equals(tiktokEnabled) ? "true" : "false") + "\n" +
-                "TIKTOK_ACCESS_TOKEN=" + (tiktokAccessToken != null ? tiktokAccessToken.trim() : "") + "\n";
+                "TIKTOK_ACCESS_TOKEN=" + (tiktokAccessToken != null ? tiktokAccessToken.trim() : "") + "\n\n" +
+                "# Google AI Studio / Imagen 3 API (Geracao de Imagens e Prompts de IA)\n" +
+                "GEMINI_API_KEY=" + (geminiApiKey != null ? geminiApiKey.trim() : "") + "\n";
     }
 }

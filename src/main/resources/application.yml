@@ -31,6 +31,8 @@ autopublisher:
   tiktok:
     enabled: ${TIKTOK_ENABLED:false}
     access-token: ${TIKTOK_ACCESS_TOKEN:}
+  ai:
+    gemini-api-key: ${GEMINI_API_KEY:${GOOGLE_AI_API_KEY:}}
 
 logging:
   level:

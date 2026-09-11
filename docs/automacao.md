@@ -70,16 +70,20 @@ O pipeline de automação para o canal `@psicosegredo` e canais correlatos é fo
    * Extração: Word boundary timestamps em tempo real via WebSocket.
    * Compilação: Geração de arquivo `.ass` com efeito karaokê dinâmico (palavras destacadas em Amarelo Ouro `#FFD700` e Ciano `#00E5FF` sobre fundo escuro).
 
-3. **Etapa 3: Aquisição de Ativos Visuais 9:16 (Visual Assets Engine):**
-   * Ferramenta: Pexels API (vídeos verticais em *dark aesthetic*, silhuetas e iluminação *chiaroscuro*) e/ou motores de IA gerativa (Luma, Kling, Stable Diffusion).
-   * Miniatura: Geração de thumbnail com contraste extremo e texto de gancho.
+3. **Etapa 3: Aquisição de Ativos Visuais 9:16 (Visual Assets Engine & IA):**
+   * Ferramentas e Modos Visuais:
+     * **Modo Híbrido (`hybrid`):** Gancho 0–3s gerado como vídeo IA dinâmico cinematográfico via **Google Veo 2** (`veo-2.0-generate-001:predictLongRunning`) ou Video FX; cenas intermediárias via imagens de altíssima definição (1080x1920 Full HD) geradas pelo **Google Imagen 3** (`imagen-3.0-generate-002`) com interpolação bicúbica e movimento de câmera Ken Burns a 30fps.
+     * **Modo Vídeo (`video`):** Todos os takes gerados diretamente via clips de vídeo IA Google Veo 2 / Pollinations Video.
+     * **Modo B-Roll Stock:** Pexels API (vídeos verticais em *dark aesthetic*, silhuetas e iluminação *chiaroscuro*).
+   * Miniatura: Geração de thumbnail com contraste extremo, gancho visual e tipografia nítida.
 
 4. **Etapa 4: Composição Audiovisual e Renderização (Video Compositor):**
-   * Ferramenta: FFmpeg headless em contêiner efêmero.
-   * Ações: Concatenação dos takes visuais com transições rápidas (2–4s), mixagem da voz com trilha dark ambient royalty-free (-22dB) e queima de legendas animadas centralizadas no terço inferior.
+   * Ferramenta: FFmpeg headless em contêiner efêmero com alinhador fonético (`scene_aligner.js`).
+   * Ações: Alinhamento de takes com L-Cut cinematográfico (100ms pré-roll) e snap em pausas de fala; concatenação dos takes visuais com transições rápidas (2–4s), mixagem da voz com ducking dinâmico e trilha dark ambient royalty-free (-22dB com fade out) e queima de legendas animadas centralizadas na safe zone (margem inferior 380px para evitar sobreposição da UI do TikTok/Shorts).
    * Saída: Arquivo MP4 H.264 (1080x1920, 9:16, 30fps, áudio -14 LUFS, duração $\ge 61$s).
 
-5. **Etapa 5: Ingestão Direta no AutoPublisher Pro:**
+5. **Etapa 5: Ingestão Direta e Agendamento em Lote no AutoPublisher Pro:**
    * Envio automático do MP4 e da Thumbnail para as pastas do canal no **Google Drive**.
-   * Inserção do novo agendamento na aba `Cronograma` do **Google Sheets** via API REST (`POST /api/v1/dashboard/posts`), com status `PENDENTE`.
+   * Suporte a execução individual ou em lote (`--batch N` / `batchCount`), escalonando o calendário semanal automaticamente (vídeo 1 em +45min e vídeos subsequentes às 18:00 nos próximos dias).
+   * Inserção dos agendamentos na aba `Cronograma` do **Google Sheets** via API REST (`POST /api/v1/dashboard/posts`), com status `PENDENTE`.
    * Publicação pontual orquestrada pelo **Cloud Scheduler** e **AutoPublisher Pro** no YouTube Shorts, Instagram Reels e TikTok, garantindo 100% de conformidade COPPA e monetização.

@@ -79,6 +79,8 @@ O backlog está organizado para viabilizar um MVP funcional focado em **monetiza
 | US-09.4 | Renderizador Headless de Vídeo (FFmpeg Compositor) | Should | Alta | Concluído | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-094) |
 | US-09.5 | Ingestor Automático no Google Drive e Google Sheets | Should | Média | Concluído | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-095) |
 | US-09.6 | Runner e Orquestração por Agentes Autônomos | Could | Média | Concluído | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-096) |
+| US-09.7 | Geração em Lote e Grade Semanal de Postagens (--batch N) | Should | Média | Concluído | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-097) |
+| US-09.8 | Conector de Vídeo IA Google Veo 2 e Resolução Nativa 1080x1920 Full HD | Should | Alta | Concluído | [epico-09](epico-09-pipeline-geracao-conteudo-ia.md#us-098) |
 
 ---
 

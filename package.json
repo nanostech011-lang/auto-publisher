@@ -8,7 +8,8 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test pipeline/test_*.js",
+    "test:pipeline": "node --test pipeline/test_*.js",
     "pipeline": "node pipeline/src/run_pipeline.js"
   },
   "repository": {

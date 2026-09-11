@@ -77,7 +77,7 @@ export function generateAssSubtitles({
   outlineColor = '&H00000000',     // Preto
   outlineWidth = 4,
   shadowWidth = 2,
-  marginV = 280
+  marginV = 380                    // Safe zone otimizada para Shorts/Reels/TikTok (acima dos botões e descrição)
 }) {
   const chunks = groupWordsIntoChunks(wordBoundaries, 4);
 
@@ -104,8 +104,12 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     // Para cada palavra ativa dentro do chunk, gera uma linha no .ass
     for (let i = 0; i < chunk.words.length; i++) {
       const activeWord = chunk.words[i];
+      const nextWord = chunk.words[i + 1];
+
       const startStr = formatAssTime(activeWord.startMs);
-      const endStr = formatAssTime(activeWord.endMs);
+      // Previne flicker na tela: estende o evento até o início da próxima palavra ou até o fim do chunk
+      const effectiveEndMs = nextWord ? nextWord.startMs : chunk.endMs;
+      const endStr = formatAssTime(Math.max(activeWord.endMs, effectiveEndMs));
 
       // Monta o texto do chunk destacando a palavra ativa em maiusculo
       const formattedChunk = chunk.words

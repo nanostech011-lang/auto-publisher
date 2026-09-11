@@ -39,8 +39,7 @@ O primeiro caso de uso a ser suportado em escala é o perfil `@psicosegredo`, co
 
 ### 2.1. Custo Operacional R$ 0,00 / Free-Tier Sustentável
 Seguindo o mandamento central do AutoPublisher Pro, a arquitetura prioriza componentes gratuitos ou de baixíssimo custo:
-* **TTS (Text-to-Speech):** Utilização do Microsoft Edge TTS (`edge-tts`), solução gratuita de altíssima fidelidade neural em português do Brasil (vozes como `pt-BR-AntonioNeural` ou `pt-BR-FranciscaNeural`), com extração nativa de timestamps de palavras (word-level). Alternativa configurável via ElevenLabs / OpenAI TTS para produções premium.
-* **Mídia Visual (B-Roll e Imagens):** Integração com APIs gratuitas de alta qualidade (Pexels Video API, Pixabay API) e motores de geração de imagens/vídeos (Stable Diffusion / ComfyUI / Recraft / Luma / Kling).
+* **Mídia Visual (B-Roll e Imagens de IA):** Conector oficial para **Google Imagen 3** (`imagen-3.0-generate-002` via Google AI Studio API) com **Gerador Profissional de Prompts Cinematográficos em Inglês** (suporte a Gemini 2.0/1.5 Flash e ontologia semântica em 5 camadas com proporção 9:16). Conta com esteira resiliente de fallback em múltiplos níveis: **Flux HD** (qualidade fotográfica gratuita sem chave) $\rightarrow$ **Turbo** $\rightarrow$ Assets Locais do Canal $\rightarrow$ Renderização Procedural Chiaroscuro via FFmpeg.
 * **Motor de Renderização:** FFmpeg e MoviePy/Remotion empacotados em um contêiner efêmero (Cloud Run Job ou script de automação), sem custos de licença.
 * **Armazenamento e Ingestão:** Utilização do mesmo Google Drive e Google Sheets configurados no AutoPublisher Pro.
 
@@ -318,24 +317,24 @@ Para suportar múltiplos canais e nichos sem alterar o código, cada canal possu
 ## 8. Fases de Implementação e Milestones
 
 ### Milestone 1: Motor de Roteiro e Voz Neural (Semanas 1)
-- [ ] Implementação do gerador de roteiros calibrado para 65–70 segundos com fórmula Gancho + Ciência + Hack + CTA.
-- [ ] Integração com `edge-tts` e exportador de timestamps de palavras.
-- [ ] Geração de legendas animadas em formato `.ass` com destaque de palavras estilo karaokê.
+- [x] Implementação do gerador de roteiros calibrado para 65–70 segundos com fórmula Gancho + Ciência + Hack + CTA.
+- [x] Integração com `edge-tts` e exportador de timestamps de palavras.
+- [x] Geração de legendas animadas em formato `.ass` com destaque de palavras estilo karaokê.
 
 ### Milestone 2: Curadoria Visual e Motor de Renderização FFmpeg (Semana 2)
-- [ ] Integração com Pexels API para download de b-roll vertical focado em estética *dark psychology*.
-- [ ] Script de composição FFmpeg: corte automático a cada 2–4s, aplicação de trilha de fundo atenuada e queima de legendas animadas.
-- [ ] Validação da qualidade: 1080x1920, 9:16, duração $\ge 60$s, áudio a -14 LUFS.
+- [x] Integração com Pexels API para download de b-roll vertical focado em estética *dark psychology*.
+- [x] Script de composição FFmpeg: corte automático a cada 2–4s, aplicação de trilha de fundo atenuada e queima de legendas animadas.
+- [x] Validação da qualidade: 1080x1920, 9:16, duração $\ge 60$s, áudio a -14 LUFS.
 
 ### Milestone 3: Ingestor Google Drive e Google Sheets (Semana 3)
-- [ ] Upload automático dos ativos para as pastas do Google Drive configuradas.
-- [ ] Chamada automatizada para o endpoint `POST /api/v1/dashboard/posts` do AutoPublisher Pro com todos os 17 campos preenchidos.
-- [ ] Teste ponta a ponta com o Roteiro 1 ("O Truque do Silêncio") gerando vídeo, agendando e publicando no canal de teste.
+- [x] Upload automático dos ativos para as pastas do Google Drive configuradas.
+- [x] Chamada automatizada para o endpoint `POST /api/v1/dashboard/posts` do AutoPublisher Pro com todos os 17 campos preenchidos.
+- [x] Teste ponta a ponta com o Roteiro 1 ("O Truque do Silêncio") gerando vídeo, agendando e publicando no canal de teste.
 
 ### Milestone 4: Orquestração Autônoma e Ferramentas MCP (Semana 4)
-- [ ] Registro das ferramentas MCP no ecossistema Antigravity.
-- [ ] Suporte a execução em lote (geração de 7 vídeos para a grade da semana inteira em uma única sessão).
-- [ ] Painel de status no Dashboard Web indicando o progresso da geração.
+- [x] Registro das ferramentas MCP no ecossistema Antigravity.
+- [x] Suporte a execução em lote (geração de 7 vídeos para a grade da semana inteira em uma única sessão).
+- [x] Painel de status no Dashboard Web indicando o progresso da geração.
 
 ---
 

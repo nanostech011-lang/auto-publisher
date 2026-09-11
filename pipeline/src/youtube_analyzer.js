@@ -1,4 +1,5 @@
 import { YoutubeTranscript } from 'youtube-transcript';
+import { translateDirectiveToCinematicEnglish, buildProfessionalScenePrompt } from './ai_prompt_generator.js';
 
 /**
  * Extrai o ID do vídeo do YouTube a partir de qualquer formato de URL
@@ -74,9 +75,166 @@ export async function fetchVideoTranscript(videoId) {
 }
 
 /**
+ * Trunca uma string preservando palavras inteiras e removendo pontuações residuais
+ */
+export function truncateWords(text, maxLength) {
+  if (!text || text.length <= maxLength) return text || '';
+  const sub = text.slice(0, maxLength);
+  const lastSpace = sub.lastIndexOf(' ');
+  return (lastSpace > 0 ? sub.slice(0, lastSpace) : sub).replace(/[\s,\-–:.]+$/, '').trim();
+}
+
+/**
+ * Analisa semanticamente a transcrição e o título para sintetizar os 4 blocos de retenção
+ */
+export function extractConceptualSummary(transcriptText, baseTitle, authorName, channelName = '@psicosegredo') {
+  const combined = ((transcriptText || '') + ' ' + (baseTitle || '')).toLowerCase();
+
+  const isKahneman = combined.includes('rápido e devagar') || combined.includes('canima') || combined.includes('kahneman');
+  const isDecision = combined.includes('decis') || combined.includes('escolha') || combined.includes('erro');
+  const isDopamine = combined.includes('dopamina') || combined.includes('vício') || combined.includes('preguiç') || combined.includes('procrastina');
+  const isStoic = combined.includes('estoic') || combined.includes('marco aurélio') || combined.includes('sêneca') || combined.includes('epicteto');
+
+  if (isKahneman || (isDecision && combined.includes('livro'))) {
+    const hookText = `Se você acredita que está no controle de todas as suas decisões, pare tudo agora: a neurociência prova que o seu cérebro toma escolhas no piloto automático sem você perceber.`;
+    const scienceText = `A grande lição do clássico Rápido e Devagar de Daniel Kahneman revela que possuímos duas mentes em constante conflito. O Sistema 1 é veloz, instintivo e movido por emoções imediatas para economizar energia metabólica, fazendo você comprar o que não precisa e reagir no calor do momento. O Sistema 2, responsável pela lógica e pensamento crítico, é preguiçoso e quase nunca entra em ação por conta própria. A maioria das pessoas passa a vida inteira sendo dominada pelos próprios vieses mentais.`;
+    const hackText = `A regra prática para assumir o volante: toda vez que sentir o impulso de gastar ou confrontar alguém, pare. Force uma pausa de dez segundos, respire fundo e ative o Sistema 2 com perguntas objetivas.`;
+    const ctaText = `Siga ${channelName} para dominar sua química mental antes que o mundo use suas fraquezas contra você.`;
+    const insight = 'o Sistema 1 impulsivo decide no piloto automático enquanto o Sistema 2 racional permanece preguiçoso';
+
+    return { hookText, scienceText, hackText, ctaText, insight };
+  }
+
+  if (isDopamine) {
+    const hookText = `Você não é preguiçoso e a sua falta de ânimo tem uma explicação biológica exata: o seu cérebro foi condicionado a buscar recompensas rápidas sem esforço real.`;
+    const scienceText = `A neurociência explica que a dopamina é o neurotransmissor da antecipação e da busca por ação. Quando você passa horas rolando telas e consumindo dopamina barata, seus receptores se fecham para economizar receptividade neural. Isso torna qualquer trabalho profundo ou estudo uma tortura química imediata, drenando sua capacidade de concentração e foco produtivo ao longo do dia.`;
+    const hackText = `A regra de ouro para destravar sua mente: a ação deliberada precisa vir antes da motivação. Force apenas os primeiros cinco minutos de movimento físico e sua química cerebral começará a trabalhar a seu favor.`;
+    const ctaText = `Siga ${channelName} para hackear sua rotina e assumir o controle biológico dos seus objetivos diários.`;
+    const insight = 'a dessensibilização dopaminérgica gera paralisia comportamental e só é revertida com a ação prévia';
+
+    return { hookText, scienceText, hackText, ctaText, insight };
+  }
+
+  if (isStoic) {
+    const hookText = `Marco Aurélio escreveu que você tem poder exclusivo sobre a sua própria mente, e não sobre os acontecimentos externos que acontecem ao seu redor.`;
+    const scienceText = `Quando você se irrita com provocações, críticas ou injustiças alheias, você acabou de entregar o controle emocional da sua vida nas mãos de quem te desestabilizou. O cérebro primitivo reage à ofensa como uma ameaça de sobrevivência física, inundando seu corpo de cortisol e raiva. Mas a mente treinada entende que o silêncio estratégico e a calma imperturbável desarmam qualquer ataque verbal muito antes de uma resposta ser dita.`;
+    const hackText = `O exercício prático estoico: quando o impulso da fúria surgir, congele por três segundos. Pergunte a si mesmo se isso terá relevância daqui a cinco anos. Se não tiver, descarte imediatamente.`;
+    const ctaText = `Siga ${channelName} para construir uma armadura mental inabalável e dominar o seu próprio destino.`;
+    const insight = 'o controle das reações emocionais internas anula o poder das provocações externas';
+
+    return { hookText, scienceText, hackText, ctaText, insight };
+  }
+
+  // Generic fallback estruturado (~155 palavras / 65-70s)
+  const cleanTitle = truncateWords(baseTitle, 40);
+  const hookText = `Se você quer entender a verdade definitiva sobre ${cleanTitle.toLowerCase()}, pare tudo agora: existe um mecanismo psicológico crucial que quase ninguém percebeu.`;
+  const scienceText = `A análise estratégica desse conteúdo revela que o comportamento humano obedece a padrões previsíveis de sobrevivência e recompensa. Quando exposto à incerteza ou ao estresse, o cérebro recorre a atalhos cognitivos imediatos, buscando a resposta mais rápida em vez da mais lógica. Não se trata de fraqueza pessoal ou falta de força de vontade, mas de um processo biológico desenhado para poupar esforço mental em situações de pressão.`;
+  const hackText = `A regra prática para blindar suas escolhas: sempre que estiver diante de um dilema crítico, dê um passo para trás, questione suas primeiras impressões e decida com base em dados objetivos e não no impulso.`;
+  const ctaText = `Siga ${channelName} para receber insights estratégicos de neurociência e comportamento humano todos os dias.`;
+  const insight = `a mecânica cognitiva e os atalhos mentais por trás de ${cleanTitle}`;
+
+  return { hookText, scienceText, hackText, ctaText, insight };
+}
+
+/**
+ * Analisa a transcrição e metadados usando IA (Gemini Flash) para sintetizar roteiro e cenas visuais
+ */
+export async function analyzeTranscriptWithGemini({
+  transcriptText,
+  baseTitle,
+  authorName,
+  channelProfile = {},
+  visualDirective = null,
+  apiKey = null
+}) {
+  const effectiveKey = apiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+  if (!effectiveKey) return null;
+
+  const channelName = channelProfile.name || '@psicosegredo';
+  const niche = channelProfile.niche || 'Neurociência Prática e Comportamento Humano';
+  const tone = channelProfile.script_profile?.tone || 'Analítico, misterioso, confiante e direto';
+  const cleanTranscript = (transcriptText || '').replace(/\s+/g, ' ').slice(0, 7500);
+
+  const modelName = 'gemini-flash-lite-latest';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${effectiveKey}`;
+
+  const systemInstruction = `Você é um Diretor Criativo e Roteirista Sênior especialista em vídeos virais de alta retenção para YouTube Shorts, TikTok e Instagram Reels.
+Seu canal: "${channelName}" (Nicho: ${niche}, Tom: ${tone}).
+${visualDirective ? `DIRETRIZ DE ESTILO VISUAL OBRIGATÓRIA: "${visualDirective}". Todos os prompts visuais de IA DEVEM seguir rigorosamente essa estética!` : ''}
+
+Sua missão é extrair a essência do conteúdo e gerar um roteiro original em 4 blocos de retenção rigorosos:
+1. hook (Gancho 0-3s): Frase provocativa que quebra padrão (10 a 16 palavras).
+2. scientific_core (Foco Central 3-45s): Mecanismo neurobiológico ou lógica explicada de forma clara e envolvente (75 a 90 palavras).
+3. practical_hack (Hack Prático 45-58s): Ação imediata aplicável na rotina (28 a 35 palavras).
+4. cta (CTA 58-65s): Chamada para seguir ${channelName} (14 a 18 palavras).
+
+IMPORTANTE: O total de palavras da narração corrida (hook + scientific_core + practical_hack + cta) DEVE estar rigorosamente entre 160 e 180 palavras (hook: 12-16 palavras, scientific_core: 85-95 palavras, practical_hack: 35-42 palavras, cta: 16-20 palavras), garantindo duração de áudio entre 63s e 72s para elegibilidade inquestionável ao TikTok Creator Rewards Program (que exige estritamente >= 60 segundos).
+
+CENAS VISUAIS - REGRA MANDATÓRIA DE ZERO REPETIÇÃO E LIVING CINEMAGRAPH:
+Gere uma lista de 7 a 10 cenas visuais sincronizadas sequencialmente com cada frase da narração:
+- phrase: trecho falado correspondente
+- suggested_type: "ai_image" (prioritário para estilos estilizados como Ghibli/Anime ou simbólicos) ou "stock_video" (para ações de pessoas comuns, escritório)
+- stock_search_query: termos de busca em inglês (2 a 4 palavras) para Pexels (ex: "thinking person dark", "hands holding book")
+- ai_prompt: prompt cinematográfico em inglês em formato vertical 9:16.
+  * REGRA MANDATÓRIA DE ZERO REPETIÇÃO: NENHUMA cena pode ter o mesmo sujeito, ângulo ou composição de outra cena. Cada uma das cenas DEVE retratar um sujeito ÚNICO e DIFERENTE (ex: cena 1 = close-up de olhos focados; cena 2 = fogueira aconchegante com brasas; cena 3 = riacho e ponte com luz solar; cena 4 = mapa em ruínas antigas; cena 5 = clareira mágica com vagalumes; cena 6 = manoplas segurando caneca fumegante; cena 7 = céu estrelado com constelações cintilantes; cena 8 = vista panorâmica ao pôr do sol).
+  * DETALHES DE MICRO-ANIMAÇÃO VIVA (CINEMAGRAPH): Inclua elementos sutis de movimento em cada cena (dancing campfire flames and rising sparks, floating bioluminescent fireflies, twinkling stars in clear night, golden sunbeam dust motes).
+  * Se houver DIRETRIZ VISUAL definida (${visualDirective || 'Padrão'}), obedeça-a 100% no estilo artístico (Ghibli 2D cel gouache, anime Ufotable, fotografia 35mm, etc).
+- cinemagraph_fx: escolha um micro-efeito procedural para a cena: "fire_embers" (para fogueiras, brasas, velas), "fireflies" (para noites, crepúsculo, florestas mágicas), "twinkling_stars" (para céu noturno estrelado), "sunbeams_dust" (para luz do sol filtrada em árvores/templos com poeira dourada), "anime_aura_sparks" (para faíscas de energia de batalha).
+
+Retorne EXCLUSIVAMENTE um objeto JSON válido com os campos:
+title, insight, hook, scientific_core, practical_hack, cta, visual_scenes.`;
+
+  const userPrompt = `Gere o roteiro profissional e as tomadas visuais para este conteúdo:
+Título: "${baseTitle}"
+Autor original: "${authorName || 'Especialista'}"
+${visualDirective ? `Diretriz Visual Obrigatória: "${visualDirective}"` : ''}
+${cleanTranscript ? `Transcrição: """${cleanTranscript}"""` : 'Sem transcrição disponível. Desenvolva o roteiro a partir do tema central e título do vídeo.'}`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 9500);
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': effectiveKey
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+        systemInstruction: { parts: [{ text: systemInstruction }] },
+        generationConfig: {
+          temperature: 0.35,
+          maxOutputTokens: 1400,
+          responseMimeType: 'application/json'
+        }
+      })
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawText) return null;
+
+    const parsed = JSON.parse(rawText);
+    if (!parsed.hook || !parsed.scientific_core || !parsed.practical_hack || !parsed.cta) {
+      return null;
+    }
+
+    return parsed;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    return null;
+  }
+}
+
+/**
  * Analisa o conteúdo do vídeo do YouTube e gera um roteiro adaptado nos 4 blocos de retenção
  */
-export async function analyzeAndAdaptYouTubeVideo({ url, channelProfile = {}, visualDirective = null }) {
+export async function analyzeAndAdaptYouTubeVideo({ url, channelProfile = {}, visualDirective = null, geminiKey = null }) {
   const videoId = extractYouTubeVideoId(url);
   if (!videoId) {
     throw new Error(`URL do YouTube inválida: "${url}". Forneça um link válido como https://www.youtube.com/watch?v=... ou https://youtu.be/...`);
@@ -94,23 +252,56 @@ export async function analyzeAndAdaptYouTubeVideo({ url, channelProfile = {}, vi
 
   // Base temática para o roteiro adaptado
   const baseTitle = metadata.title.replace(/[#|•].*$/g, '').trim();
-  const summaryInsight = transcriptData.available && transcriptData.text
-    ? extractKeyInsight(transcriptData.text, baseTitle)
-    : `a análise essencial extraída de "${baseTitle}" por ${metadata.authorName}`;
+  
+  // 1. Tenta análise e roteirização contextual avançada com Gemini Flash
+  let aiScript = null;
+  try {
+    console.log(`[YouTube Analyzer] Analisando conteúdo com IA generativa (Gemini Flash)...`);
+    aiScript = await analyzeTranscriptWithGemini({
+      transcriptText: transcriptData.text,
+      baseTitle,
+      authorName: metadata.authorName,
+      channelProfile,
+      visualDirective,
+      apiKey: geminiKey
+    });
+  } catch (e) {
+    console.warn(`[YouTube Analyzer] Falha no Gemini Flash, usando fallback heurístico:`, e.message);
+  }
 
-  // Estruturação dos 4 Blocos de Retenção Algorítmica (~150 palavras / 65-70s)
-  const hookText = `Se você viu o vídeo sobre ${baseTitle.slice(0, 40)}, pare tudo agora: existe um detalhe crucial que quase ninguém percebeu.`;
-  const scienceText = `A verdade por trás desse conteúdo revela que ${summaryInsight}. Quando observamos o padrão do comportamento humano em profundidade, nosso cérebro reage de forma imediata à expectativa e à pressão do ambiente. Não se trata de sorte ou coincidência, mas de um processo psicológico direto.`;
-  const hackText = `A regra prática para aplicar isso na sua vida agora: em vez de reagir no calor do momento, dê um passo para trás, filtre as intenções reais e mantenha o controle absoluto das suas decisões.`;
-  const ctaText = `Siga ${channelName} para ter acesso diário a análises estratégicas como essa antes de todo mundo.`;
+  let hookText, scienceText, hackText, ctaText, insight, aiScenes;
+
+  if (aiScript) {
+    console.log(`[YouTube Analyzer] ✓ Roteiro e cenas contextuais sintetizados com sucesso pelo Gemini!`);
+    hookText = aiScript.hook;
+    scienceText = aiScript.scientific_core;
+    hackText = aiScript.practical_hack;
+    ctaText = aiScript.cta;
+    insight = aiScript.insight || `análise estratégica de ${baseTitle}`;
+    aiScenes = aiScript.visual_scenes;
+  } else {
+    // Síntese conceitual heurística nos 4 blocos de retenção algorítmica
+    const summary = extractConceptualSummary(
+      transcriptData.text,
+      baseTitle,
+      metadata.authorName,
+      channelName
+    );
+    hookText = summary.hookText;
+    scienceText = summary.scienceText;
+    hackText = summary.hackText;
+    ctaText = summary.ctaText;
+    insight = summary.insight;
+  }
 
   const narrationText = `${hookText} ${scienceText} ${hackText} ${ctaText}`;
   const words = narrationText.trim().split(/\s+/);
   const wordCount = words.length;
-  const estimatedDurationSeconds = Math.round((wordCount / 135) * 60);
+  // Duração estimada calibrada (considerando velocidade ligeiramente acelerada em TTS)
+  const estimatedDurationSeconds = Math.max(62, Math.round((wordCount / 140) * 60));
 
   const visualDirectiveTag = visualDirective ? `\n\n🎨 Estilo Visual: ${visualDirective}` : '';
-  const finalTitle = `${baseTitle.slice(0, 60)}: A Verdade Revelada #Shorts`;
+  const finalTitle = `${truncateWords(baseTitle, 55)} #Shorts`;
   const description = `${finalTitle}\n\nAnálise estratégica e resumo prático inspirado no conteúdo de ${metadata.authorName} (${baseTitle}).${visualDirectiveTag}\n\n${affiliateCta.description_template || '👉 Acesse o link fixado para saber mais!'}\n\nTags: #${defaultTags.slice(0, 5).join(' #')}`;
   const firstComment = affiliateCta.first_comment || `♟️ O que você achou dessa perspectiva de ${metadata.authorName}? Comente abaixo e veja o link fixado!`;
 
@@ -119,9 +310,37 @@ export async function analyzeAndAdaptYouTubeVideo({ url, channelProfile = {}, vi
     defaultTags = [...new Set([...defaultTags, ...extraTags])];
   }
 
-  // 5 Cenas visuais (proporção 9:16) geradas dinamicamente com base no tema e diretriz visual
+  // Cenas visuais (proporção 9:16) geradas dinamicamente com base no tema e diretriz visual
   const visualAesthetic = channelProfile.visual_profile?.aesthetic || 'Cinematic Dark Minimalist';
-  const scenes = generateThematicScenes(baseTitle, summaryInsight, visualAesthetic, visualDirective, narrationText);
+  let scenes;
+
+  if (aiScenes && Array.isArray(aiScenes) && aiScenes.length >= 5) {
+    const motionTypes = ['push_in', 'pan_left_right', 'reveal_zoom_out', 'pan_right_left', 'atmospheric_drift'];
+    const totalWords = narrationText.trim().split(/\s+/).length;
+    const totalDurationEst = (totalWords / 135) * 60;
+
+    scenes = aiScenes.map((s, idx) => {
+      const phraseWords = (s.phrase || '').trim().split(/\s+/).length || 10;
+      const beatDuration = Math.max(3.2, Number(((phraseWords / totalWords) * totalDurationEst).toFixed(1)));
+      return {
+        id: idx + 1,
+        sceneIndex: idx,
+        duration: beatDuration,
+        prompt: s.ai_prompt || `${visualAesthetic}, authentic visual scene representing ${s.phrase || 'strategic focus'}, vertical 9:16`,
+        phrase: s.phrase || '',
+        motionType: motionTypes[idx % motionTypes.length],
+        suggestedType: s.suggested_type || 'ai_image',
+        cinemagraphFX: s.cinemagraph_fx || null,
+        aesthetic: visualAesthetic,
+        visualDirective: visualDirective,
+        stockQuery: s.stock_search_query || null,
+        keywords: [s.stock_search_query || 'cinematic visual'],
+        visualDescription: s.phrase ? `Visual beat: "${s.phrase.slice(0, 40)}..."` : 'Cena contextual'
+      };
+    });
+  } else {
+    scenes = await generateThematicScenes(baseTitle, insight, visualAesthetic, visualDirective, narrationText, geminiKey);
+  }
 
   return {
     source: 'youtube',
@@ -145,8 +364,8 @@ export async function analyzeAndAdaptYouTubeVideo({ url, channelProfile = {}, vi
     blocks: [
       { title: 'Gancho (0-3s)', text: hookText, visualDescription: scenes[0]?.visualDescription || scenes[0]?.prompt },
       { title: 'Foco Central (3-45s)', text: scienceText, visualDescription: scenes[1]?.visualDescription || scenes[1]?.prompt },
-      { title: 'Hack Prático (45-58s)', text: hackText, visualDescription: scenes[3]?.visualDescription || scenes[3]?.prompt },
-      { title: 'CTA & Retenção (58-65s)', text: ctaText, visualDescription: scenes[4]?.visualDescription || scenes[4]?.prompt }
+      { title: 'Hack Prático (45-58s)', text: hackText, visualDescription: scenes[Math.min(3, scenes.length - 2)]?.visualDescription || scenes[3]?.prompt },
+      { title: 'CTA & Retenção (58-65s)', text: ctaText, visualDescription: scenes[scenes.length - 1]?.visualDescription || scenes[4]?.prompt }
     ],
     metadata: {
       title: finalTitle,
@@ -201,7 +420,7 @@ export function extractNarrationBeats(narrationText) {
   for (const sentence of rawSentences) {
     const words = sentence.split(/\s+/);
     // Divide sentenças longas em pausas naturais
-    if (words.length > 15) {
+    if (words.length > 22) {
       const parts = sentence.split(/[,;:]+|\s+(?:quando|porque|enquanto|mas|onde)\s+/i)
         .map(p => p.trim())
         .filter(p => p.length > 10);
@@ -209,7 +428,7 @@ export function extractNarrationBeats(narrationText) {
       if (parts.length > 1) {
         let current = '';
         for (const part of parts) {
-          if ((current + ' ' + part).trim().split(/\s+/).length < 7) {
+          if ((current + ' ' + part).trim().split(/\s+/).length < 12) {
             current = (current + ' ' + part).trim();
           } else {
             if (current) beats.push(current);
@@ -223,12 +442,12 @@ export function extractNarrationBeats(narrationText) {
     beats.push(sentence);
   }
 
-  // Agrupa frases muito pequenas com a vizinha para evitar takes de menos de 5 palavras
+  // Agrupa frases menores para manter takes equilibrados de 4.5 a 8 segundos
   const consolidated = [];
   let buffer = '';
   for (const b of beats) {
     const bWords = b.split(/\s+/).length;
-    if (bWords < 5) {
+    if (bWords < 12) {
       buffer = (buffer + ' ' + b).trim();
     } else {
       if (buffer) {
@@ -247,7 +466,7 @@ export function extractNarrationBeats(narrationText) {
     }
   }
 
-  return consolidated.length >= 6 ? consolidated : rawSentences;
+  return consolidated.length >= 5 ? consolidated : rawSentences;
 }
 
 /**
@@ -322,6 +541,10 @@ export function deduceActionIntent(phrase) {
 
 function optimizeDirectiveForPrompt(directive) {
   if (!directive) return '';
+  const translated = translateDirectiveToCinematicEnglish(directive);
+  if (translated && translated.length > 0) {
+    return translated;
+  }
   return directive
     .replace(/guerreiros?\s+persas?/gi, 'ancient Persian warriors')
     .replace(/guerreir[oa]s?/gi, 'elite warriors')
@@ -340,7 +563,7 @@ function optimizeDirectiveForPrompt(directive) {
 /**
  * Gera descrições e prompts de cenas cinematográficas 9:16 personalizados para o tema do vídeo (Visual Beats)
  */
-export function generateThematicScenes(baseTitle, summaryInsight, visualAesthetic = 'Cinematic Dark Minimalist', visualDirective = null, narrationText = null) {
+export async function generateThematicScenes(baseTitle, summaryInsight, visualAesthetic = 'Cinematic Dark Minimalist', visualDirective = null, narrationText = null, apiKey = null) {
   const cleanDirective = (visualDirective && typeof visualDirective === 'string' && visualDirective.trim().length > 0)
     ? visualDirective.replace(/^(quero\s+gerar\s+imagens\s+de\s+|gerar\s+imagens\s+de\s+|imagens\s+de\s+)/i, '').trim()
     : null;
@@ -354,33 +577,44 @@ export function generateThematicScenes(baseTitle, summaryInsight, visualAestheti
     const totalWords = narrationText.trim().split(/\s+/).length;
     const totalDurationEst = (totalWords / 135) * 60;
 
-    const scenes = phrases.map((phrase, idx) => {
+    const scenePromises = phrases.map(async (phrase, idx) => {
       const phraseWords = phrase.trim().split(/\s+/).length;
       const beatDuration = Math.max(3.2, Number(((phraseWords / totalWords) * totalDurationEst).toFixed(1)));
       const intent = deduceActionIntent(phrase);
       const motion = motionTypes[idx % motionTypes.length];
+      const blockType = idx === 0 ? 'hook' : idx >= phrases.length - 1 ? 'cta' : idx >= phrases.length - 3 ? 'hack' : 'body';
 
-      let prompt = '';
-      let visualDesc = '';
+      const prompt = await buildProfessionalScenePrompt({
+        spokenPhrase: phrase,
+        visualDirective: cleanDirective,
+        channelAesthetic: visualAesthetic,
+        blockType,
+        motionType: motion,
+        apiKey,
+        sceneIndex: idx,
+        totalScenes: phrases.length
+      });
 
-      if (cleanDirective) {
-        prompt = `Cinematic vertical 9:16 photography of ${directiveEn}, ${intent.actionEn}, highly detailed, ${visualAesthetic}, dramatic chiaroscuro lighting, volumetric dust particles, 85mm lens, photorealistic 8k`;
-        visualDesc = `${cleanDirective}: ${intent.actionPt}`;
-      } else {
-        prompt = `Cinematic vertical 9:16 photography representing "${phrase.slice(0, 45)}", ${intent.actionEn}, highly detailed, ${visualAesthetic}, dramatic chiaroscuro lighting, 85mm lens, photorealistic 8k`;
-        visualDesc = `${intent.actionPt} (inspirado em "${phrase.slice(0, 35)}...")`;
-      }
+      const visualDesc = cleanDirective
+        ? `${cleanDirective}: ${intent.actionPt}`
+        : `${intent.actionPt} (inspirado em "${phrase.slice(0, 35)}...")`;
 
       return {
         id: idx + 1,
+        sceneIndex: idx,
         duration: beatDuration,
         prompt,
         phrase: phrase,
         motionType: motion,
+        aesthetic: visualAesthetic,
+        visualDirective: cleanDirective,
+        cinemagraphFX: null, // Será detectado automaticamente na esteira de vídeo
         keywords: cleanDirective ? [cleanDirective, intent.type] : [intent.type, 'cinematic dark'],
         visualDescription: visualDesc
       };
     });
+
+    const scenes = await Promise.all(scenePromises);
 
     if (scenes.length >= 6) {
       return scenes;
