@@ -297,11 +297,16 @@ public class DashboardApiController {
         String topic = (String) body.get("topic");
         String sourceUrl = (String) body.get("sourceUrl");
         String visualDirective = (String) body.get("visualDirective");
+        String channelName = (String) body.get("channelName");
+        String channelNiche = (String) body.get("channelNiche");
+        String voiceId = (String) body.get("voiceId");
+        String affiliateUrl = (String) body.get("affiliateUrl");
         Integer scriptIndex = body.get("scriptIndex") != null ? ((Number) body.get("scriptIndex")).intValue() : 0;
 
-        Map<String, Object> scriptPreview = (visualDirective != null && !visualDirective.isBlank())
-                ? aiPipelineService.previewScript(channelId, topic, scriptIndex, sourceUrl, visualDirective)
-                : aiPipelineService.previewScript(channelId, topic, scriptIndex, sourceUrl);
+        Map<String, Object> scriptPreview = aiPipelineService.previewScript(
+                channelId, topic, scriptIndex, sourceUrl, visualDirective,
+                channelName, channelNiche, voiceId, affiliateUrl
+        );
         return ResponseEntity.ok(scriptPreview);
     }
 
@@ -319,14 +324,35 @@ public class DashboardApiController {
         String url = (String) body.get("url");
         String channelId = (String) body.get("channelId");
         String visualDirective = (String) body.get("visualDirective");
+        String channelName = (String) body.get("channelName");
+        String channelNiche = (String) body.get("channelNiche");
+        String voiceId = (String) body.get("voiceId");
+        String affiliateUrl = (String) body.get("affiliateUrl");
+
         if (url == null || url.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Campo 'url' e obrigatorio."));
         }
 
-        Map<String, Object> analysis = (visualDirective != null && !visualDirective.isBlank())
-                ? aiPipelineService.analyzeYouTubeVideo(url, channelId, visualDirective)
-                : aiPipelineService.analyzeYouTubeVideo(url, channelId);
+        Map<String, Object> analysis = aiPipelineService.analyzeYouTubeVideo(
+                url, channelId, visualDirective,
+                channelName, channelNiche, voiceId, affiliateUrl
+        );
         return ResponseEntity.ok(analysis);
+    }
+
+    @PostMapping("/pipeline/flow-package")
+    public ResponseEntity<?> generateFlowPackage(
+            @RequestBody PipelineRunRequest request,
+            @RequestHeader(value = "X-API-KEY", required = false) String providedHeaderKey,
+            @RequestParam(value = "api_key", required = false) String providedQueryKey
+    ) {
+        if (isUnauthorized(providedHeaderKey, providedQueryKey)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Unauthorized: Invalid or missing X-API-KEY"));
+        }
+
+        Map<String, Object> flowResult = aiPipelineService.generateFlowPackage(request);
+        return ResponseEntity.ok(flowResult);
     }
 
     @PostMapping("/pipeline/run")

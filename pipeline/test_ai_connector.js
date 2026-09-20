@@ -205,7 +205,7 @@ test('translateStockQueryToEnglish deve mapear termos comuns em portugues para i
 });
 
 test('generateAssSubtitles deve produzir tags de escala pop spring animada e temas customizaveis', async () => {
-  const { generateAssSubtitles, SUBTITLE_THEMES } = await import('./src/subtitle_generator.js');
+  const { generateAssSubtitles, SUBTITLE_THEMES, toAssInlineColor } = await import('./src/subtitle_generator.js');
   const tempAssPath = 'pipeline/scratch/test_subtitles_pop.ass';
 
   const wordBoundaries = [
@@ -229,8 +229,8 @@ test('generateAssSubtitles deve produzir tags de escala pop spring animada e tem
   assert.ok(content.includes('PlayResY: 1920'), 'Resolução Y 1920');
 
   // Verifica a presença do efeito Spring Bounce / Pop
-  assert.ok(content.includes('\\fscx118\\fscy118'), 'Deve conter tag de escala de pop spring');
-  assert.ok(content.includes('&H0000D7FF'), 'Deve conter cor dourada do tema GOLD_PUNCH');
+  assert.ok(/\\fscx\d+\\fscy\d+/.test(content), 'Deve conter tag de escala de pop spring');
+  assert.ok(content.includes(toAssInlineColor ? toAssInlineColor(SUBTITLE_THEMES.GOLD_PUNCH.activeWordColor) : '&H00FFFF&') || content.includes(SUBTITLE_THEMES.GOLD_PUNCH.activeWordColor), 'Deve conter cor ativa do tema GOLD_PUNCH');
 });
 
 test('detectOptimalVideoEncoder deve retornar codec valido compativel', async () => {

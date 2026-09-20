@@ -1,0 +1,44 @@
+{
+  "channel_id": "motivacao",
+  "name": "@MotivacaoEpica",
+  "niche": "Motivação, Disciplina e Alta Performance",
+  "description": "Canal de motivação épica com estética anime/guerreiro para jovens entre 18-34 anos que buscam transformação pessoal.",
+  "voice_profile": {
+    "voice_id": "pt-BR-AntonioNeural",
+    "rate": "+12%",
+    "pitch": "+2Hz",
+    "style": "intense"
+  },
+  "visual_profile": {
+    "aesthetic": "Epic Anime Shonen Dark",
+    "broll_keywords": ["warrior", "epic battle", "dark anime", "power aura", "training", "determination"],
+    "color_palette": "Dark Navy, Gold, Crimson, White",
+    "subtitles_style": {
+      "theme": "TIKTOK_VIRAL",
+      "font_name": "Arial",
+      "font_size": 80,
+      "primary_color": "&H0000FFFF",
+      "active_word_color": "&H000000FF",
+      "outline_color": "&H00000000",
+      "outline_width": 6.0,
+      "margin_v": 350
+    }
+  },
+  "script_profile": {
+    "tone": "Épico, energético, desafiador e inspirador",
+    "hook_style": "pattern_interrupt",
+    "target_words_max": 165,
+    "narrative_persona": "Coach épico — fala direto, sem rodeios, exige mais do espectador"
+  },
+  "publishing_profile": {
+    "platform": "YOUTUBE_SHORTS",
+    "youtube_category_id": 24,
+    "privacy": "PUBLIC",
+    "made_for_kids": false,
+    "default_tags": ["motivação", "disciplina", "alta performance", "mentalidade vencedora", "foco", "sucesso", "motivação diária", "shorts", "mindset"],
+    "affiliate_cta": {
+      "description_template": "🔥 QUER TRANSFORMAÇÃO REAL? Acesse o link no perfil e descubra o método que está mudando mentes.\n\n💬 Comente: qual é seu maior obstáculo hoje?\n\n#Motivação #Disciplina #Mentalidade #Shorts",
+      "first_comment": "🔥 Bora! Compartilhe com quem precisa ouvir isso hoje. Link para o método no perfil!"
+    }
+  }
+}

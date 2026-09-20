@@ -429,6 +429,30 @@ export async function generateSceneImageFromPrompt({
 }
 
 /**
+ * Adapta um clipe de vídeo fornecido externamente (ex: gerado no Google Flow)
+ * para a resolução exata 1080x1920 (9:16), duração da cena e sem áudio.
+ */
+export function adaptExternalVideoClip({ inputPath, durationSeconds, outputPath }) {
+  return new Promise((resolve, reject) => {
+    ffmpeg()
+      .input(inputPath)
+      .inputOptions(['-stream_loop -1']) // Permite loop suave caso o clipe do Flow seja mais curto
+      .outputOptions([
+        `-t ${durationSeconds}`,
+        '-vf scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30',
+        '-c:v libx264',
+        '-pix_fmt yuv420p',
+        '-an',
+        '-preset fast'
+      ])
+      .output(outputPath)
+      .on('end', () => resolve(outputPath))
+      .on('error', err => reject(err))
+      .run();
+  });
+}
+
+/**
  * Coleta ou gera todos os pequenos vídeos/takes necessários para o roteiro
  */
 export async function harvestVisualScenes({
@@ -438,10 +462,13 @@ export async function harvestVisualScenes({
   apiKey = null,
   pexelsApiKey = null,
   visualMode = 'hybrid', // 'hybrid' | 'video' | 'image'
-  visualDirective = null
+  visualDirective = null,
+  flowClipsDir = null
 }) {
   const videoClips = [];
   const channelAssetsDir = path.resolve(`pipeline/assets/scenes/${channelId}`);
+  const defaultFlowDir = path.resolve('pipeline/inputs/flow');
+  const effectiveFlowDir = flowClipsDir || (fs.existsSync(defaultFlowDir) ? defaultFlowDir : null);
   const fixedVideoSeed = Math.floor(Math.random() * 100000);
   const usedPrompts = new Set();
   const usedStockVideoIds = new Set();
@@ -449,6 +476,9 @@ export async function harvestVisualScenes({
   let lastCinemagraphFX = null;
 
   console.log(`Iniciando renderizacao de ${scenes.length} takes visuais dinâmicos (Modo: ${visualMode.toUpperCase()})...`);
+  if (effectiveFlowDir) {
+    console.log(`[Google Flow] Diretório de clipes externos ativo: ${effectiveFlowDir}`);
+  }
 
   for (let i = 0; i < scenes.length; i++) {
     const scene = scenes[i];
@@ -495,7 +525,46 @@ export async function harvestVisualScenes({
     if (scenePrompt) {
       console.log(`  -> Prompt Base: "${scenePrompt.slice(0, 85)}..."`);
     }
-    console.log(`  -> Termos de Busca Contextual: [${contextualQueries.slice(0, 3).map(q => `"${q}"`).join(', ')}]`);
+    // 0. Verifica se há clipe de vídeo do Google Flow ou personalizado fornecido
+    if (effectiveFlowDir && fs.existsSync(effectiveFlowDir)) {
+      const candidates = [
+        path.join(effectiveFlowDir, `scene_${i + 1}.mp4`),
+        path.join(effectiveFlowDir, `scene_${i + 1}.webm`),
+        path.join(effectiveFlowDir, `scene_${i + 1}.mov`),
+        path.join(effectiveFlowDir, `take_${i + 1}.mp4`),
+        path.join(effectiveFlowDir, `take_${i + 1}.webm`),
+        path.join(effectiveFlowDir, `flow_${i + 1}.mp4`),
+        path.join(effectiveFlowDir, `flow_${i + 1}.webm`)
+      ];
+
+      let matchedCustomClip = candidates.find(c => fs.existsSync(c));
+      if (!matchedCustomClip) {
+        const dirFiles = fs.readdirSync(effectiveFlowDir)
+          .filter(f => /\.(mp4|mov|webm|mkv)$/i.test(f))
+          .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+        if (dirFiles[i]) {
+          matchedCustomClip = path.join(effectiveFlowDir, dirFiles[i]);
+        }
+      }
+
+      if (matchedCustomClip) {
+        console.log(`  -> [Google Flow] Incorporando clipe de vídeo: ${path.basename(matchedCustomClip)}`);
+        try {
+          await adaptExternalVideoClip({
+            inputPath: matchedCustomClip,
+            durationSeconds: scene.duration,
+            outputPath: clipPath
+          });
+          if (fs.existsSync(clipPath) && fs.statSync(clipPath).size > 20000) {
+            console.log(`  -> [Google Flow] Clipe renderizado e adaptado (1080x1920, ${scene.duration}s)!`);
+            videoClips.push(clipPath);
+            continue;
+          }
+        } catch (clipErr) {
+          console.warn(`  -> [Google Flow] Falha ao adaptar clipe: ${clipErr.message}, acionando fallback...`);
+        }
+      }
+    }
 
     // 1. Tenta geração de clipe de vídeo direto via IA (Google Veo 2 / Video AI) se aplicável
     if (visualMode === 'video' || (visualMode === 'hybrid' && isHook)) {

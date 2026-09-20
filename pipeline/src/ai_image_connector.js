@@ -183,13 +183,20 @@ export async function generateImageWithPollinationsFlux({ prompt, outputPath, se
   const negPrompt = getNegativePromptForDirective(visualDirective, prompt);
   const negParam = encodeURIComponent(negPrompt);
 
-  const url = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=1080&height=1920&nologo=true&seed=${sceneSeed}&model=flux&negative_prompt=${negParam}`;
+  // flux-realism para cenas fotorrealistas (documentário, pessoas, objetos)
+  // flux para estilos artísticos (anime, ghibli, cyberpunk)
+  const combined = `${visualDirective || ''} ${prompt}`.toLowerCase();
+  const isArtStyle = /ghibli|anime|manga|cyberpunk|lofi|lo-fi|fantasy|illustration/i.test(combined);
+  const imageModel = isArtStyle ? 'flux' : 'flux-realism';
+
+  const url = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=1080&height=1920&nologo=true&seed=${sceneSeed}&model=${imageModel}&negative_prompt=${negParam}`;
 
   const startTime = Date.now();
 
   for (let attempt = 1; attempt <= 2; attempt++) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    // 28s timeout: o Flux-Realism processa em ~15-25s dependendo do servidor
+    const timeoutId = setTimeout(() => controller.abort(), 28000);
 
     try {
       const res = await fetch(url, { signal: controller.signal });

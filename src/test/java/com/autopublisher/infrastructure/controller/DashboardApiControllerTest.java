@@ -177,7 +177,7 @@ class DashboardApiControllerTest {
     @Test
     @DisplayName("Deve analisar vídeo do YouTube via POST /api/v1/dashboard/pipeline/analyze-youtube")
     void shouldAnalyzeYouTubeVideoSuccessfully() throws Exception {
-        when(aiPipelineService.analyzeYouTubeVideo(any(), any())).thenReturn(java.util.Map.of(
+        when(aiPipelineService.analyzeYouTubeVideo(any(), any(), any(), any(), any(), any(), any())).thenReturn(java.util.Map.of(
                 "title", "Análise de Foco Viral #Shorts",
                 "wordCount", 150,
                 "author", "Canal de Referência"
@@ -201,5 +201,64 @@ class DashboardApiControllerTest {
                         .content("{\"channelId\":\"psicosegredo\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Campo 'url' e obrigatorio."));
+    }
+
+    @Test
+    @DisplayName("Deve disparar pipeline com parâmetros 100% dinâmicos extraídos do dashboard")
+    void shouldRunPipelineWithDynamicDashboardParameters() throws Exception {
+        com.autopublisher.application.port.in.PipelineJobStatus mockStatus = new com.autopublisher.application.port.in.PipelineJobStatus(
+                "job_dyn_123", "RUNNING", 5, "Iniciando", "canal_custom", "TIKTOK",
+                "Produtividade Extrema", java.time.LocalDateTime.now(), null,
+                java.util.List.of("Log 1"), null, null, null, null, null
+        );
+        when(aiPipelineService.startPipelineJob(any())).thenReturn(mockStatus);
+
+        mockMvc.perform(post("/api/v1/dashboard/pipeline/run")
+                        .header("X-API-KEY", API_KEY)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                        {
+                            "channelName": "@meunovocanal",
+                            "channelNiche": "Produtividade",
+                            "voiceId": "pt-BR-FranciscaNeural",
+                            "affiliateUrl": "https://meuafiliado.com/curso",
+                            "title": "Os 3 Hábitos Diários #Shorts",
+                            "narrationText": "Você quer mudar sua rotina mas não sabe por onde começar...",
+                            "firstComment": "👉 Link oficial do curso: https://meuafiliado.com/curso",
+                            "platform": "TIKTOK",
+                            "subtitlesTheme": "CYAN_ELECTRIC",
+                            "enableSubtitles": true
+                        }
+                        """))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.jobId").value("job_dyn_123"))
+                .andExpect(jsonPath("$.platform").value("TIKTOK"));
+    }
+
+    @Test
+    @DisplayName("Deve gerar pacote do Google Flow com parâmetros 100% dinâmicos")
+    void shouldGenerateFlowPackageWithDynamicParameters() throws Exception {
+        when(aiPipelineService.generateFlowPackage(any())).thenReturn(java.util.Map.of(
+                "flowScenes", java.util.List.of(
+                        java.util.Map.of("sceneIndex", 0, "flowPrompt", "Vertical 9:16 cinematic prompt...")
+                ),
+                "channelName", "@meunovocanal",
+                "audioDurationSeconds", 65.5
+        ));
+
+        mockMvc.perform(post("/api/v1/dashboard/pipeline/flow-package")
+                        .header("X-API-KEY", API_KEY)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                        {
+                            "channelName": "@meunovocanal",
+                            "channelNiche": "Finanças",
+                            "voiceId": "pt-BR-AntonioNeural",
+                            "affiliateUrl": "https://meuafiliado.com/vip",
+                            "subtitlesTheme": "GOLD_PUNCH"
+                        }
+                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.channelName").value("@meunovocanal"));
     }
 }

@@ -9,6 +9,7 @@ try {
 } catch (ignored) {}
 
 import { analyzeAndAdaptYouTubeVideo, generateThematicScenes } from './youtube_analyzer.js';
+import { generateViralScriptWithGemini } from './gemini_script_generator.js';
 
 /**
  * Banco de roteiros validados e calibrados para nichos canônicos
@@ -69,13 +70,70 @@ const VALIDATED_SCRIPTS_CATALOG = [
       { id: 4, duration: 15, phrase: 'A regra de ouro dos milionários: antes de pagar qualquer conta no início do mês, pague o seu futuro primeiro. Separe pelo menos vinte por cento de tudo o que entra e invista em ativos geradores de renda.', prompt: 'Close-up of hands signing an executive investment agreement with luxury fountain pen, vertical 9:16', keywords: ['executive agreement hands', 'investment luxury', 'smart money'] },
       { id: 5, duration: 14, phrase: 'Pare de ser passageiro da sua vida financeira. Siga a Mente Milionária e tome o volante do seu patrimônio agora.', prompt: 'A successful person looking at the sunrise over a metropolis from a penthouse terrace, vertical 9:16', keywords: ['penthouse sunrise freedom', 'wealthy freedom', 'lifestyle victory'] }
     ]
+  },
+  {
+    id: 'script-05',
+    channelId: 'psicosegredo',
+    topic: 'Ansiedade \u0026 Sistema Nervoso',
+    title: 'Seu Cérebro Viciou em Alerta. Veja Como Sair. #Shorts',
+    narrationText: 'O que chamamos de ansiedade não é fraqueza. É um sistema de alarme que ficou preso no modo ligado. Toda vez que você percebe uma ameaça, real ou imaginária, o eixo hipotalâmico hipofisário libera cortisol e adrenalina em até cento e oitenta milissegundos. O problema não é o alarme; é que nos humanos modernos o alarme toca para e-mails, notícias e julgamentos sociais com a mesma intensidade que tocava para predadores. Pesquisadores da Universidade de Harvard descobriram que oitenta e cinco por cento das preocupações que antecipamos nunca chegam a acontecer. E dentre as que acontecem, setenta e nove por cento são gerenciáveis. A saída científica mais eficaz é simples: quando sentir o gatilho, faça uma expiração longa de seis segundos. Ativa o nervo vago e desliga o modo de luta ou fuga instantaneamente. Siga o Psicosegredo e reconquiste o controle da sua mente.',
+    scenes: [
+      { id: 1, duration: 5, phrase: 'O que chamamos de ansiedade não é fraqueza. É um sistema de alarme que ficou preso no modo ligado.', prompt: 'Macro cinematic close-up of stressed anxious human eye with dilated pupil, dramatic chiaroscuro, extreme dark background, documentary photography style, vertical 9:16', keywords: ['anxious eye closeup', 'stress dark', 'fear dilated pupil'] },
+      { id: 2, duration: 18, phrase: 'Toda vez que você percebe uma ameaça, real ou imaginária, o eixo hipotalâmico hipofisário libera cortisol e adrenalina em até cento e oitenta milissegundos.', prompt: 'Abstract glowing human brain scan showing amygdala activating in pulsing red-orange, dark neuroscience laboratory environment, documentary photography, vertical 9:16', keywords: ['brain amygdala red alert', 'cortisol neuro scan', 'fight or flight brain'] },
+      { id: 3, duration: 17, phrase: 'Pesquisadores descobriram que oitenta e cinco por cento das preocupações que antecipamos nunca chegam a acontecer.', prompt: 'Dark minimalist hourglass with red anxious sand particles dissolving into nothing, cinematic dramatic side lighting, vertical 9:16', keywords: ['anxiety dissolving dark', 'hourglass stress', 'worry fades away'] },
+      { id: 4, duration: 14, phrase: 'A saída científica mais eficaz: faça uma expiração longa de seis segundos. Ativa o nervo vago e desliga o modo de luta ou fuga.', prompt: 'Cinematic close-up of a person breathing deeply, calm eyes closed, soft golden light touching serene face, dark background, vertical 9:16', keywords: ['deep breath calm', 'vagus nerve relaxation', 'meditation dark'] },
+      { id: 5, duration: 12, phrase: 'Siga o Psicosegredo e reconquiste o controle da sua mente.', prompt: 'Silhouette of a strong person standing calm above stormy clouds, golden sunrays breaking through, dark cinematic aesthetic, vertical 9:16', keywords: ['calm above storm', 'mental strength dark', 'anxiety overcome'] }
+    ]
+  },
+  {
+    id: 'script-06',
+    channelId: 'psicosegredo',
+    topic: 'Manipulação \u0026 Influência',
+    title: 'As 3 Frases que Manipuladores Usam Sempre #Shorts',
+    narrationText: 'Há padrões verbais que manipuladores repetem independentemente da cultura, da idade ou do contexto. Quando alguém diz você é sensível demais ou está exagerando, estão usando uma técnica chamada gaslighting, que consiste em invalidar a percepção da realidade de outra pessoa para que ela perca a confiança nos próprios instintos. Quando ouvir depois de tudo que fiz por você, cuidado: essa frase ativa a culpa para criar uma dívida emocional impagável. E por fim, eu só estou dizendo isso por seu próprio bem é a cobertura perfeita para críticas que na verdade servem apenas a quem as dispara. Ao identificar esses três padrões, o mecanismo perde todo o poder sobre você. Siga o Psicosegredo e aprenda a reconhecer cada jogada antes que ela chegue até você.',
+    scenes: [
+      { id: 1, duration: 4, phrase: 'Há padrões verbais que manipuladores repetem independentemente da cultura, da idade ou do contexto.', prompt: 'Cinematic dark silhouette of a hand pulling invisible puppet strings above shadow figures, chiaroscuro dramatic lighting, vertical 9:16', keywords: ['puppet master manipulation', 'shadow control dark', 'influence strings'] },
+      { id: 2, duration: 18, phrase: 'Quando alguém diz você é sensível demais, estão usando gaslighting para invalidar sua percepção da realidade.', prompt: 'Dark atmospheric image of a distorted mirror reflecting a warped reality, dramatic chiaroscuro, cinematic moody shadows, vertical 9:16', keywords: ['warped mirror reality', 'gaslighting dark mirror', 'manipulation perception'] },
+      { id: 3, duration: 16, phrase: 'Depois de tudo que fiz por você ativa culpa. Eu só estou dizendo por seu bem cobre críticas que servem apenas a quem as dispara.', prompt: 'Close-up of two people in a psychological power dynamic conversation in deep shadow, one figure dominant in the dark, vertical 9:16', keywords: ['power dynamic dark', 'guilt trip shadow', 'manipulation conversation'] },
+      { id: 4, duration: 13, phrase: 'Ao identificar esses padrões, o mecanismo perde todo o poder sobre você.', prompt: 'Dark cinematic image of broken chains dissolving into golden light particles, freedom from manipulation, dramatic vertical 9:16', keywords: ['broken chains golden light', 'freedom dark aesthetic', 'liberation manipulation'] },
+      { id: 5, duration: 12, phrase: 'Siga o Psicosegredo e aprenda a reconhecer cada jogada antes que ela chegue até você.', prompt: 'Sharp focused eye surrounded by darkness, knowing gaze, intelligent awareness, cinematic documentary photography, vertical 9:16', keywords: ['awareness watchful eye', 'sharp gaze dark', 'psychology knowledge'] }
+    ]
+  },
+  {
+    id: 'script-07',
+    channelId: 'estoicismo',
+    topic: 'Gratidão \u0026 Perspectiva Estoica',
+    title: 'A Técnica Romana que Elimina a Comparação #Shorts',
+    narrationText: 'Marco Aurélio praticava diariamente uma meditação que os romanos chamavam de Memento Mori: a contemplação da própria mortalidade. Não como fonte de medo, mas de clareza absoluta. Quando você imagina, de forma plena e honetária, que poderia perder tudo o que tem hoje, algo surpreendente acontece na sua neurobiologia: os circuitos de comparação social desativam temporariamente, e os circuitos de gratidão são ativados com intensidade incomum. A ciência moderna confirma que pessoas que praticam a visualização da perda têm quarenta por cento mais satisfação reportada com suas próprias vidas do que quem constantemente almeja o que não tem. O exercício é simples: mentalize que perdeu sua saúde, sua liberdade ou seus entes queridos. Sinta o peso por três segundos. Depois perceba o que ainda permanece. Siga a Filosofia Estoica e construa uma mente que não precisa de mais para sentir-se completa.',
+    scenes: [
+      { id: 1, duration: 5, phrase: 'Marco Aurélio praticava diariamente uma meditação que os romanos chamavam de Memento Mori: a contemplação da própria mortalidade.', prompt: 'Ancient Roman marble bust of Marcus Aurelius emperor in dramatic dark museum lighting, chiaroscuro, dust particles floating, vertical 9:16', keywords: ['marcus aurelius bust marble', 'ancient roman emperor dark', 'stoic philosopher'] },
+      { id: 2, duration: 18, phrase: 'Quando você imagina que poderia perder tudo o que tem hoje, os circuitos de comparação social desativam e os de gratidão são ativados.', prompt: 'Cinematic moody hourglass with golden sand slowly falling, memento mori concept, dark atmospheric background, philosophy aesthetics, vertical 9:16', keywords: ['hourglass gold memento mori', 'mortality time dark', 'stoic meditation'] },
+      { id: 3, duration: 18, phrase: 'A ciência confirma que pessoas que praticam a visualização da perda têm quarenta por cento mais satisfação com suas vidas.', prompt: 'Side profile of a person in deep contemplative meditation, dramatic golden side light, dark philosophical atmosphere, cinematic documentary, vertical 9:16', keywords: ['meditation contemplation dark', 'gratitude golden light', 'stoic practice'] },
+      { id: 4, duration: 13, phrase: 'Mentalize que perdeu sua saúde, sua liberdade ou seus entes queridos. Sinta o peso por três segundos. Depois perceba o que ainda permanece.', prompt: 'Empty hands open in acceptance and gratitude, dramatic chiaroscuro light beam illuminating from above, dark cinematic background, vertical 9:16', keywords: ['open hands acceptance', 'gratitude dark light', 'stoic acceptance'] },
+      { id: 5, duration: 12, phrase: 'Siga a Filosofia Estoica e construa uma mente que não precisa de mais para sentir-se completa.', prompt: 'A lone ancient warrior in meditation posture on a hilltop at twilight, golden horizon, stoic silhouette against dramatic sky, vertical 9:16', keywords: ['stoic warrior meditation', 'twilight silhouette', 'inner peace philosophy'] }
+    ]
+  },
+  {
+    id: 'script-08',
+    channelId: 'psicosegredo',
+    topic: 'Narcisismo \u0026 Relações Tóxicas',
+    title: 'Por Que Você Não Consegue Sair de Relações Tóxicas #Shorts',
+    narrationText: 'Se você já ficou preso em um relacionamento onde a pessoa alternava entre te tratar como especial e te fazer sentir uma nulidade, não é por fraqueza. É química cerebral pura. Esse padrão tem nome: ciclo de reforço intermitente. É a mesma técnica que os cassinos usam para criar dependentes: você nunca sabe quando vem a recompensa, então o cérebro permanece em alerta constante. A validação intermitente de um narcisista libera mais dopamina do que qualquer relacionamento estável porque o cérebro interpreta a incerteza como recompensa potencial. Quando você finalmente entende o mecanismo, a attração perde o misticismo e ganha o nome certo: condicionamento. O primeiro passo para sair é nomear o que sente. Viciàdo. Não apaixonado. Siga o Psicosegredo e decodifique os padrões que tentam te prender.',
+    scenes: [
+      { id: 1, duration: 4, phrase: 'Se você já ficou preso em um relacionamento onde a pessoa alternava entre te tratar como especial e te fazer sentir uma nulidade, não é fraqueza.', prompt: 'Two shadows, one dominant over the other, psychological power imbalance, dark chiaroscuro cinematic atmosphere, dramatic side lighting, vertical 9:16', keywords: ['shadow dominance relationship', 'power imbalance dark', 'toxic relationship cinematic'] },
+      { id: 2, duration: 18, phrase: 'Esse padrão tem nome: ciclo de reforço intermitente. A mesma técnica que os cassinos usam para criar dependentes.', prompt: 'Dark atmospheric neon casino roulette wheel spinning in cinematic slow motion, dopamine trap concept, vertical 9:16', keywords: ['casino roulette dark neon', 'intermittent reinforcement', 'addiction dopamine loop'] },
+      { id: 3, duration: 18, phrase: 'A validação intermitente libera mais dopamina do que qualquer relacionamento estável porque o cérebro interpreta a incerteza como recompensa potencial.', prompt: 'Glowing dopamine reward pathway in human brain, neural circuits illuminated in gold and red, documentary neuroscience visualization, dark background, vertical 9:16', keywords: ['dopamine reward circuit brain', 'neural pathway gold', 'toxic bond neuroscience'] },
+      { id: 4, duration: 13, phrase: 'Quando você entende o mecanismo, a atração perde o misticismo e ganha o nome certo: condicionamento.', prompt: 'Person in cinematic realization moment, dramatic shaft of golden light breaking through darkness, liberation concept, vertical 9:16', keywords: ['realization awakening dark', 'truth revelation light', 'pattern recognition'] },
+      { id: 5, duration: 11, phrase: 'O primeiro passo é nomear o que sente. Viciado. Não apaixonado. Siga o Psicosegredo.', prompt: 'Broken golden chain falling against dark cinematic background, freedom from conditioning, liberation concept, vertical 9:16', keywords: ['broken chain golden freedom', 'liberation toxic pattern', 'psychology awareness'] }
+    ]
   }
 ];
+
 
 /**
  * Carrega a configuracao do perfil do canal
  */
-export function loadChannelProfile(channelId = 'psicosegredo') {
+export function loadChannelProfile(channelId = 'custom') {
   const profilePath = path.resolve(`pipeline/config/channels/${channelId}.json`);
   if (fs.existsSync(profilePath)) {
     return JSON.parse(fs.readFileSync(profilePath, 'utf8'));
@@ -85,7 +143,7 @@ export function loadChannelProfile(channelId = 'psicosegredo') {
   return {
     channel_id: channelId,
     name: `@${channelId}`,
-    niche: 'Canal Automatizado',
+    niche: 'Geral',
     voice_profile: {
       voice_id: 'pt-BR-AntonioNeural',
       rate: '+2%'
@@ -104,20 +162,80 @@ export function loadChannelProfile(channelId = 'psicosegredo') {
 }
 
 /**
- * Gera ou recupera um roteiro estruturado calibrado (suporta YouTube, Tema ou Catálogo)
+ * Gera ou recupera um roteiro estruturado calibrado (suporta YouTube, Tema, Catálogo ou Roteiro Direto do Dashboard)
  */
 export async function generateScript({
-  channelId = 'psicosegredo',
+  channelId = 'custom',
   topic,
   scriptIndex = 0,
   sourceUrl = null,
   customProfile = null,
   visualDirective = null,
+  customNarration = null,
+  customTitle = null,
+  customComment = null,
   geminiKey = null
 }) {
   const channel = customProfile || loadChannelProfile(channelId);
-
   const effectiveGeminiKey = geminiKey || process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+
+  // 0. Se foi fornecido roteiro de locução direto do dashboard (customNarration)
+  if (customNarration && customNarration.trim().length > 30) {
+    const fullNarration = customNarration.trim();
+    const words = fullNarration.split(/\s+/);
+    const wordCount = words.length;
+    const durSec = Math.max(60, Math.round((wordCount / 135) * 60));
+    const finalTitle = customTitle || (topic ? `${topic} #Shorts` : `${channel.name || 'Vídeo'} #Shorts`);
+    const pubProfile = channel.publishing_profile || {};
+    const tags = pubProfile.default_tags || ['shorts', 'viral', channel.channel_id || 'custom'];
+    const ctaProfile = pubProfile.affiliate_cta || {};
+
+    const q1 = Math.floor(fullNarration.length * 0.15);
+    const q2 = Math.floor(fullNarration.length * 0.65);
+    const q3 = Math.floor(fullNarration.length * 0.85);
+
+    const hookText = fullNarration.slice(0, q1);
+    const scienceText = fullNarration.slice(q1, q2);
+    const hackText = fullNarration.slice(q2, q3);
+    const ctaText = fullNarration.slice(q3);
+
+    const scenes = await generateThematicScenes(
+      topic || finalTitle,
+      fullNarration.slice(0, 200),
+      channel.visual_profile?.aesthetic,
+      visualDirective,
+      fullNarration,
+      effectiveGeminiKey
+    );
+
+    return {
+      channelId: channel.channel_id || channelId,
+      channelName: channel.name || `@${channelId}`,
+      scriptId: `custom_${Date.now()}`,
+      topic: topic || finalTitle,
+      title: finalTitle,
+      narrationText: fullNarration,
+      wordCount,
+      estimatedDurationSeconds: durSec,
+      rewardsEligible: durSec >= 60,
+      blocks: [
+        { title: 'Gancho (0-3s)', text: hookText },
+        { title: 'Foco Central (3-45s)', text: scienceText },
+        { title: 'Hack Prático (45-58s)', text: hackText },
+        { title: 'CTA & Retenção (58-65s)', text: ctaText }
+      ],
+      scenes,
+      metadata: {
+        title: finalTitle,
+        description: `${finalTitle}\n\n${ctaProfile.description_template || ''}\n\nTags: #${tags.slice(0, 5).join(' #')}`,
+        tags: tags.join(', '),
+        categoryId: pubProfile.youtube_category_id || 24,
+        madeForKids: pubProfile.made_for_kids || false,
+        privacy: pubProfile.privacy || 'PUBLIC',
+        firstComment: customComment || ctaProfile.first_comment || 'Siga para mais conteúdos!'
+      }
+    };
+  }
 
   // 1. Se foi fornecido um Link do YouTube, aciona o analisador de conteúdo
   if (sourceUrl && (sourceUrl.includes('youtube.com') || sourceUrl.includes('youtu.be'))) {
@@ -147,6 +265,23 @@ export async function generateScript({
 
   // Se o usuário digitou um tema livre personalizado sem correspondência exata no catálogo
   if (topic && (!selectedScript || !selectedScript.topic.toLowerCase().includes(topic.toLowerCase()))) {
+    // PRIORIDADE 1: Tentar gerar roteiro viral com Gemini Flash
+    if (effectiveGeminiKey) {
+      console.log(`[Script Generator] Solicitando roteiro viral ao Gemini Flash para: "${topic}"...`);
+      const geminiScript = await generateViralScriptWithGemini({
+        topic,
+        channelProfile: channel,
+        apiKey: effectiveGeminiKey,
+        visualDirective
+      });
+
+      if (geminiScript && geminiScript.narrationText && geminiScript.narrationText.length > 100) {
+        console.log(`[Script Generator] ✅ Roteiro gerado pelo Gemini: ${geminiScript.wordCount} palavras, ${geminiScript.scenes.length} cenas.`);
+        return geminiScript;
+      }
+
+      console.log('[Script Generator] Gemini não retornou roteiro válido — usando template local.');
+    }
     const customTitle = `${topic.slice(0, 50)} #Shorts`;
     const hook = `Se você busca dominar ${topic.slice(0, 35)} com verdadeira maestria, existe um princípio silencioso que poucos têm a coragem de praticar no dia a dia.`;
     const core1 = `A maioria das pessoas falha constantemente porque tenta buscar respostas fáceis e atalhos superficiais. Elas reagem a cada estímulo externo, esquecendo que o verdadeiro domínio nasce da calma interior e do controle rigoroso da própria atenção.`;
@@ -190,7 +325,13 @@ export async function generateScript({
     };
   }
 
-  const wordCount = selectedScript.narrationText.trim().split(/\s+/).length;
+  let narrationText = selectedScript.narrationText;
+  if (channel.name && channel.name !== '@psicosegredo') {
+    narrationText = narrationText.replace(/Siga o Psicosegredo/gi, `Siga ${channel.name}`);
+    narrationText = narrationText.replace(/o Psicosegredo/gi, channel.name);
+  }
+
+  const wordCount = narrationText.trim().split(/\s+/).length;
   const pubProfile = channel.publishing_profile || {};
   const tags = pubProfile.default_tags || ['shorts', 'viral', channelId];
   const cta = pubProfile.affiliate_cta || {};
@@ -204,17 +345,17 @@ export async function generateScript({
     scriptId: selectedScript.id,
     topic: selectedScript.topic,
     title: selectedScript.title,
-    narrationText: selectedScript.narrationText,
+    narrationText: narrationText,
     wordCount,
     estimatedDurationSeconds: Math.round((wordCount / 135) * 60),
     rewardsEligible: Math.round((wordCount / 135) * 60) >= 60,
     blocks: [
-      { title: 'Gancho (0-3s)', text: selectedScript.narrationText.slice(0, 100) },
-      { title: 'Foco Central (3-45s)', text: selectedScript.narrationText.slice(100, 350) },
-      { title: 'Hack Prático (45-58s)', text: selectedScript.narrationText.slice(350, 500) },
-      { title: 'CTA & Retenção (58-65s)', text: selectedScript.narrationText.slice(500) }
+      { title: 'Gancho (0-3s)', text: narrationText.slice(0, 100) },
+      { title: 'Foco Central (3-45s)', text: narrationText.slice(100, 350) },
+      { title: 'Hack Prático (45-58s)', text: narrationText.slice(350, 500) },
+      { title: 'CTA & Retenção (58-65s)', text: narrationText.slice(500) }
     ],
-    scenes: (visualDirective && visualDirective.trim().length > 0) ? await generateThematicScenes(selectedScript.topic, selectedScript.title, channel.visual_profile?.aesthetic, visualDirective, selectedScript.narrationText, effectiveGeminiKey) : selectedScript.scenes,
+    scenes: (visualDirective && visualDirective.trim().length > 0) ? await generateThematicScenes(selectedScript.topic, selectedScript.title, channel.visual_profile?.aesthetic, visualDirective, narrationText, effectiveGeminiKey) : selectedScript.scenes,
     metadata: {
       title: selectedScript.title,
       description,

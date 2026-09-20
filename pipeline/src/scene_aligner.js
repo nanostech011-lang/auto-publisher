@@ -271,7 +271,7 @@ export function alignScenesWithWordBoundaries({
   const alignmentDetails = new Array(numScenes);
   alignmentDetails[0] = { type: 'audio_start', word: wordBoundaries[0]?.word || '' };
 
-  const minSceneDurationMs = 1500; // Mínimo de 1.5s por cena
+  const minSceneDurationMs = 800; // Mínimo de 0.8s por cena (cortes dinâmicos para Shorts/TikTok)
   const totalBaseDuration = scenes.reduce((acc, s) => acc + (s.duration || 5), 0) || (numScenes * 5);
 
   let boundaryCursor = 0;

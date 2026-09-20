@@ -19,17 +19,42 @@ import { ingestGeneratedPost } from './publisher_ingestor.js';
 // Parser simples de argumentos CLI
 function parseArgs() {
   const args = process.argv.slice(2);
-  const options = {
-    channel: 'psicosegredo',
+  let options = {
+    channel: 'custom',
     scriptIndex: 0,
     topic: null,
     platform: 'YOUTUBE_SHORTS',
     geminiKey: null,
     pexelsKey: null,
-    visualMode: 'hybrid', // 'hybrid' (Vídeo no gancho + Imagens HD) | 'video' (Vídeo em tudo) | 'image' (Apenas Imagens)
-    batch: 1
+    visualMode: 'hybrid', // 'hybrid' | 'video' | 'image'
+    batch: 1,
+    enableSubtitles: true,
+    channelName: null,
+    niche: null,
+    voiceId: null,
+    affiliateUrl: null,
+    subtitlesTheme: 'GOLD_PUNCH',
+    title: null,
+    narrationText: null,
+    firstComment: null
   };
 
+  // 1. Se foi passado arquivo de configuração (--config-file)
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--config-file' && args[i + 1]) {
+      const cfgPath = path.resolve(args[i + 1]);
+      if (fs.existsSync(cfgPath)) {
+        try {
+          const fileConfig = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+          options = { ...options, ...fileConfig };
+        } catch (e) {
+          console.warn('[Pipeline] Aviso: Falha ao carregar config file:', e.message);
+        }
+      }
+    }
+  }
+
+  // 2. Flags de linha de comando
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--channel' && args[i + 1]) {
       options.channel = args[i + 1];
@@ -61,10 +86,122 @@ function parseArgs() {
     } else if ((args[i] === '--pexels-key' || args[i] === '--pexels-api-key') && args[i + 1]) {
       options.pexelsKey = args[i + 1];
       i++;
+    } else if (args[i] === '--no-subtitles' || args[i] === '--sem-legenda') {
+      options.enableSubtitles = false;
+    } else if (args[i] === '--subtitles' || args[i] === '--com-legenda') {
+      options.enableSubtitles = true;
+    } else if ((args[i] === '--flow-clips-dir' || args[i] === '--clips-dir') && args[i + 1]) {
+      options.flowClipsDir = path.resolve(args[i + 1]);
+      i++;
+    } else if ((args[i] === '--channel-name' || args[i] === '--name') && args[i + 1]) {
+      options.channelName = args[i + 1];
+      i++;
+    } else if ((args[i] === '--niche') && args[i + 1]) {
+      options.niche = args[i + 1];
+      i++;
+    } else if ((args[i] === '--voice' || args[i] === '--voice-id') && args[i + 1]) {
+      options.voiceId = args[i + 1];
+      i++;
+    } else if ((args[i] === '--affiliate-url' || args[i] === '--cta-url') && args[i + 1]) {
+      options.affiliateUrl = args[i + 1];
+      i++;
+    } else if ((args[i] === '--subtitles-theme' || args[i] === '--sub-theme') && args[i + 1]) {
+      options.subtitlesTheme = args[i + 1];
+      i++;
+    } else if (args[i] === '--title' && args[i + 1]) {
+      options.title = args[i + 1];
+      i++;
+    } else if ((args[i] === '--narration-text' || args[i] === '--script-text') && args[i + 1]) {
+      options.narrationText = args[i + 1];
+      i++;
+    } else if (args[i] === '--first-comment' && args[i + 1]) {
+      options.firstComment = args[i + 1];
+      i++;
     }
   }
 
   return options;
+}
+
+/**
+ * Tenta renderizar o vídeo final. Se falhar com legenda habilitada,
+ * tenta automaticamente sem legenda como fallback de resiliência.
+ */
+async function renderWithFallback({
+  videoClips,
+  audioPath,
+  subtitlesPath,
+  finalVideoPath,
+  targetDurationSeconds,
+  bgMusicPath,
+  enableSubtitles
+}) {
+  let renderResult = null;
+  let usedSubtitles = enableSubtitles;
+
+  // Tentativa 1: com as configurações solicitadas (com ou sem legenda)
+  try {
+    renderResult = await composeFinalVideo({
+      videoClips,
+      audioPath,
+      subtitlesAssPath: subtitlesPath,
+      outputVideoPath: finalVideoPath,
+      totalDurationSeconds: targetDurationSeconds,
+      bgMusicPath,
+      enableSubtitles
+    });
+
+    // Validação de tamanho mínimo (500 KB = 512000 bytes)
+    if (!renderResult || !renderResult.videoPath || !fs.existsSync(renderResult.videoPath)) {
+      throw new Error('Arquivo de saída não encontrado após render');
+    }
+    const stat = fs.statSync(renderResult.videoPath);
+    if (stat.size < 512000) {
+      throw new Error(`Arquivo de saída muito pequeno: ${stat.size} bytes (mínimo esperado: 512000)`);
+    }
+
+    return renderResult;
+
+  } catch (primaryErr) {
+    console.error(`\n[Pipeline] ❌ Erro na renderização primária: ${primaryErr.message}`);
+
+    // Fallback automático: se falhou COM legenda, tenta SEM legenda
+    if (enableSubtitles) {
+      console.warn('[Pipeline] ↳ Acionando fallback automático SEM legendas queimadas...');
+      usedSubtitles = false;
+
+      // Limpa arquivo de saída corrompido se existir
+      if (fs.existsSync(finalVideoPath)) {
+        fs.unlinkSync(finalVideoPath);
+      }
+
+      try {
+        renderResult = await composeFinalVideo({
+          videoClips,
+          audioPath,
+          subtitlesAssPath: subtitlesPath,
+          outputVideoPath: finalVideoPath,
+          totalDurationSeconds: targetDurationSeconds,
+          bgMusicPath,
+          enableSubtitles: false
+        });
+
+        const stat = fs.statSync(renderResult.videoPath);
+        if (stat.size < 512000) {
+          throw new Error(`Fallback também produziu arquivo pequeno: ${stat.size} bytes`);
+        }
+
+        console.log('[Pipeline] ✅ Vídeo renderizado com sucesso (sem legendas queimadas).');
+        console.warn('[Pipeline] ⚠️  ATENÇÃO: As legendas foram geradas nos arquivos .ass e .srt, mas NÃO estão queimadas no vídeo. Verifique o escape do path no video_compositor.js.');
+        return { ...renderResult, subtitlesBurned: false, fallbackUsed: true };
+
+      } catch (fallbackErr) {
+        throw new Error(`Falha na renderização primária E no fallback: ${primaryErr.message} | Fallback: ${fallbackErr.message}`);
+      }
+    }
+
+    throw primaryErr;
+  }
 }
 
 export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1) {
@@ -77,6 +214,7 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
   if (options.visualDirective) console.log(`Diretriz Visual das Imagens: "${options.visualDirective}"`);
   console.log(`Plataforma Alvo: ${options.platform}`);
   console.log(`Modo Visual: ${options.visualMode.toUpperCase()}`);
+  console.log(`Legendas Queimadas: ${options.enableSubtitles ? 'SIM (com fallback automático)' : 'NÃO'}`);
   console.log(`Provedor de Imagens IA: ${effectiveGeminiKey ? 'Google Imagen 3 (imagen-3.0-generate-002) [Ativo]' : 'Fallback Flux HD (Alta Fidelidade Gratuita)'}`);
   console.log(`Provedor de B-Roll: ${effectivePexelsKey ? 'Pexels Video API (Alta Fidelidade HD) [Ativo]' : 'Fallback Cinemagraph Procedural'}\n`);
 
@@ -88,14 +226,44 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
 
   // 1. Carrega Perfil e Roteiro
   console.log('>>> [1/6] Carregando perfil e gerando roteiro estruturado...');
-  const channelProfile = loadChannelProfile(options.channel);
+  const baseProfile = loadChannelProfile(options.channel);
+  const channelProfile = {
+    ...baseProfile,
+    channel_id: options.channel,
+    name: options.channelName || baseProfile.name || `@${options.channel}`,
+    channelName: options.channelName || baseProfile.channelName || baseProfile.name || `@${options.channel}`,
+    niche: options.niche || baseProfile.niche || 'Geral',
+    voice_profile: {
+      ...baseProfile.voice_profile,
+      voice_id: options.voiceId || baseProfile.voice_profile?.voice_id || 'pt-BR-AntonioNeural'
+    },
+    publishing_profile: {
+      ...baseProfile.publishing_profile,
+      affiliate_cta: {
+        ...baseProfile.publishing_profile?.affiliate_cta,
+        description_template: options.affiliateUrl 
+          ? `👉 Acesse o link oficial: ${options.affiliateUrl}` 
+          : baseProfile.publishing_profile?.affiliate_cta?.description_template,
+        first_comment: options.firstComment 
+          ? options.firstComment
+          : (options.affiliateUrl 
+              ? `👉 Link oficial fixado: ${options.affiliateUrl}` 
+              : baseProfile.publishing_profile?.affiliate_cta?.first_comment)
+      }
+    }
+  };
+
   const scriptData = await generateScript({
     channelId: options.channel,
     topic: options.topic,
     scriptIndex: options.scriptIndex,
     sourceUrl: options.sourceUrl,
+    customProfile: channelProfile,
     visualDirective: options.visualDirective,
-    geminiKey: effectiveGeminiKey
+    geminiKey: effectiveGeminiKey,
+    customTitle: options.title,
+    customNarration: options.narrationText,
+    customComment: options.firstComment
   });
 
   console.log(`Titulo: "${scriptData.title}"`);
@@ -105,30 +273,51 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
   // 2. Síntese de Voz Neural com Edge-TTS e Timestamps
   console.log('\n>>> [2/6] Sintetizando locucao neural com Edge-TTS e timestamps...');
   const voiceProfile = channelProfile.voice_profile || {};
-  const voiceId = voiceProfile.voice_id || 'pt-BR-AntonioNeural';
+  const voiceId = options.voiceId || voiceProfile.voice_id || 'pt-BR-AntonioNeural';
   const voiceRate = voiceProfile.rate || '+5%';
+  const voicePitch = voiceProfile.pitch || '+0Hz'; // Pitch correto do canal
   const audioPath = path.join(scratchDir, 'narration.mp3');
 
   const voiceResult = await synthesizeVoiceWithTimestamps({
     text: scriptData.narrationText,
     voice: voiceId,
     rate: voiceRate,
+    pitch: voicePitch,
     outputAudioPath: audioPath
   });
 
   console.log(`Audio sintetizado com sucesso!`);
   console.log(`Duracao exata: ${voiceResult.durationSeconds}s (${voiceResult.wordBoundaries.length} palavras mapeadas)`);
 
+  if (voiceResult.wordBoundaries.length < 5) {
+    console.warn('[Pipeline] ⚠️  Poucos wordBoundaries capturados — Edge-TTS pode ter tido falha parcial. Verifique a qualidade do áudio.');
+  }
+
   // 3. Geração de Legendas Dinâmicas (ASS / Karaokê)
   console.log('\n>>> [3/6] Compilando legendas animadas em estilo karaokê...');
   const subtitlesPath = path.join(scratchDir, 'subtitles.ass');
   const srtPath = path.join(scratchDir, 'subtitles.srt');
 
-  const channelSubTheme = options.channel === 'fatos.ocultos' ? 'CYAN_ELECTRIC' : 'GOLD_PUNCH';
+  // Seleciona tema de legenda: do dashboard, perfil do canal ou padrão por canal
+  const channelSubStyle = channelProfile.visual_profile?.subtitles_style;
+  const channelSubTheme = options.subtitlesTheme || channelSubStyle?.theme || (
+    options.channel === 'fatos.ocultos' ? 'CYAN_ELECTRIC'
+    : options.channel === 'motivacao' ? 'TIKTOK_VIRAL'
+    : 'GOLD_PUNCH'
+  );
+
   generateAssSubtitles({
     wordBoundaries: voiceResult.wordBoundaries,
     outputAssPath: subtitlesPath,
     theme: channelSubTheme,
+    // Permite override de estilo via perfil do canal
+    fontName: channelSubStyle?.font_name || null,
+    fontSize: channelSubStyle?.font_size || null,
+    primaryColor: channelSubStyle?.primary_color || null,
+    activeWordColor: channelSubStyle?.active_word_color || null,
+    outlineColor: channelSubStyle?.outline_color || null,
+    outlineWidth: channelSubStyle?.outline_width || null,
+    marginV: channelSubStyle?.margin_v || null,
     popAnimation: true
   });
   generateSrtSubtitles({
@@ -141,9 +330,11 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
   console.log('\n>>> [4/6] Calibrando sincronização fonética de cenas (WordBoundaries)...');
   // Sincronização exata da duração com o áudio real gerado (+ 0.3s de respiração natural para fade out)
   const rawAudioDuration = Number(voiceResult.durationSeconds) || 0;
+  // Padding de 1.2s: garante elegibilidade ao TikTok Rewards (mínimo 60s)
+  // e cria fade-out natural no final sem cortar o áudio abruptamente
   const targetDurationSeconds = rawAudioDuration > 0
-    ? Number((rawAudioDuration + 0.3).toFixed(2))
-    : 60.8;
+    ? Math.max(60.0, Number((rawAudioDuration + 1.2).toFixed(2)))
+    : 61.2;
 
   const alignedScenes = alignScenesWithWordBoundaries({
     scenes: scriptData.scenes,
@@ -168,7 +359,8 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
     apiKey: effectiveGeminiKey,
     pexelsApiKey: effectivePexelsKey,
     visualMode: options.visualMode,
-    visualDirective: options.visualDirective
+    visualDirective: options.visualDirective,
+    flowClipsDir: options.flowClipsDir
   });
   console.log(`${videoClips.length} takes visuais gerados.`);
 
@@ -189,7 +381,7 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
   const thumbPath = path.join(outputDir, 'thumbnail.png');
   const thumbSub = options.visualDirective
     ? options.visualDirective.split(',')[0].slice(0, 24).toUpperCase()
-    : (channelProfile.channelName || 'MOTIVACIONAL').toUpperCase();
+    : (channelProfile.channelName || channelProfile.name || 'MOTIVACIONAL').toUpperCase();
 
   await createProceduralThumbnail({
     title: scriptData.title,
@@ -213,17 +405,18 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
     if (musicFiles.length > 0) bgMusicPath = path.join(globalMusicDir, musicFiles[0]);
   }
 
-  // 5. Renderização Final com FFmpeg
+  // 5. Renderização Final com FFmpeg (com fallback automático sem legenda)
   console.log('\n>>> [5/6] Renderizando video final com FFmpeg...');
   const finalVideoPath = path.join(outputDir, 'video_final_9x16.mp4');
 
-  const renderResult = await composeFinalVideo({
-    videoClips: videoClips,
-    audioPath: audioPath,
-    subtitlesAssPath: subtitlesPath,
-    outputVideoPath: finalVideoPath,
-    totalDurationSeconds: targetDurationSeconds,
-    bgMusicPath: bgMusicPath
+  const renderResult = await renderWithFallback({
+    videoClips,
+    audioPath,
+    subtitlesPath,
+    finalVideoPath,
+    targetDurationSeconds,
+    bgMusicPath,
+    enableSubtitles: options.enableSubtitles
   });
 
   // 6. Ingestão no AutoPublisher Pro com suporte a agendamento escalonado
@@ -237,12 +430,19 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
     totalBatch: totalBatch
   });
 
+  const subtitleStatus = renderResult.subtitlesBurned === false
+    ? '⚠️  SEM LEGENDA (fallback automático acionado)'
+    : renderResult.subtitlesBurned
+    ? '✅ Com legendas karaokê'
+    : '✅ Sem legendas (solicitado)';
+
   console.log('\n===============================================================');
   console.log(`           TAKE [${batchIndex + 1}/${totalBatch}] CONCLUIDO COM SUCESSO!     `);
   console.log('===============================================================');
   console.log(`Video MP4:      ${renderResult.videoPath}`);
   console.log(`Thumbnail PNG:  ${thumbPath}`);
   console.log(`Duracao Final:  ${renderResult.durationSeconds} segundos`);
+  console.log(`Legenda:        ${subtitleStatus}`);
   console.log(`Elegivel TikTok Rewards: ${renderResult.durationSeconds >= 60 ? 'SIM (>= 60s)' : 'NAO'}`);
   console.log(`Status Ingestao: ${ingestResult.source}`);
   console.log('===============================================================\n');
@@ -256,6 +456,35 @@ async function main() {
   console.log('===============================================================\n');
 
   const options = parseArgs();
+
+  // Exibe ajuda rápida dos parâmetros disponíveis
+  if (process.argv.includes('--help') || process.argv.includes('-h')) {
+    console.log(`Uso: node pipeline/src/run_pipeline.js [opções]
+
+Opções:
+  --channel <id>         Canal alvo (ex: psicosegredo, estoicismo, financas)
+  --script <n>           Índice do roteiro no catálogo (0, 1, 2...)
+  --topic "<tema>"       Tema personalizado para geração de roteiro
+  --url <youtube-url>    URL do YouTube para análise e adaptação
+  --platform <plat>      Plataforma (YOUTUBE_SHORTS, TIKTOK, INSTAGRAM_REELS)
+  --visual-mode <modo>   hybrid | video | image (padrão: hybrid)
+  --visual "<diretriz>"  Diretriz visual para geração de imagens
+  --batch <n>            Gerar N vídeos em lote
+  --subtitles            Habilitar legendas queimadas no vídeo (padrão)
+  --no-subtitles         Desabilitar legendas queimadas no vídeo
+  --gemini-key <chave>   Chave Google AI Studio (Gemini/Imagen 3)
+  --pexels-key <chave>   Chave Pexels para B-Roll de vídeo real
+  --help                 Exibe esta ajuda
+
+Exemplos:
+  node pipeline/src/run_pipeline.js --channel psicosegredo
+  node pipeline/src/run_pipeline.js --channel psicosegredo --no-subtitles
+  node pipeline/src/run_pipeline.js --topic "Disciplina e Foco" --platform TIKTOK
+  node pipeline/src/run_pipeline.js --batch 3 --channel estoicismo
+`);
+    process.exit(0);
+  }
+
   const batchCount = options.batch || 1;
   const results = [];
 

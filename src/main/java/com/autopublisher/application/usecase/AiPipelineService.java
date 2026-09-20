@@ -110,83 +110,109 @@ public class AiPipelineService {
      * Gera ou recupera a pre-visualizacao do roteiro estruturado com diretriz visual personalizada.
      */
     public Map<String, Object> previewScript(String channelId, String topic, Integer scriptIndex, String sourceUrl, String visualDirective) {
-        if (sourceUrl != null && !sourceUrl.isBlank()) {
-            return analyzeYouTubeVideo(sourceUrl, channelId, visualDirective);
-        }
+        return previewScript(channelId, topic, scriptIndex, sourceUrl, visualDirective, null, null, null, null);
+    }
 
-        String finalChannel = (channelId != null && !channelId.isBlank()) ? channelId.trim() : "psicosegredo";
+    /**
+     * Gera ou recupera a pre-visualizacao do roteiro estruturado com suporte a perfil de canal 100% dinamico do dashboard.
+     */
+    public Map<String, Object> previewScript(String channelId, String topic, Integer scriptIndex, String sourceUrl,
+                                             String visualDirective, String channelName, String channelNiche,
+                                             String voiceId, String affiliateUrl) {
+        String finalChannel = (channelId != null && !channelId.isBlank()) ? channelId.trim() : (channelName != null ? channelName.replace("@", "").trim() : "canal");
         int index = (scriptIndex != null) ? scriptIndex : 0;
 
-        // Se for psicosegredo e index 0 ou tema silêncio
-        if ("psicosegredo".equalsIgnoreCase(finalChannel)) {
-            if (topic != null && topic.toLowerCase().contains("motiva")) {
-                index = 1;
-            }
-
-            if (index == 1) {
-                return scriptMap(
-                        "channelId", "psicosegredo",
-                        "channelName", "@psicosegredo",
-                        "scriptId", "script-02",
-                        "topic", "Dopamina & Procrastinação",
-                        "title", "A Mentira da Falta de Motivação #Shorts",
-                        "wordCount", 152,
-                        "estimatedDurationSeconds", 68,
-                        "rewardsEligible", true,
-                        "narrationText", "Você não é preguiçoso, e a sua falta de ânimo para mudar de vida tem uma explicação biológica exata. A neurociência explica que a dopamina não é o neurotransmissor do prazer, mas sim da antecipação e da motivação para agir. Quando você passa o dia rolando vídeos curtos, seu cérebro recebe descargas rápidas de dopamina sem nenhum esforço real. Quando você tenta sentar para estudar, treinar ou construir um projeto difícil, sua mente interpreta aquilo como sofrimento extremo, simplesmente porque a recompensa demora a chegar. O nome disso não é incapacidade; é dessensibilização dos seus receptores dopaminérgicos. A regra prática para reiniciar esse circuito: a ação precisa vir antes da vontade. A dopamina só é liberada de forma sustentável depois que os primeiros 5 minutos de uma tarefa começam. Pare de esperar a motivação cair do céu. Force o primeiro movimento. Siga o Psicosegredo e aprenda a controlar sua química mental.",
-                        "blocks", List.of(
-                                Map.of("title", "Gancho (0-3s)", "text", "Você não é preguiçoso: a neurociência explica o motivo."),
-                                Map.of("title", "Foco Científico (3-45s)", "text", "Dopamina da antecipação vs dessensibilização dos receptores dopaminérgicos."),
-                                Map.of("title", "Hack Prático (45-58s)", "text", "Regra dos 5 minutos: a ação precisa vir antes da vontade."),
-                                Map.of("title", "CTA & Retenção (58-65s)", "text", "Siga o @psicosegredo para dominar sua química mental.")
-                        ),
-                        "firstComment", "♟️ Quer aprender a controlar sua dopamina e eliminar a procrastinação em 21 dias? O método completo está no link fixado: https://meulink.com/psicosegredo",
-                        "tags", "neurociencia, dopamina, procrastinacao, foco, produtividade, shorts"
-                );
-            }
-
-            // Roteiro 1 (Default)
-            return scriptMap(
-                    "channelId", "psicosegredo",
-                    "channelName", "@psicosegredo",
-                    "scriptId", "script-01",
-                    "topic", "Linguagem Corporal & Silêncio",
-                    "title", "O Truque do Silêncio e a Dopamina da Dúvida #Shorts",
-                    "wordCount", 149,
-                    "estimatedDurationSeconds", 66,
-                    "rewardsEligible", true,
-                    "narrationText", "Se você desconfia que alguém está mentindo ou escondendo algo de você, nunca confronte a pessoa na hora. Existe um truque da neurociência muito mais poderoso. Quando a pessoa terminar de falar, não diga absolutamente nada. Apenas faça uma pausa e continue mantendo contato visual direto nos olhos dela. O que acontece no cérebro humano nesse momento é fascinante: o cérebro detesta o vácuo de informação. O silêncio prolongado ativa a amígdala cerebral, gerando um pico imediato de ansiedade e insegurança. A pessoa subconscientemente assume que o seu silêncio significa que você já sabe da verdade. Para tentar preencher o vazio e aliviar o desconforto mental, ela começa a falar mais do que deveria e entrega detalhes que pretendia esconder. O silêncio sob controle sempre entrega mais poder do que qualquer argumento verbal. Siga o Psicosegredo para dominar sua mente antes que usem isso contra você.",
-                    "blocks", List.of(
-                            Map.of("title", "Gancho (0-3s)", "text", "Nunca confronte quem mente: use este truque de neurociência."),
-                            Map.of("title", "Foco Científico (3-45s)", "text", "Vácuo de informação, ativação da amígdala cerebral e desconforto subconsciente."),
-                            Map.of("title", "Hack Prático (45-58s)", "text", "Pausa e contato visual prolongado forçam a pessoa a entregar detalhes."),
-                            Map.of("title", "CTA & Retenção (58-65s)", "text", "Siga o @psicosegredo para dominar sua mente.")
-                    ),
-                    "firstComment", "♟️ Protocolo completo de Leitura Comportamental e Detecção de Mentiras no link fixado: https://meulink.com/psicosegredo",
-                    "tags", "neurociencia, linguagem corporal, psicologia escura, shorts, autodominio"
-            );
+        if (sourceUrl != null && !sourceUrl.isBlank()) {
+            return analyzeYouTubeVideo(sourceUrl, channelId, visualDirective, channelName, channelNiche, voiceId, affiliateUrl);
         }
 
-        // Generic fallback para outros canais
+        try {
+            List<String> command = List.of(
+                    "node",
+                    "-e",
+                    "import('./pipeline/src/script_generator.js').then(m => {" +
+                            "  const customProfile = (process.argv[6] || process.argv[7] || process.argv[8] || process.argv[9]) ? {" +
+                            "    channel_id: process.argv[1]," +
+                            "    name: process.argv[6] || ('@' + process.argv[1])," +
+                            "    channelName: process.argv[6] || ('@' + process.argv[1])," +
+                            "    niche: process.argv[7] || 'Geral'," +
+                            "    voice_profile: { voice_id: process.argv[8] || 'pt-BR-AntonioNeural' }," +
+                            "    publishing_profile: {" +
+                            "      affiliate_cta: {" +
+                            "        description_template: process.argv[9] ? ('👉 Acesse o link oficial: ' + process.argv[9]) : undefined," +
+                            "        first_comment: process.argv[9] ? ('👉 Link oficial fixado: ' + process.argv[9]) : undefined" +
+                            "      }" +
+                            "    }" +
+                            "  } : null;" +
+                            "  return m.generateScript({" +
+                            "    channelId: process.argv[1]," +
+                            "    topic: process.argv[2] || null," +
+                            "    scriptIndex: parseInt(process.argv[3], 10)," +
+                            "    sourceUrl: process.argv[4] || null," +
+                            "    visualDirective: process.argv[5] || null," +
+                            "    customProfile: customProfile," +
+                            "    geminiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY" +
+                            "  });" +
+                            "}).then(r => console.log('JSON_START' + JSON.stringify(r) + 'JSON_END')).catch(e => { console.error(e); process.exit(1); });",
+                    finalChannel,
+                    topic != null ? topic : "",
+                    String.valueOf(index),
+                    sourceUrl != null ? sourceUrl : "",
+                    visualDirective != null ? visualDirective : "",
+                    channelName != null ? channelName : "",
+                    channelNiche != null ? channelNiche : "",
+                    voiceId != null ? voiceId : "",
+                    affiliateUrl != null ? affiliateUrl : ""
+            );
+
+            ProcessBuilder pb = new ProcessBuilder(command);
+            injectEnvironment(pb);
+            Process process = pb.start();
+
+            StringBuilder out = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    out.append(line).append("\n");
+                }
+            }
+
+            int exitCode = process.waitFor();
+            String fullOutput = out.toString();
+            int startIdx = fullOutput.indexOf("JSON_START");
+            int endIdx = fullOutput.indexOf("JSON_END");
+            if (startIdx != -1 && endIdx > startIdx) {
+                String json = fullOutput.substring(startIdx + "JSON_START".length(), endIdx).trim();
+                Map<String, Object> parsed = objectMapper.readValue(json, new TypeReference<>() {});
+                if (parsed != null && !parsed.isEmpty()) {
+                    return parsed;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Erro ao gerar roteiro dinâmico via Node ({}), usando fallback contextual: {}", e.getMessage(), e);
+        }
+
+        // Fallback analítico genérico e contextual
         String finalTopic = (topic != null && !topic.isBlank()) ? topic.trim() : "Alta Performance e Foco";
+        String channelDisplayName = (channelName != null && !channelName.isBlank()) ? channelName.trim() : ("@" + finalChannel);
         return scriptMap(
                 "channelId", finalChannel,
-                "channelName", "@" + finalChannel,
+                "channelName", channelDisplayName,
                 "scriptId", "script-auto",
                 "topic", finalTopic,
                 "title", finalTopic + " #Shorts",
                 "wordCount", 150,
                 "estimatedDurationSeconds", 65,
                 "rewardsEligible", true,
-                "narrationText", "Roteiro dinâmico estruturado para o canal " + finalChannel + " abordando: " + finalTopic + ". A mecânica prática transforma consistência em resultados exponenciais. Siga para mais conteúdos.",
+                "narrationText", "Roteiro dinâmico gerado para o canal " + channelDisplayName + " abordando: " + finalTopic + ". A mecânica prática transforma consistência em resultados exponenciais. Siga para mais conteúdos.",
                 "blocks", List.of(
                         Map.of("title", "Gancho (0-3s)", "text", "Quebra de padrão provocativa."),
                         Map.of("title", "Foco Central (3-45s)", "text", "Mecanismo prático simplificado."),
                         Map.of("title", "Hack Prático (45-58s)", "text", "Ação prática imediata."),
-                        Map.of("title", "CTA (58-65s)", "text", "Chamada de conversão e link no comentário fixado.")
+                        Map.of("title", "CTA (58-65s)", "text", "Siga " + channelDisplayName + " e acesse o link no comentário fixado.")
                 ),
-                "firstComment", "Link com conteúdo exclusivo nos comentários.",
-                "tags", "shorts, foco, alta performance"
+                "firstComment", (affiliateUrl != null && !affiliateUrl.isBlank()) ? ("👉 Link oficial fixado: " + affiliateUrl) : "Link com conteúdo exclusivo no primeiro comentário fixado.",
+                "tags", "shorts, foco, " + finalChannel
         );
     }
 
@@ -226,15 +252,48 @@ public class AiPipelineService {
      * Analisa o conteudo de um video do YouTube com diretriz visual personalizada.
      */
     public Map<String, Object> analyzeYouTubeVideo(String sourceUrl, String channelId, String visualDirective) {
-        String finalChannel = (channelId != null && !channelId.isBlank()) ? channelId.trim() : "psicosegredo";
+        return analyzeYouTubeVideo(sourceUrl, channelId, visualDirective, null, null, null, null);
+    }
+
+    /**
+     * Analisa o conteudo de um video do YouTube com perfil de canal 100% dinamico do dashboard.
+     */
+    public Map<String, Object> analyzeYouTubeVideo(String sourceUrl, String channelId, String visualDirective,
+                                                  String channelName, String channelNiche, String voiceId, String affiliateUrl) {
+        String finalChannel = (channelId != null && !channelId.isBlank()) ? channelId.trim() : (channelName != null ? channelName.replace("@", "").trim() : "canal");
         try {
             List<String> command = List.of(
                     "node",
                     "-e",
-                    "import('./pipeline/src/script_generator.js').then(m => m.generateScript({ channelId: process.argv[1], sourceUrl: process.argv[2], visualDirective: process.argv[3], geminiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY })).then(r => console.log('JSON_START' + JSON.stringify(r) + 'JSON_END')).catch(e => { console.error(e); process.exit(1); });",
+                    "import('./pipeline/src/script_generator.js').then(m => {" +
+                            "  const customProfile = (process.argv[4] || process.argv[5] || process.argv[6] || process.argv[7]) ? {" +
+                            "    channel_id: process.argv[1]," +
+                            "    name: process.argv[4] || ('@' + process.argv[1])," +
+                            "    channelName: process.argv[4] || ('@' + process.argv[1])," +
+                            "    niche: process.argv[5] || 'Geral'," +
+                            "    voice_profile: { voice_id: process.argv[6] || 'pt-BR-AntonioNeural' }," +
+                            "    publishing_profile: {" +
+                            "      affiliate_cta: {" +
+                            "        description_template: process.argv[7] ? ('👉 Acesse o link oficial: ' + process.argv[7]) : undefined," +
+                            "        first_comment: process.argv[7] ? ('👉 Link oficial fixado: ' + process.argv[7]) : undefined" +
+                            "      }" +
+                            "    }" +
+                            "  } : null;" +
+                            "  return m.generateScript({" +
+                            "    channelId: process.argv[1]," +
+                            "    sourceUrl: process.argv[2]," +
+                            "    visualDirective: process.argv[3] || null," +
+                            "    customProfile: customProfile," +
+                            "    geminiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY" +
+                            "  });" +
+                            "}).then(r => console.log('JSON_START' + JSON.stringify(r) + 'JSON_END')).catch(e => { console.error(e); process.exit(1); });",
                     finalChannel,
                     sourceUrl,
-                    visualDirective != null ? visualDirective : ""
+                    visualDirective != null ? visualDirective : "",
+                    channelName != null ? channelName : "",
+                    channelNiche != null ? channelNiche : "",
+                    voiceId != null ? voiceId : "",
+                    affiliateUrl != null ? affiliateUrl : ""
             );
 
             ProcessBuilder pb = new ProcessBuilder(command);
@@ -327,20 +386,62 @@ public class AiPipelineService {
 
         // Execucao assincrona em thread do sistema
         Thread.ofVirtual().name("ai-pipeline-" + jobId).start(() -> {
-            runProcess(jobId, channel, platform, topic, scriptIndex, sourceUrl, visualDirective, visualMode, logs);
+            runProcess(jobId, request, logs);
         });
 
         return initialStatus;
     }
 
-    private void runProcess(String jobId, String channel, String platform, String topic, int scriptIndex, String sourceUrl, String visualDirective, String visualMode, List<String> logs) {
+    private void runProcess(String jobId, PipelineRunRequest request, List<String> logs) {
+        String channel = request.getChannelIdOrDefault();
+        String platform = request.getPlatformOrDefault();
+        String topic = request.topic();
+        int scriptIndex = request.getScriptIndexOrDefault();
+        String sourceUrl = request.getSourceUrl();
+        String visualDirective = request.getVisualDirective();
+        String visualMode = request.getVisualModeOrDefault();
+
         log.info("Iniciando processo do pipeline para Job ID: {} (Canal: {}, Modo Visual: {})", jobId, channel, visualMode);
         logs.add("[" + LocalDateTime.now().toString().substring(11, 19) + "] [INFO] Iniciando pipeline de geracao automatizada (Modo Visual: " + visualMode + ")...");
-
         try {
+            // Cria pasta de scratch e arquivo de configuração dinâmica
+            File scratchDir = new File("pipeline/scratch");
+            if (!scratchDir.exists()) {
+                scratchDir.mkdirs();
+            }
+            File configFile = new File(scratchDir, "job_" + jobId + "_config.json");
+            Map<String, Object> configMap = new LinkedHashMap<>();
+            configMap.put("channel", channel);
+            configMap.put("platform", platform);
+            configMap.put("scriptIndex", scriptIndex);
+            configMap.put("topic", topic);
+            configMap.put("sourceUrl", sourceUrl);
+            configMap.put("visualDirective", visualDirective);
+            configMap.put("visualMode", visualMode);
+            configMap.put("channelName", request.getChannelName());
+            configMap.put("niche", request.getChannelNiche());
+            configMap.put("voiceId", request.getVoiceId());
+            configMap.put("affiliateUrl", request.getAffiliateUrl());
+            configMap.put("subtitlesTheme", request.getSubtitlesTheme());
+            configMap.put("flowClipsDir", request.getFlowClipsDir());
+            configMap.put("enableSubtitles", request.isSubtitlesEnabled());
+            configMap.put("title", request.getTitle());
+            configMap.put("narrationText", request.getNarrationText());
+            configMap.put("firstComment", request.getFirstComment());
+            if (geminiApiKey != null && !geminiApiKey.isBlank()) configMap.put("geminiKey", geminiApiKey.trim());
+            if (pexelsApiKey != null && !pexelsApiKey.isBlank()) configMap.put("pexelsKey", pexelsApiKey.trim());
+
+            try {
+                objectMapper.writeValue(configFile, configMap);
+            } catch (Exception err) {
+                log.warn("Nao foi possivel gravar config temporaria do job: {}", err.getMessage());
+            }
+
             List<String> command = new ArrayList<>();
             command.add("node");
             command.add("pipeline/src/run_pipeline.js");
+            command.add("--config-file");
+            command.add(configFile.getAbsolutePath());
             command.add("--channel");
             command.add(channel);
             command.add("--platform");
@@ -366,6 +467,40 @@ public class AiPipelineService {
             if (visualDirective != null && !visualDirective.isBlank()) {
                 command.add("--visual-directive");
                 command.add(visualDirective.trim());
+            }
+
+            if (request.getChannelName() != null) {
+                command.add("--channel-name");
+                command.add(request.getChannelName());
+            }
+
+            if (request.getChannelNiche() != null) {
+                command.add("--niche");
+                command.add(request.getChannelNiche());
+            }
+
+            if (request.getVoiceId() != null) {
+                command.add("--voice");
+                command.add(request.getVoiceId());
+            }
+
+            if (request.getAffiliateUrl() != null) {
+                command.add("--affiliate-url");
+                command.add(request.getAffiliateUrl());
+            }
+
+            if (request.getSubtitlesTheme() != null) {
+                command.add("--subtitles-theme");
+                command.add(request.getSubtitlesTheme());
+            }
+
+            if (request.getFlowClipsDir() != null) {
+                command.add("--flow-clips-dir");
+                command.add(request.getFlowClipsDir());
+            }
+
+            if (!request.isSubtitlesEnabled()) {
+                command.add("--no-subtitles");
             }
 
             if (geminiApiKey != null && !geminiApiKey.isBlank()) {
@@ -528,5 +663,146 @@ public class AiPipelineService {
 
     public PipelineJobStatus getJobStatus(String jobId) {
         return jobRepository.get(jobId);
+    }
+
+    /**
+     * Gera pacote completo para produção no Google Flow (Veo),
+     * incluindo roteiro, áudio neural, legendas, prompts calibrados e linha da planilha.
+     */
+    public Map<String, Object> generateFlowPackage(PipelineRunRequest request) {
+        String channel = request.getChannelIdOrDefault();
+        String topic = request.topic() != null ? request.topic().trim() : "";
+        String visual = request.getVisualDirective() != null ? request.getVisualDirective().trim() : "";
+
+        try {
+            long ts = System.currentTimeMillis();
+            File scratchDir = new File("pipeline/scratch");
+            if (!scratchDir.exists()) {
+                scratchDir.mkdirs();
+            }
+            File configFile = new File(scratchDir, "flow_" + ts + "_config.json");
+            Map<String, Object> configMap = new LinkedHashMap<>();
+            configMap.put("channel", channel);
+            configMap.put("platform", (request.platform() != null && !request.platform().isBlank()) ? request.platform() : "YOUTUBE_SHORTS");
+            configMap.put("scriptIndex", request.getScriptIndexOrDefault());
+            configMap.put("topic", topic);
+            configMap.put("visualDirective", visual);
+            configMap.put("channelName", request.getChannelName());
+            configMap.put("niche", request.getChannelNiche());
+            configMap.put("voiceId", request.getVoiceId());
+            configMap.put("affiliateUrl", request.getAffiliateUrl());
+            configMap.put("subtitlesTheme", request.getSubtitlesTheme());
+            configMap.put("title", request.getTitle());
+            configMap.put("narrationText", request.getNarrationText());
+            configMap.put("firstComment", request.getFirstComment());
+            if (geminiApiKey != null && !geminiApiKey.isBlank()) configMap.put("geminiKey", geminiApiKey.trim());
+
+            try {
+                objectMapper.writeValue(configFile, configMap);
+            } catch (Exception err) {
+                log.warn("Nao foi possivel gravar config temporaria do flow: {}", err.getMessage());
+            }
+
+            List<String> command = new ArrayList<>();
+            command.add("node");
+            command.add("pipeline/scripts/generate_flow_package.js");
+            command.add("--config-file");
+            command.add(configFile.getAbsolutePath());
+            command.add("--channel");
+            command.add(channel);
+            if (!topic.isBlank()) {
+                command.add("--topic");
+                command.add(topic);
+            }
+            if (!visual.isBlank()) {
+                command.add("--visual-directive");
+                command.add(visual);
+            }
+
+            if (request.getChannelName() != null) {
+                command.add("--channel-name");
+                command.add(request.getChannelName());
+            }
+
+            if (request.getChannelNiche() != null) {
+                command.add("--niche");
+                command.add(request.getChannelNiche());
+            }
+
+            if (request.getVoiceId() != null) {
+                command.add("--voice");
+                command.add(request.getVoiceId());
+            }
+
+            if (request.getAffiliateUrl() != null) {
+                command.add("--affiliate-url");
+                command.add(request.getAffiliateUrl());
+            }
+
+            if (request.getSubtitlesTheme() != null) {
+                command.add("--subtitles-theme");
+                command.add(request.getSubtitlesTheme());
+            }
+
+            if (request.platform() != null && !request.platform().isBlank()) {
+                command.add("--platform");
+                command.add(request.platform());
+            }
+
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.directory(new File("."));
+            injectEnvironment(pb);
+            Process process = pb.start();
+
+            StringBuilder out = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    out.append(line).append("\n");
+                }
+            }
+
+            int exitCode = process.waitFor();
+            log.info("generateFlowPackage finalizou com exitCode: {}", exitCode);
+
+            File outputDir = new File("pipeline/output");
+            if (outputDir.exists() && outputDir.isDirectory()) {
+                File[] runs = outputDir.listFiles((dir, name) -> name.startsWith("flow_") && new File(dir, name).isDirectory());
+                if (runs != null && runs.length > 0) {
+                    java.util.Arrays.sort(runs, (a, b) -> Long.compare(b.lastModified(), a.lastModified()));
+                    File latest = runs[0];
+                    File manifest = new File(latest, "flow_manifest.json");
+                    if (manifest.exists() && manifest.isFile()) {
+                        Map<String, Object> result = objectMapper.readValue(manifest, new TypeReference<>() {});
+                        if (result.get("sheetsRow") instanceof List<?> list && result.get("cronogramaRowTsv") == null) {
+                            result.put("cronogramaRowTsv", list.stream().map(Object::toString).collect(java.util.stream.Collectors.joining("\t")));
+                        }
+                        if (result.get("scenes") instanceof List<?> scenes) {
+                            for (Object sc : scenes) {
+                                if (sc instanceof Map<?, ?> smap) {
+                                    @SuppressWarnings("unchecked")
+                                    Map<String, Object> mutMap = (Map<String, Object>) smap;
+                                    Object p = mutMap.get("flowPrompt");
+                                    if (p != null) {
+                                        mutMap.putIfAbsent("googleFlowPrompt", p);
+                                        mutMap.putIfAbsent("prompt", p);
+                                    }
+                                }
+                            }
+                        }
+                        File guide = new File(latest, "GOOGLE_FLOW_GUIDE.md");
+                        if (guide.exists()) {
+                            result.put("guideMarkdown", java.nio.file.Files.readString(guide.toPath(), StandardCharsets.UTF_8));
+                        }
+                        result.put("outputDir", latest.getAbsolutePath());
+                        return result;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Erro ao executar generateFlowPackage via Node: {}", e.getMessage(), e);
+        }
+
+        return Map.of("error", "Falha ao gerar pacote do Google Flow");
     }
 }

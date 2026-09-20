@@ -109,7 +109,7 @@ export function truncateWords(text, maxLength) {
 /**
  * Analisa semanticamente a transcrição e o título para sintetizar os 4 blocos de retenção
  */
-export function extractConceptualSummary(transcriptText, baseTitle, authorName, channelName = '@psicosegredo') {
+export function extractConceptualSummary(transcriptText, baseTitle, authorName, channelName = '@canal') {
   const combined = ((transcriptText || '') + ' ' + (baseTitle || '')).toLowerCase();
 
   const isKahneman = combined.includes('rápido e devagar') || combined.includes('canima') || combined.includes('kahneman');
@@ -172,7 +172,7 @@ export async function analyzeTranscriptWithGemini({
   const effectiveKey = apiKey || process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY;
   if (!effectiveKey) return null;
 
-  const channelName = channelProfile.name || '@psicosegredo';
+  const channelName = channelProfile.name || channelProfile.channelName || (channelProfile.channel_id ? `@${channelProfile.channel_id}` : '@canal');
   const niche = channelProfile.niche || 'Neurociência Prática e Comportamento Humano';
   const tone = channelProfile.script_profile?.tone || 'Analítico, misterioso, confiante e direto';
   const cleanTranscript = (transcriptText || '').replace(/\s+/g, ' ').slice(0, 7500);

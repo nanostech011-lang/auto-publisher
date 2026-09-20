@@ -89,7 +89,7 @@ export const SUBTITLE_THEMES = {
     outlineWidth: 5.0,
     shadowWidth: 2.5,
     marginV: 380,
-    popScale: 122
+    popScale: 132
   },
   CYAN_ELECTRIC: {
     fontName: 'Arial',
@@ -100,18 +100,31 @@ export const SUBTITLE_THEMES = {
     outlineWidth: 5.0,
     shadowWidth: 2.5,
     marginV: 380,
-    popScale: 122
+    popScale: 132
   },
   EMERALD_NEON: {
     fontName: 'Arial',
     fontSize: 74,
-    primaryColor: '&H00FFFFFF',
-    activeWordColor: '&H0000FF00',  // Verde Neon (BGR: BB=00, GG=FF, RR=00 -> RGB 0, 255, 0)
-    outlineColor: '&H00000000',
+    primaryColor: '\u0026H00FFFFFF',
+    activeWordColor: '\u0026H0000FF00',  // Verde Neon (BGR: BB=00, GG=FF, RR=00 -> RGB 0, 255, 0)
+    outlineColor: '\u0026H00000000',
     outlineWidth: 5.0,
     shadowWidth: 2.5,
     marginV: 380,
-    popScale: 122
+    popScale: 132
+  },
+  TIKTOK_VIRAL: {
+    // Estilo TikTok / CapCut: texto amarelo neon bold em caixa alta,
+    // fundo retangular preto semitransparente por baixo — maximiza legibilidade em qualquer cena
+    fontName: 'Arial',
+    fontSize: 80,
+    primaryColor: '\u0026H0000FFFF',     // Amarelo neon (BGR: 00,FF,FF = RGB 255,255,0)
+    activeWordColor: '\u0026H000000FF',  // Vermelho vivo para a palavra ativa (BGR: 00,00,FF = RGB 255,0,0)
+    outlineColor: '\u0026H00000000',     // Preto para outline
+    outlineWidth: 6.0,
+    shadowWidth: 3.0,
+    marginV: 350,
+    popScale: 136
   }
 };
 
