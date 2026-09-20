@@ -39,13 +39,12 @@ public class JobTriggerController {
     public ResponseEntity<?> triggerPublishing(
             @RequestHeader(value = "X-API-KEY", required = false) String providedApiKey
     ) {
-        // Valida chave de seguranca se configurada
-        if (expectedApiKey != null && !expectedApiKey.trim().isEmpty()) {
-            if (providedApiKey == null || !expectedApiKey.trim().equals(providedApiKey.trim())) {
-                log.warn("Tentativa de disparo nao autorizada recebida com chave invalida.");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "Unauthorized: Invalid or missing X-API-KEY"));
-            }
+        // Valida chave de seguranca (Fail-Secure: rejeita se nao configurada ou se nao corresponder)
+        if (expectedApiKey == null || expectedApiKey.trim().isEmpty() ||
+            providedApiKey == null || !expectedApiKey.trim().equals(providedApiKey.trim())) {
+            log.warn("Tentativa de disparo nao autorizada recebida no endpoint /api/v1/publisher/run.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Unauthorized: Invalid or missing X-API-KEY"));
         }
 
         log.info("Gatilho de publicacao recebido e autorizado. Iniciando orquestracao...");

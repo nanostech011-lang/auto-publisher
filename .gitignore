@@ -23,6 +23,7 @@ target/
 /bin/
 *.class
 *.jar
+!.mvn/wrapper/maven-wrapper.jar
 *.war
 
 # IDEs e Editores
@@ -58,6 +59,7 @@ blob-report/
 playwright/.cache/
 docs/manual/manual_screenshot.png
 docs/manual/test_run/
+.playwright-mcp/
 
 # Pipeline & Renderização de Mídia (Zero-Copy)
 # Bloqueio de mídias geradas e scratch temporário
@@ -76,3 +78,9 @@ pipeline/output/**/*
 
 # Migrações antigas
 .github/modernize/
+
+# Agent platform skills locais
+.agents/skills/*
+!.agents/skills/autopublisher-dev-workflow/
+!.agents/skills/sheets-contract-validator/
+!.agents/skills/youtube-oauth-setup/

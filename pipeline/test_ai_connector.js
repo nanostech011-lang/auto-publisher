@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import fs from 'node:fs';
 import { translateDirectiveToCinematicEnglish, buildProfessionalScenePrompt, deriveVisualSubjectFromPhrase } from './src/ai_prompt_generator.js';
 import { generateImageWithImagen3, generateHighQualitySceneImage } from './src/ai_image_connector.js';
 
@@ -188,6 +189,57 @@ test('buildCinemagraphAtmosphericFilters deve retornar filtros com drawtext e eq
 
   const starsFilters = buildCinemagraphAtmosphericFilters({ fxType: 'twinkling_stars', durationSeconds: 4 });
   assert.ok(starsFilters.some(f => f.includes('drawtext')), 'Deve conter drawtext para estrelas cintilantes');
+});
+
+test('translateStockQueryToEnglish deve mapear termos comuns em portugues para ingles', async () => {
+  const { translateStockQueryToEnglish } = await import('./src/stock_video_connector.js');
+
+  const t1 = translateStockQueryToEnglish('homem pensativo no escritório');
+  assert.ok(t1.includes('man') && t1.includes('thoughtful') && t1.includes('office'), 'Deve traduzir homem, pensativo e escritório');
+
+  const t2 = translateStockQueryToEnglish('estátua antiga e filosofia');
+  assert.ok(t2.includes('statue') && t2.includes('philosophy'), 'Deve traduzir estátua e filosofia');
+
+  const t3 = translateStockQueryToEnglish('');
+  assert.equal(t3, 'cinematic moody vertical');
+});
+
+test('generateAssSubtitles deve produzir tags de escala pop spring animada e temas customizaveis', async () => {
+  const { generateAssSubtitles, SUBTITLE_THEMES } = await import('./src/subtitle_generator.js');
+  const tempAssPath = 'pipeline/scratch/test_subtitles_pop.ass';
+
+  const wordBoundaries = [
+    { word: 'Atenção', startMs: 0, endMs: 500 },
+    { word: 'ao', startMs: 510, endMs: 700 },
+    { word: 'detalhe', startMs: 710, endMs: 1200 }
+  ];
+
+  generateAssSubtitles({
+    wordBoundaries,
+    outputAssPath: tempAssPath,
+    theme: 'GOLD_PUNCH',
+    popAnimation: true
+  });
+
+  assert.ok(fs.existsSync(tempAssPath), 'Arquivo .ass deve existir');
+  const content = fs.readFileSync(tempAssPath, 'utf8');
+
+  // Verifica se o cabeçalho e estilo foram aplicados
+  assert.ok(content.includes('PlayResX: 1080'), 'Resolução X 1080');
+  assert.ok(content.includes('PlayResY: 1920'), 'Resolução Y 1920');
+
+  // Verifica a presença do efeito Spring Bounce / Pop
+  assert.ok(content.includes('\\fscx118\\fscy118'), 'Deve conter tag de escala de pop spring');
+  assert.ok(content.includes('&H0000D7FF'), 'Deve conter cor dourada do tema GOLD_PUNCH');
+});
+
+test('detectOptimalVideoEncoder deve retornar codec valido compativel', async () => {
+  const { detectOptimalVideoEncoder } = await import('./src/video_compositor.js');
+  const encoder = await detectOptimalVideoEncoder();
+
+  assert.ok(encoder, 'Deve retornar objeto de encoder');
+  assert.ok(typeof encoder.codec === 'string' && encoder.codec.length > 0, 'Codec deve ser string');
+  assert.ok(['libx264', 'h264_nvenc', 'h264_qsv'].includes(encoder.codec), 'Codec deve ser um dos suportados');
 });
 
 

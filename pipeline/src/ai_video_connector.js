@@ -44,7 +44,7 @@ export async function generateVideoWithVeo({
     return { success: false, error: 'Google Veo indisponível para esta sessão (cota excedida ou acesso prévio restrito)' };
   }
 
-  const effectiveKey = apiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+  const effectiveKey = apiKey || process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY;
   if (!effectiveKey) {
     return { success: false, error: 'GEMINI_API_KEY não configurada para o Google Veo' };
   }
@@ -71,11 +71,15 @@ export async function generateVideoWithVeo({
     }
   }
 
+  // Google Veo 3.1 / 2.0 aceita estritamente 4, 6 ou 8 segundos para durationSeconds
+  const rawSec = Math.round(durationSeconds || 5);
+  const veoDuration = rawSec <= 4 ? 4 : (rawSec <= 6 ? 6 : 8);
+
   const payload = {
     instances: [instance],
     parameters: {
       aspectRatio: aspectRatio,
-      durationSeconds: Math.min(8, Math.max(3, Math.round(durationSeconds))),
+      durationSeconds: veoDuration,
       sampleCount: 1
     }
   };

@@ -31,15 +31,30 @@ public class AiPipelineService {
 
     private final ObjectMapper objectMapper;
     private final String geminiApiKey;
+    private final String pexelsApiKey;
+    private final String pixabayApiKey;
     private final Map<String, PipelineJobStatus> jobRepository = new ConcurrentHashMap<>();
     private final Map<String, List<String>> jobLogs = new ConcurrentHashMap<>();
 
+    @org.springframework.beans.factory.annotation.Autowired
     public AiPipelineService(
             ObjectMapper objectMapper,
-            @org.springframework.beans.factory.annotation.Value("${autopublisher.ai.gemini-api-key:}") String geminiApiKey
+            @org.springframework.beans.factory.annotation.Value("${autopublisher.ai.gemini-api-key:}") String geminiApiKey,
+            @org.springframework.beans.factory.annotation.Value("${autopublisher.ai.pexels-api-key:}") String pexelsApiKey,
+            @org.springframework.beans.factory.annotation.Value("${autopublisher.ai.pixabay-api-key:}") String pixabayApiKey
     ) {
         this.objectMapper = objectMapper;
         this.geminiApiKey = geminiApiKey;
+        this.pexelsApiKey = pexelsApiKey;
+        this.pixabayApiKey = pixabayApiKey;
+    }
+
+    public AiPipelineService(ObjectMapper objectMapper, String geminiApiKey) {
+        this(objectMapper, geminiApiKey, null, null);
+    }
+
+    public AiPipelineService() {
+        this(new ObjectMapper(), null, null, null);
     }
 
     /**
@@ -182,6 +197,31 @@ public class AiPipelineService {
         return analyzeYouTubeVideo(sourceUrl, channelId, null);
     }
 
+    private void injectEnvironment(ProcessBuilder pb) {
+        Map<String, String> env = pb.environment();
+        for (String key : List.of("GEMINI_API_KEY", "GEMINI_AI_API_KEY", "GOOGLE_AI_API_KEY", "PEXELS_API_KEY", "PIXABAY_API_KEY", "AUTOPUBLISHER_API_KEY")) {
+            String sysProp = System.getProperty(key);
+            if (sysProp != null && !sysProp.isBlank()) {
+                env.put(key, sysProp.trim());
+            }
+            String sysEnv = System.getenv(key);
+            if (sysEnv != null && !sysEnv.isBlank()) {
+                env.put(key, sysEnv.trim());
+            }
+        }
+        if (this.geminiApiKey != null && !this.geminiApiKey.isBlank()) {
+            env.put("GEMINI_API_KEY", this.geminiApiKey.trim());
+            env.put("GEMINI_AI_API_KEY", this.geminiApiKey.trim());
+            env.put("GOOGLE_AI_API_KEY", this.geminiApiKey.trim());
+        }
+        if (this.pexelsApiKey != null && !this.pexelsApiKey.isBlank()) {
+            env.put("PEXELS_API_KEY", this.pexelsApiKey.trim());
+        }
+        if (this.pixabayApiKey != null && !this.pixabayApiKey.isBlank()) {
+            env.put("PIXABAY_API_KEY", this.pixabayApiKey.trim());
+        }
+    }
+
     /**
      * Analisa o conteudo de um video do YouTube com diretriz visual personalizada.
      */
@@ -191,7 +231,7 @@ public class AiPipelineService {
             List<String> command = List.of(
                     "node",
                     "-e",
-                    "import('./pipeline/src/script_generator.js').then(m => m.generateScript({ channelId: process.argv[1], sourceUrl: process.argv[2], visualDirective: process.argv[3] })).then(r => console.log('JSON_START' + JSON.stringify(r) + 'JSON_END')).catch(e => { console.error(e); process.exit(1); });",
+                    "import('./pipeline/src/script_generator.js').then(m => m.generateScript({ channelId: process.argv[1], sourceUrl: process.argv[2], visualDirective: process.argv[3], geminiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY })).then(r => console.log('JSON_START' + JSON.stringify(r) + 'JSON_END')).catch(e => { console.error(e); process.exit(1); });",
                     finalChannel,
                     sourceUrl,
                     visualDirective != null ? visualDirective : ""
@@ -199,9 +239,8 @@ public class AiPipelineService {
 
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.directory(new File("."));
-            if (geminiApiKey != null && !geminiApiKey.isBlank()) {
-                pb.environment().put("GEMINI_API_KEY", geminiApiKey.trim());
-            }
+            pb.redirectErrorStream(true);
+            injectEnvironment(pb);
             Process process = pb.start();
 
             StringBuilder out = new StringBuilder();
@@ -212,16 +251,18 @@ public class AiPipelineService {
                 }
             }
 
-            process.waitFor();
+            int exitCode = process.waitFor();
             String fullOutput = out.toString();
             int startIdx = fullOutput.indexOf("JSON_START");
             int endIdx = fullOutput.indexOf("JSON_END");
             if (startIdx != -1 && endIdx > startIdx) {
                 String json = fullOutput.substring(startIdx + "JSON_START".length(), endIdx).trim();
                 return objectMapper.readValue(json, new TypeReference<>() {});
+            } else {
+                log.warn("Node YouTube analysis retornou sem delimitadores JSON (exitCode={}). Output: {}", exitCode, fullOutput);
             }
         } catch (Exception e) {
-            log.error("Erro ao analisar vídeo do YouTube via Node: {}", e.getMessage());
+            log.error("Erro ao analisar vídeo do YouTube via Node: {}", e.getMessage(), e);
         }
 
         // Fallback analítico se offline ou sem Node
@@ -332,12 +373,15 @@ public class AiPipelineService {
                 command.add(geminiApiKey.trim());
             }
 
+            if (pexelsApiKey != null && !pexelsApiKey.isBlank()) {
+                command.add("--pexels-key");
+                command.add(pexelsApiKey.trim());
+            }
+
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.directory(new File("."));
             pb.redirectErrorStream(true);
-            if (geminiApiKey != null && !geminiApiKey.isBlank()) {
-                pb.environment().put("GEMINI_API_KEY", geminiApiKey.trim());
-            }
+            injectEnvironment(pb);
 
             Process process = pb.start();
 

@@ -10,12 +10,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 /**
  * Adaptador de infraestrutura para o Google Drive (implementa MediaStoragePort).
  * Cumpre a Regra 1 e ADR 0003: Streaming Zero-Copy direto via InputStream, sem alocar byte[] na RAM.
+ * Suporta fallback automatico para streaming de arquivos locais gerados pela esteira de IA.
  */
 @Component
 public class GoogleDriveAdapter implements MediaStoragePort {
@@ -44,6 +46,16 @@ public class GoogleDriveAdapter implements MediaStoragePort {
             throw new IllegalArgumentException("O ID do arquivo no Google Drive nao pode ser nulo ou vazio");
         }
 
+        java.io.File localFile = findLocalFile(fileId);
+        if (localFile != null) {
+            log.info("[Local Media] Abrindo streaming zero-copy a partir do arquivo local: {}", localFile.getAbsolutePath());
+            try {
+                return new FileInputStream(localFile);
+            } catch (IOException e) {
+                throw new MediaStreamingException("Erro ao abrir arquivo local para streaming: " + e.getMessage(), e);
+            }
+        }
+
         log.info("Abrindo conexao de streaming direto (Zero-Copy) para o arquivo do Drive: {}", fileId);
 
         try {
@@ -62,6 +74,11 @@ public class GoogleDriveAdapter implements MediaStoragePort {
             return -1;
         }
 
+        java.io.File localFile = findLocalFile(fileId);
+        if (localFile != null) {
+            return localFile.length();
+        }
+
         try {
             File fileMetadata = getActiveDrive().files()
                     .get(fileId)
@@ -76,5 +93,25 @@ public class GoogleDriveAdapter implements MediaStoragePort {
             log.warn("Nao foi possivel obter metadados de tamanho para o arquivo {}: {}", fileId, e.getMessage());
             return -1;
         }
+    }
+
+    private java.io.File findLocalFile(String fileId) {
+        if (fileId == null || fileId.isBlank()) return null;
+        java.io.File f = new java.io.File(fileId);
+        if (f.exists() && f.isFile()) return f;
+
+        java.io.File outputDir = new java.io.File("pipeline/output");
+        if (outputDir.exists() && outputDir.isDirectory()) {
+            java.io.File[] runs = outputDir.listFiles();
+            if (runs != null) {
+                for (java.io.File r : runs) {
+                    if (r.isDirectory()) {
+                        java.io.File target = new java.io.File(r, fileId);
+                        if (target.exists() && target.isFile()) return target;
+                    }
+                }
+            }
+        }
+        return null;
     }
 }

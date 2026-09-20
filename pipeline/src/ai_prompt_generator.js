@@ -109,7 +109,7 @@ export async function buildProfessionalScenePrompt({
   sceneIndex = 0,
   totalScenes = 8
 }) {
-  const effectiveKey = forceHeuristic ? null : (apiKey !== null && apiKey !== undefined ? (apiKey || null) : (process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY));
+  const effectiveKey = forceHeuristic ? null : (apiKey !== null && apiKey !== undefined ? (apiKey || null) : (process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY));
 
   // 1. Tenta enriquecimento neural ultrarrápido com Gemini Flash se a chave estiver ativa
   if (effectiveKey) {
@@ -547,7 +547,7 @@ Rules:
   }
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 6000);
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
 
   try {
     const response = await fetch(url, {

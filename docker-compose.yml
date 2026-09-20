@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   autopublisher:
     build:
@@ -9,24 +7,42 @@ services:
     container_name: autopublisher-pro
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "${PORT:-8080}:8080"
     environment:
       - PORT=8080
       - SPRING_PROFILES_ACTIVE=prod
+      # Seguranca e Autenticacao Multi-Tenant
       - AUTOPUBLISHER_SECURITY_API_KEY=${AUTOPUBLISHER_API_KEY:-dev-local-api-key}
       - AUTOPUBLISHER_SECURITY_MASTER_API_KEY=${AUTOPUBLISHER_MASTER_API_KEY:-master-super-secret-key}
+      # Integracao Google (Sheets, Drive, YouTube Data API v3)
       - GOOGLE_SHEETS_SPREADSHEET_ID=${GOOGLE_SHEETS_SPREADSHEET_ID:-}
+      - GOOGLE_SHEETS_TAB_NAME=${GOOGLE_SHEETS_TAB_NAME:-Cronograma}
       - YOUTUBE_CLIENT_ID=${YOUTUBE_CLIENT_ID:-}
       - YOUTUBE_CLIENT_SECRET=${YOUTUBE_CLIENT_SECRET:-}
       - YOUTUBE_REFRESH_TOKEN=${YOUTUBE_REFRESH_TOKEN:-}
+      # Integracoes Sociais Adicionais (Meta Graph API & TikTok Posting API)
+      - INSTAGRAM_ENABLED=${INSTAGRAM_ENABLED:-false}
+      - INSTAGRAM_BUSINESS_ACCOUNT_ID=${INSTAGRAM_BUSINESS_ACCOUNT_ID:-}
+      - META_ACCESS_TOKEN=${META_ACCESS_TOKEN:-}
+      - TIKTOK_ENABLED=${TIKTOK_ENABLED:-false}
+      - TIKTOK_ACCESS_TOKEN=${TIKTOK_ACCESS_TOKEN:-}
+      # Pipeline de Geracao de Conteudo e IA (Gemini & Stock Footage)
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_AI_API_KEY=${GEMINI_AI_API_KEY:-}
+      - GOOGLE_AI_API_KEY=${GOOGLE_AI_API_KEY:-}
+      - PEXELS_API_KEY=${PEXELS_API_KEY:-}
+      - PIXABAY_API_KEY=${PIXABAY_API_KEY:-}
     volumes:
+      - ./pipeline/src:/app/pipeline/src:ro
       - ./pipeline/assets:/app/pipeline/assets:ro
+      - ./pipeline/output:/app/pipeline/output
+      - ./logs:/app/logs
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
-      interval: 30s
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/v1/health || exit 1"]
+      interval: 15s
       timeout: 5s
       retries: 3
-      start_period: 20s
+      start_period: 25s
     deploy:
       resources:
         limits:

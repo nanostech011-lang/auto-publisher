@@ -50,6 +50,9 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
         if (path.equals("/api/v1/health") || path.startsWith("/api/v1/public/")) {
             return true;
         }
+        if (path.startsWith("/v3/api-docs") || path.startsWith("/swagger-ui") || path.startsWith("/api/v1/dashboard/pipeline/media")) {
+            return true;
+        }
         return false;
     }
 

@@ -1,11 +1,16 @@
 import fs from 'fs';
 import path from 'path';
+import { execFile } from 'child_process';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 import ffprobeInstaller from '@ffprobe-installer/ffprobe';
 import { generateHighQualitySceneImage } from './ai_image_connector.js';
 import { generateCinematicTake } from './ai_video_connector.js';
-import { fetchAndPrepareStockBroll } from './stock_video_connector.js';
+import {
+  fetchAndPrepareStockBroll,
+  fetchAndPrepareStockPhoto,
+  buildSmartContextualQueries
+} from './stock_video_connector.js';
 
 const ffmpegBinary = process.env.FFMPEG_PATH || (fs.existsSync('/usr/bin/ffmpeg') ? '/usr/bin/ffmpeg' : ffmpegInstaller.path);
 const ffprobeBinary = process.env.FFPROBE_PATH || (fs.existsSync('/usr/bin/ffprobe') ? '/usr/bin/ffprobe' : ffprobeInstaller.path);
@@ -47,20 +52,27 @@ export function createProceduralDarkScene({
       `[scene]noise=alls=10:allf=t+u,curves=vintage[final]`
     ].join(';');
 
-    ffmpeg()
-      .input(`color=c=black:s=1080x1920:d=${durationSeconds}:r=30`)
-      .inputFormat('lavfi')
-      .complexFilter(filterComplex, 'final')
-      .outputOptions([
-        '-c:v libx264',
-        '-pix_fmt yuv420p',
-        '-preset ultrafast',
-        `-t ${durationSeconds}`
-      ])
-      .output(outputPath)
-      .on('end', () => resolve(outputPath))
-      .on('error', err => reject(err))
-      .run();
+    const args = [
+      '-f', 'lavfi',
+      '-i', `color=c=black:s=1080x1920:d=${durationSeconds}:r=30`,
+      '-filter_complex', filterComplex,
+      '-map', '[final]',
+      '-c:v', 'libx264',
+      '-pix_fmt', 'yuv420p',
+      '-preset', 'ultrafast',
+      '-t', String(durationSeconds),
+      '-y',
+      outputPath
+    ];
+
+    execFile(ffmpegBinary, args, (err, stdout, stderr) => {
+      if (err) {
+        console.error('[FFmpeg procedural scene error]:', err.message);
+        if (stderr) console.error(stderr);
+        return reject(err);
+      }
+      resolve(outputPath);
+    });
   });
 }
 
@@ -178,6 +190,7 @@ export function createCinematicMotionClip({
   outputPath,
   motionType = 'push_in',
   isHookScene = false,
+  isLastScene = false,
   cinemagraphFX = null
 }) {
   const dir = path.dirname(outputPath);
@@ -187,11 +200,11 @@ export function createCinematicMotionClip({
 
   const isVideo = assetPath.toLowerCase().endsWith('.mp4') || assetPath.toLowerCase().endsWith('.webm');
   const dSec = Math.max(1, Number(durationSeconds) || 3);
-  const fadeOutStart = Math.max(0.2, (dSec - 0.15)).toFixed(2);
-  // Transição sutil de 150ms: sem corte brusco, preservando sincronia fonética exata
-  const transitionFade = isHookScene
-    ? `,fade=t=out:st=${fadeOutStart}:d=0.15`
-    : `,fade=t=in:st=0:d=0.15,fade=t=out:st=${fadeOutStart}:d=0.15`;
+  const fadeOutStart = Math.max(0.2, (dSec - 0.20)).toFixed(2);
+  // Match cuts ágeis para retenção mobile: fade out suave apenas no último take
+  const transitionFade = isLastScene
+    ? `,fade=t=out:st=${fadeOutStart}:d=0.20`
+    : '';
 
   // Se já for um arquivo de vídeo (ex: b-roll real), recorta em 9:16 e loopa se necessário
   if (isVideo) {
@@ -341,29 +354,49 @@ export function createProceduralThumbnail({
         filters.push(`[box]drawtext=text='${line1}':fontsize=58:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2-40:borderw=5:bordercolor=black[t1]`);
         filters.push(`[t1]drawtext=text='${cleanSub}':fontsize=34:fontcolor=0x00E5FF:x=(w-text_w)/2:y=(h-text_h)/2+45:borderw=3:bordercolor=black[final]`);
       }
+
+      command
+        .complexFilter(filters, 'final')
+        .outputOptions(['-vframes 1'])
+        .output(outputPath)
+        .on('end', () => resolve(outputPath))
+        .on('error', err => reject(err))
+        .run();
     } else {
-      command.input('color=c=0x080A12:s=1080x1920:d=1:r=1').inputFormat('lavfi');
-      filters.push(`color=c=0xFFD700:s=1080x1920:d=1[glow]`);
-      filters.push(`[glow]format=rgba,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='255*exp(-((X-540)*(X-540)+(Y-960)*(Y-960))/(1080*400))'[radial]`);
-      filters.push(`[0:v][radial]overlay=0:0[bg]`);
+      const thumbFilters = [
+        `color=c=0x080A12:s=1080x1920:d=1:r=1[base]`,
+        `color=c=0xFFD700:s=1080x1920:d=1[glow]`,
+        `[glow]format=rgba,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='255*exp(-((X-540)*(X-540)+(Y-960)*(Y-960))/(1080*400))'[radial]`,
+        `[base][radial]overlay=0:0[bg]`
+      ];
 
       if (line2) {
-        filters.push(`[bg]drawtext=text='${line1}':fontsize=64:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2-110:borderw=5:bordercolor=black[t1]`);
-        filters.push(`[t1]drawtext=text='${line2}':fontsize=64:fontcolor=0xFFD700:x=(w-text_w)/2:y=(h-text_h)/2-35:borderw=5:bordercolor=black[t2]`);
-        filters.push(`[t2]drawtext=text='${cleanSub}':fontsize=36:fontcolor=0x00E5FF:x=(w-text_w)/2:y=(h-text_h)/2+60:borderw=3:bordercolor=black[final]`);
+        thumbFilters.push(`[bg]drawtext=text='${line1}':fontsize=64:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2-110:borderw=5:bordercolor=black[t1]`);
+        thumbFilters.push(`[t1]drawtext=text='${line2}':fontsize=64:fontcolor=0xFFD700:x=(w-text_w)/2:y=(h-text_h)/2-35:borderw=5:bordercolor=black[t2]`);
+        thumbFilters.push(`[t2]drawtext=text='${cleanSub}':fontsize=36:fontcolor=0x00E5FF:x=(w-text_w)/2:y=(h-text_h)/2+60:borderw=3:bordercolor=black[final]`);
       } else {
-        filters.push(`[bg]drawtext=text='${line1}':fontsize=70:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2-70:borderw=5:bordercolor=black[t1]`);
-        filters.push(`[t1]drawtext=text='${cleanSub}':fontsize=36:fontcolor=0x00E5FF:x=(w-text_w)/2:y=(h-text_h)/2+40:borderw=3:bordercolor=black[final]`);
+        thumbFilters.push(`[bg]drawtext=text='${line1}':fontsize=70:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2-70:borderw=5:bordercolor=black[t1]`);
+        thumbFilters.push(`[t1]drawtext=text='${cleanSub}':fontsize=36:fontcolor=0x00E5FF:x=(w-text_w)/2:y=(h-text_h)/2+40:borderw=3:bordercolor=black[final]`);
       }
-    }
 
-    command
-      .complexFilter(filters, 'final')
-      .outputOptions(['-vframes 1'])
-      .output(outputPath)
-      .on('end', () => resolve(outputPath))
-      .on('error', err => reject(err))
-      .run();
+      const args = [
+        '-f', 'lavfi',
+        '-i', 'color=c=0x080A12:s=1080x1920:d=1:r=1',
+        '-filter_complex', thumbFilters.join(';'),
+        '-map', '[final]',
+        '-vframes', '1',
+        '-y',
+        outputPath
+      ];
+
+      execFile(ffmpegBinary, args, (err, stdout, stderr) => {
+        if (err) {
+          console.error('[FFmpeg procedural thumbnail error]:', err.message);
+          return reject(err);
+        }
+        resolve(outputPath);
+      });
+    }
   });
 }
 
@@ -403,6 +436,7 @@ export async function harvestVisualScenes({
   scratchDir,
   channelId = 'psicosegredo',
   apiKey = null,
+  pexelsApiKey = null,
   visualMode = 'hybrid', // 'hybrid' | 'video' | 'image'
   visualDirective = null
 }) {
@@ -410,6 +444,8 @@ export async function harvestVisualScenes({
   const channelAssetsDir = path.resolve(`pipeline/assets/scenes/${channelId}`);
   const fixedVideoSeed = Math.floor(Math.random() * 100000);
   const usedPrompts = new Set();
+  const usedStockVideoIds = new Set();
+  const usedStockPhotoIds = new Set();
   let lastCinemagraphFX = null;
 
   console.log(`Iniciando renderizacao de ${scenes.length} takes visuais dinâmicos (Modo: ${visualMode.toUpperCase()})...`);
@@ -420,6 +456,7 @@ export async function harvestVisualScenes({
     const sceneImgPath = path.join(scratchDir, `scene_${i + 1}_generated.jpg`);
     const motionType = scene.motionType || (i % 2 === 0 ? 'push_in' : 'reveal_zoom_out');
     const isHook = (i === 0);
+    const isLast = (i === scenes.length - 1);
 
     let assetForClip = null;
 
@@ -432,6 +469,16 @@ export async function harvestVisualScenes({
 
     const effectiveAesthetic = scene.aesthetic || visualDirective || 'Cinematic Dark Minimalist';
     const effectiveDirective = visualDirective || scene.visualDirective || '';
+    const effectivePexelsKey = pexelsApiKey || process.env.PEXELS_API_KEY;
+
+    // Constrói queries contextuais semânticas em inglês para busca no acervo de estoque
+    const contextualQueries = buildSmartContextualQueries({
+      scene,
+      phrase: scene.phrase || '',
+      visualDirective: effectiveDirective,
+      channelAesthetic: effectiveAesthetic,
+      sceneIndex: i
+    });
 
     // Detecção inteligente de micro-animação Cinemagraph (living GIF)
     const cinemagraphFX = scene.cinemagraphFX || detectSceneCinemagraphFX({
@@ -446,8 +493,9 @@ export async function harvestVisualScenes({
 
     console.log(`Cena ${i + 1}/${scenes.length} (${scene.duration}s) [Motion: ${motionType} | Cinemagraph: ${cinemagraphFX}]:`);
     if (scenePrompt) {
-      console.log(`  -> Prompt Base: "${scenePrompt.slice(0, 90)}..."`);
+      console.log(`  -> Prompt Base: "${scenePrompt.slice(0, 85)}..."`);
     }
+    console.log(`  -> Termos de Busca Contextual: [${contextualQueries.slice(0, 3).map(q => `"${q}"`).join(', ')}]`);
 
     // 1. Tenta geração de clipe de vídeo direto via IA (Google Veo 2 / Video AI) se aplicável
     if (visualMode === 'video' || (visualMode === 'hybrid' && isHook)) {
@@ -468,21 +516,20 @@ export async function harvestVisualScenes({
       }
     }
 
-    // 2. Tentativa de B-Roll de Stock Video Real (Pexels / Pixabay) para cenas com ação humana/cotidiana
-    const shouldAttemptStock = visualMode !== 'image' && !isHook && (
-      scene.suggestedType === 'stock_video' ||
-      Boolean(scene.stockQuery) ||
-      (scene.phrase && /olh|olhar|olhos|pessoa|homem|mulher|trabalh|estud|andand|caminh|celular|escritório|livro|dinheiro/i.test(scene.phrase))
-    );
+    // 2. Tentativa de B-Roll de Stock Video Real (Pexels / Pixabay) para vídeos dinâmicos
+    const shouldAttemptStockVideo = visualMode === 'video' || (visualMode === 'hybrid' && (isHook || i % 2 === 1 || scene.suggestedType === 'stock_video'));
 
-    if (shouldAttemptStock) {
-      const stockQuery = scene.stockQuery || (scene.keywords && scene.keywords[0]) || 'cinematic dark psychology';
-      console.log(`  -> Consultando B-Roll de vídeo real (Pexels/Pixabay) para: "${stockQuery}"...`);
+    if (shouldAttemptStockVideo && effectivePexelsKey) {
+      console.log(`  -> Consultando B-Roll de vídeo real (Pexels/Pixabay) para: "${contextualQueries[0]}"...`);
       const stockResult = await fetchAndPrepareStockBroll({
-        query: stockQuery,
+        query: contextualQueries[0],
+        candidateQueries: contextualQueries,
         outputPath: clipPath,
         durationSeconds: scene.duration,
-        isHookScene: isHook
+        isHookScene: isHook,
+        isLastScene: isLast,
+        pexelsApiKey: effectivePexelsKey,
+        usedVideoIds: usedStockVideoIds
       });
 
       if (stockResult.success && fs.existsSync(clipPath) && fs.statSync(clipPath).size > 20480) {
@@ -492,40 +539,81 @@ export async function harvestVisualScenes({
       }
     }
 
-    // 3. Geração de Imagem Ultra HD 1080x1920 (Google Imagen 3 / Flux HD) para Motion Engine 2x
+    // 3. Geração de Imagem Ultra HD 1080x1920 (Google Imagen 3 se habilitado)
     const sceneSeed = fixedVideoSeed + (i * 1039) + 77; // Semente estritamente única por take
     const blockType = i === 0 ? 'hook' : (i >= scenes.length - 2 ? 'cta' : (i >= Math.floor(scenes.length * 0.65) ? 'hack' : 'body'));
 
-    const generated = await generateHighQualitySceneImage({
-      prompt: scenePrompt,
-      spokenPhrase: scene.phrase || '',
-      visualDirective: effectiveDirective,
-      channelAesthetic: effectiveAesthetic,
-      blockType: scene.blockType || blockType,
-      motionType: motionType,
-      outputPath: sceneImgPath,
-      seed: sceneSeed,
-      apiKey: apiKey
-    });
+    if (apiKey) {
+      const generated = await generateHighQualitySceneImage({
+        prompt: scenePrompt,
+        spokenPhrase: scene.phrase || '',
+        visualDirective: effectiveDirective,
+        channelAesthetic: effectiveAesthetic,
+        blockType: scene.blockType || blockType,
+        motionType: motionType,
+        outputPath: sceneImgPath,
+        seed: sceneSeed,
+        apiKey: apiKey
+      });
 
-    if (generated && fs.existsSync(generated.outputPath)) {
-      assetForClip = generated.outputPath;
-      console.log(`  -> Imagem pronta via ${generated.provider} (${generated.sizeKb} KB)`);
-    }
-    // Espaçamento de 1.2s para cadência estável da API sem congestionar fila do IP
-    await new Promise(r => setTimeout(r, 1200));
-
-    // 2. Fallback resiliente apenas se a IA remota oscilar (nunca interrompe o fluxo)
-    if (!assetForClip) {
-      const sceneJpg = path.join(channelAssetsDir, `scene_${(i % 5) + 1}.jpg`);
-      const scenePng = path.join(channelAssetsDir, `scene_${(i % 5) + 1}.png`);
-      assetForClip = fs.existsSync(sceneJpg) ? sceneJpg : (fs.existsSync(scenePng) ? scenePng : null);
-      if (assetForClip) {
-        console.log(`  -> Fallback resiliente para asset local (${path.basename(assetForClip)})`);
+      if (generated && fs.existsSync(generated.outputPath) && fs.statSync(generated.outputPath).size > 5000) {
+        assetForClip = generated.outputPath;
+        console.log(`  -> Imagem pronta via ${generated.provider} (${generated.sizeKb} KB)`);
       }
     }
 
-    // 3. Renderiza o pequeno vídeo clip com o movimento de câmera cinematográfico e Cinemagraph FX
+    // 4. Integração de Fotos Contextuais em Alta Resolução (Pexels & Pixabay Photos)
+    // Garante que cada take tenha uma imagem 9:16 perfeitamente alinhada com o roteiro, sem repetições
+    if (!assetForClip && effectivePexelsKey) {
+      console.log(`  -> Consultando acervo fotográfico contextual 9:16 (Pexels / Pixabay)...`);
+      const photoResult = await fetchAndPrepareStockPhoto({
+        query: contextualQueries[0],
+        candidateQueries: contextualQueries,
+        outputPath: sceneImgPath,
+        pexelsApiKey: effectivePexelsKey,
+        usedPhotoIds: usedStockPhotoIds
+      });
+
+      if (photoResult.success && fs.existsSync(photoResult.outputPath) && fs.statSync(photoResult.outputPath).size > 5000) {
+        assetForClip = photoResult.outputPath;
+        console.log(`  -> Foto contextual integrada via ${photoResult.provider} (termo: "${photoResult.matchedQuery}")`);
+      }
+    }
+
+    // 5. Fallback Temático Inteligente (Verifica diretório específico da diretriz ou nicho)
+    if (!assetForClip) {
+      const idx = (i % 5) + 1;
+      const themeSubdir = (effectiveDirective && /persa/i.test(effectiveDirective))
+        ? 'guerreiros_persas'
+        : (/procrastin/i.test(scene.phrase || '') ? 'procrastinacao' : null);
+
+      const candidates = [];
+      if (themeSubdir) {
+        candidates.push(path.join(channelAssetsDir, themeSubdir, `scene_${idx}.jpg`));
+        candidates.push(path.join('pipeline/assets/scenes/psicosegredo', themeSubdir, `scene_${idx}.jpg`));
+        candidates.push(path.join('/app/pipeline/assets/scenes/psicosegredo', themeSubdir, `scene_${idx}.jpg`));
+      }
+      candidates.push(
+        path.join(channelAssetsDir, `scene_${idx}.jpg`),
+        path.join(channelAssetsDir, `scene_${idx}.png`),
+        path.join('pipeline/assets/scenes/psicosegredo', `scene_${idx}.jpg`),
+        path.join('pipeline/assets/scenes/psicosegredo', `scene_${idx}.png`),
+        path.join('/app/pipeline/assets/scenes/psicosegredo', `scene_${idx}.jpg`),
+        path.join('/app/pipeline/assets/scenes/psicosegredo', `scene_${idx}.png`)
+      );
+
+      for (const cand of candidates) {
+        if (fs.existsSync(cand)) {
+          assetForClip = cand;
+          break;
+        }
+      }
+      if (assetForClip) {
+        console.log(`  -> Fallback resiliente para asset temático (${path.basename(path.dirname(assetForClip))}/${path.basename(assetForClip)})`);
+      }
+    }
+
+    // 6. Renderiza o pequeno vídeo clip com o movimento de câmera cinematográfico e Cinemagraph FX
     if (assetForClip) {
       await createCinematicMotionClip({
         assetPath: assetForClip,
@@ -533,6 +621,7 @@ export async function harvestVisualScenes({
         outputPath: clipPath,
         motionType: motionType,
         isHookScene: isHook,
+        isLastScene: isLast,
         cinemagraphFX: cinemagraphFX
       });
     } else {

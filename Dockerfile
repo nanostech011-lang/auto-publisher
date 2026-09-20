@@ -5,7 +5,7 @@
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
-# Stage 1: Build & Extração de Camadas (Spring Boot Layertools)
+# Stage 1: Build & Extração de Camadas (Spring Boot 3.3 Tools)
 # ------------------------------------------------------------------------------
 FROM eclipse-temurin:21-jdk-alpine AS builder
 WORKDIR /build
@@ -13,14 +13,14 @@ WORKDIR /build
 # Copia configurações do Maven e wrapper
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
-RUN chmod +x mvnw && ./mvnw dependency:go-offline -B --no-transfer-progress
+RUN sed -i 's/\r$//' mvnw && chmod +x mvnw && ./mvnw dependency:go-offline -B --no-transfer-progress
 
 # Copia código-fonte e compila JAR de produção
 COPY src/ src/
 RUN ./mvnw clean package -DskipTests --no-transfer-progress
 
 # Extração cirúrgica de camadas para acelerar re-builds e otimizar cache de imagens Docker
-RUN java -Djarmode=layertools -jar target/*.jar extract --destination /build/extracted
+RUN java -Djarmode=tools -jar target/*.jar extract --layers --launcher --destination /build/extracted
 
 # ------------------------------------------------------------------------------
 # Stage 2: Runtime Ultraleve, Seguro e Otimizado
@@ -39,7 +39,6 @@ RUN apk add --no-cache \
     npm \
     fontconfig \
     font-liberation \
-    font-noto \
     ttf-dejavu \
     ca-certificates \
     tzdata \
@@ -73,17 +72,8 @@ RUN pnpm install --prod --ignore-scripts && \
 # Alterna para o usuário não-privilegiado
 USER appuser
 
-# Parâmetros JVM afinados para Cloud Run (512MB RAM total, < 256MB Heap, SerialGC para menor pegada de memória)
-ENV JAVA_OPTS="-XX:+UseContainerSupport \
-               -XX:MaxRAMPercentage=50.0 \
-               -XX:InitialRAMPercentage=25.0 \
-               -XX:+UseSerialGC \
-               -XX:MaxMetaspaceSize=96m \
-               -XX:ReservedCodeCacheSize=48m \
-               -Xss256k \
-               -XX:+ExitOnOutOfMemoryError \
-               -Djava.security.egd=file:/dev/./urandom \
-               -Dspring.threads.virtual.enabled=true"
+# Parâmetros JVM afinados para Cloud Run e Docker local (512MB RAM total, < 256MB Heap, SerialGC)
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=50.0 -XX:InitialRAMPercentage=25.0 -XX:+UseSerialGC -XX:MaxMetaspaceSize=96m -XX:ReservedCodeCacheSize=48m -Xss256k -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom -Dspring.threads.virtual.enabled=true"
 
 ENV FFMPEG_PATH=/usr/bin/ffmpeg
 ENV FFPROBE_PATH=/usr/bin/ffprobe

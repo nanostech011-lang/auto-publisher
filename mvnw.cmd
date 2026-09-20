@@ -8,13 +8,15 @@ set "DIR=%~dp0"
 set "DIR=%DIR:~0,-1%"
 set "WRAPPER_JAR=%DIR%\.mvn\wrapper\maven-wrapper.jar"
 
-if exist "C:\Program Files\Java\jdk-21.0.10" (
-    set "JAVA_HOME=C:\Program Files\Java\jdk-21.0.10"
+@REM Prioritize JDK 21 required by AutoPublisher Pro
+for /d %%i in ("C:\Program Files\Java\jdk-21*") do (
+    if exist "%%i\bin\java.exe" set "JAVA_HOME=%%i"
 )
 
 if not exist "%WRAPPER_JAR%" (
-    echo [ERROR] maven-wrapper.jar not found at %WRAPPER_JAR%
-    exit /b 1
+    echo [INFO] maven-wrapper.jar not found, downloading...
+    if not exist "%DIR%\.mvn\wrapper" mkdir "%DIR%\.mvn\wrapper"
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.3.2/maven-wrapper-3.3.2.jar', '%WRAPPER_JAR%')"
 )
 
 if "%JAVA_HOME%"=="" (

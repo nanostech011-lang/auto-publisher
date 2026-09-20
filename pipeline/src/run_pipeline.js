@@ -25,6 +25,7 @@ function parseArgs() {
     topic: null,
     platform: 'YOUTUBE_SHORTS',
     geminiKey: null,
+    pexelsKey: null,
     visualMode: 'hybrid', // 'hybrid' (Vídeo no gancho + Imagens HD) | 'video' (Vídeo em tudo) | 'image' (Apenas Imagens)
     batch: 1
   };
@@ -57,6 +58,9 @@ function parseArgs() {
     } else if ((args[i] === '--gemini-key' || args[i] === '--api-key' || args[i] === '--ai-key') && args[i + 1]) {
       options.geminiKey = args[i + 1];
       i++;
+    } else if ((args[i] === '--pexels-key' || args[i] === '--pexels-api-key') && args[i + 1]) {
+      options.pexelsKey = args[i + 1];
+      i++;
     }
   }
 
@@ -64,7 +68,8 @@ function parseArgs() {
 }
 
 export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1) {
-  const effectiveGeminiKey = options.geminiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+  const effectiveGeminiKey = options.geminiKey || process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+  const effectivePexelsKey = options.pexelsKey || process.env.PEXELS_API_KEY;
 
   console.log(`Canal: ${options.channel}`);
   console.log(`Script Index: ${options.scriptIndex}`);
@@ -72,7 +77,8 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
   if (options.visualDirective) console.log(`Diretriz Visual das Imagens: "${options.visualDirective}"`);
   console.log(`Plataforma Alvo: ${options.platform}`);
   console.log(`Modo Visual: ${options.visualMode.toUpperCase()}`);
-  console.log(`Provedor de Imagens IA: ${effectiveGeminiKey ? 'Google Imagen 3 (imagen-3.0-generate-002) [Ativo]' : 'Fallback Flux HD (Alta Fidelidade Gratuita)'}\n`);
+  console.log(`Provedor de Imagens IA: ${effectiveGeminiKey ? 'Google Imagen 3 (imagen-3.0-generate-002) [Ativo]' : 'Fallback Flux HD (Alta Fidelidade Gratuita)'}`);
+  console.log(`Provedor de B-Roll: ${effectivePexelsKey ? 'Pexels Video API (Alta Fidelidade HD) [Ativo]' : 'Fallback Cinemagraph Procedural'}\n`);
 
   const runId = `run_${Date.now()}_${batchIndex + 1}`;
   const scratchDir = path.resolve(`pipeline/scratch/${runId}`);
@@ -88,7 +94,8 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
     topic: options.topic,
     scriptIndex: options.scriptIndex,
     sourceUrl: options.sourceUrl,
-    visualDirective: options.visualDirective
+    visualDirective: options.visualDirective,
+    geminiKey: effectiveGeminiKey
   });
 
   console.log(`Titulo: "${scriptData.title}"`);
@@ -117,9 +124,12 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
   const subtitlesPath = path.join(scratchDir, 'subtitles.ass');
   const srtPath = path.join(scratchDir, 'subtitles.srt');
 
+  const channelSubTheme = options.channel === 'fatos.ocultos' ? 'CYAN_ELECTRIC' : 'GOLD_PUNCH';
   generateAssSubtitles({
     wordBoundaries: voiceResult.wordBoundaries,
-    outputAssPath: subtitlesPath
+    outputAssPath: subtitlesPath,
+    theme: channelSubTheme,
+    popAnimation: true
   });
   generateSrtSubtitles({
     wordBoundaries: voiceResult.wordBoundaries,
@@ -156,6 +166,7 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
     scratchDir: scratchDir,
     channelId: options.channel,
     apiKey: effectiveGeminiKey,
+    pexelsApiKey: effectivePexelsKey,
     visualMode: options.visualMode,
     visualDirective: options.visualDirective
   });

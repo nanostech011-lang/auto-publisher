@@ -142,10 +142,24 @@ curl -X POST http://localhost:8080/api/v1/publisher/run \
   -H "X-API-KEY: sua-chave-configurada"
 ```
 
-#### Build do Contêiner Docker Otimizado:
+#### Execução Local com Docker e Docker Compose:
+1. Copie o arquivo de exemplo de variáveis de ambiente:
 ```bash
-docker build -t autopublisher-pro:latest .
+cp .env.example .env
 ```
+*(No Windows PowerShell: `Copy-Item .env.example .env`)*
+
+2. Inicie o contêiner em segundo plano:
+```bash
+docker compose up -d --build
+```
+
+3. Acesse a aplicação e monitore o status:
+* **Dashboard Web & Studio IA:** [http://localhost:8080/](http://localhost:8080/)
+* **Health Check:** [http://localhost:8080/api/v1/health](http://localhost:8080/api/v1/health)
+* **Logs em tempo real:** `docker compose logs -f`
+* **Parar o contêiner:** `docker compose down`
+
 
 ---
 

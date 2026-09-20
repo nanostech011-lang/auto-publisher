@@ -1224,6 +1224,17 @@ try {
                     </div>
                 </div>
 
+                <!-- Video Player Local Preview (se gerado) -->
+                <div id="detailVideoPreviewContainer" class="p-3 bg-slate-950 border border-purple-900/50 rounded-xl space-y-2 hidden">
+                    <div class="font-bold text-purple-300 flex items-center justify-between text-[11px]">
+                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-play text-purple-400"></i> Pré-visualização do Vídeo Gerado</span>
+                        <a id="detailDownloadVideoLink" href="#" target="_blank" download class="text-purple-400 hover:text-purple-200 text-[10px] flex items-center gap-1">
+                            <i class="fa-solid fa-download"></i> Baixar MP4
+                        </a>
+                    </div>
+                    <video id="detailVideoPlayer" controls class="w-full max-h-72 rounded-lg bg-black object-contain"></video>
+                </div>
+
                 <!-- Bloco de Erro (se houver) -->
                 <div id="detailErrorBlock" class="p-3 bg-rose-950/40 border border-rose-900/60 rounded-xl space-y-1.5 hidden">
                     <div class="font-bold text-rose-400 flex items-center gap-1.5">
@@ -1616,6 +1627,10 @@ try {
                 } else if (post.firstComment) {
                     const safeComment = encodeURIComponent(post.firstComment);
                     actionsHtml += `<button type="button" onclick="event.stopPropagation(); copyFirstComment('${safeComment}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-yellow-300 border border-slate-700 rounded font-semibold text-[11px] inline-flex items-center gap-1 shadow-sm mr-1.5" title="Copiar comentário fixado"><i class="fa-regular fa-copy"></i></button>`;
+                }
+
+                if (post.videoDriveId && (post.videoDriveId.includes('pipeline') || post.videoDriveId.endsWith('.mp4'))) {
+                    actionsHtml += `<button type="button" onclick="event.stopPropagation(); openPostDetails('${post.id}')" class="px-2 py-1 bg-purple-950/80 hover:bg-purple-900 text-purple-300 border border-purple-800 rounded font-semibold text-[11px] inline-flex items-center gap-1 shadow-sm mr-1.5" title="Assistir Vídeo Gerado"><i class="fa-solid fa-play"></i> Assistir</button>`;
                 }
 
                 actionsHtml += `<button type="button" onclick="event.stopPropagation(); openPostDetails('${post.id}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded font-semibold text-[11px] inline-flex items-center gap-1 shadow-sm" title="Ver Detalhes"><i class="fa-regular fa-eye"></i></button>`;
@@ -2400,8 +2415,10 @@ try {
 
                 if (res.ok) {
                     const data = await res.json();
-                    if (visualDirective && data.script && !data.script.visualDirective) {
-                        data.script.visualDirective = visualDirective;
+                    const scriptObj = data.script || data;
+                    scriptObj.fromYouTube = true;
+                    if (visualDirective && !scriptObj.visualDirective) {
+                        scriptObj.visualDirective = visualDirective;
                     }
                     displayAnalyzedYouTubeResult(data);
                     showToast('Vídeo do YouTube analisado e roteiro estruturado com sucesso!', 'success');
@@ -2430,18 +2447,20 @@ try {
                 card.classList.remove('hidden');
                 card.classList.add('flex');
             }
+            const thumbUrl = data.thumbnailUrl || data.original?.thumbnailUrl;
             const thumb = document.getElementById('studioYtThumb');
-            if (thumb && data.thumbnailUrl) thumb.src = data.thumbnailUrl;
+            if (thumb && thumbUrl) thumb.src = thumbUrl;
 
             const channelEl = document.getElementById('studioYtChannel');
-            if (channelEl) channelEl.innerText = data.author || 'YouTube';
+            if (channelEl) channelEl.innerText = data.author || data.original?.authorName || 'YouTube';
 
             const titleEl = document.getElementById('studioYtTitle');
-            if (titleEl) titleEl.innerText = data.title || 'Vídeo Original';
+            if (titleEl) titleEl.innerText = data.title || data.original?.title || 'Vídeo Original';
 
             const badge = document.getElementById('studioYtBadgeTranscript');
             if (badge) {
-                if (data.transcriptAvailable) {
+                const hasTrans = data.transcriptAvailable || data.original?.hasTranscript;
+                if (hasTrans) {
                     badge.innerText = 'Transcrição OK';
                     badge.className = 'text-[9px] px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono';
                 } else {
@@ -2450,19 +2469,21 @@ try {
                 }
             }
 
-            if (data.script) {
-                studioScriptData = data.script;
-                renderStudioScriptPreviewUI(data.script);
+            const scriptObj = data.script || data;
+            if (scriptObj && (scriptObj.blocks || scriptObj.narrationText)) {
+                scriptObj.fromYouTube = true;
+                studioScriptData = scriptObj;
+                renderStudioScriptPreviewUI(scriptObj);
             }
         }
 
         async function fallbackSimulatedYouTubeAnalysis(url, channel, visualDirective) {
-            let videoId = 'faE1EGQJ0lQ';
+            let videoId = 'video_' + Date.now();
             const match = url.match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([a-zA-Z0-9_-]{11})/);
             if (match) videoId = match[1];
 
-            let title = 'COMO CURAR (RÁPIDO) SUA PROCRASTINAÇÃO';
-            let author = 'Eslen Delanogare';
+            let title = `Análise de Vídeo (${videoId})`;
+            let author = 'Criador Original';
             let thumb = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 
             try {
@@ -2478,43 +2499,44 @@ try {
             }
 
             const directive = visualDirective || (document.getElementById('studioVisualDirectiveInput')?.value.trim() || null);
+            const cleanTitle = title.replace(/[#|•].*$/g, '').trim();
 
             const fallbackData = {
-                title: title,
+                title: cleanTitle,
                 author: author,
                 thumbnailUrl: thumb,
                 transcriptAvailable: true,
                 script: {
-                    title: 'Como Vencer a Procrastinação em 5 Minutos #Shorts',
-                    topic: title,
+                    title: `${cleanTitle.slice(0, 50)} #Shorts`,
+                    topic: cleanTitle,
                     fromYouTube: true,
                     visualDirective: directive,
-                    wordCount: 154,
-                    estimatedDurationSeconds: 68,
+                    wordCount: 155,
+                    estimatedDurationSeconds: 67,
                     blocks: [
                         { 
                             title: "Gancho (0-3s)", 
-                            text: "Você não é preguiçoso: seu cérebro só está viciado em dopamina barata.",
-                            visualDescription: directive ? `${directive}: close-up cinematográfico com olhar compenetrado e armadura ornamentada` : "Close-up dramático e dinâmico com iluminação de alto contraste"
+                            text: `Se você quer entender a verdade sobre ${cleanTitle.toLowerCase()}, pare tudo agora: existe um mecanismo oculto que quase ninguém percebeu.`,
+                            visualDescription: directive ? `${directive}: close-up cinematográfico com foco dramático` : "Close-up dramático e dinâmico com iluminação de alto contraste"
                         },
                         { 
-                            title: "Neurociência (3-45s)", 
-                            text: "A procrastinação é uma reação da amígdala fugindo do desconforto. Quando você inicia por apenas 5 minutos, o córtex pré-frontal assume o comando.",
-                            visualDescription: directive ? `${directive}: soldados de elite em formação tática inabalável contra o caos` : "Metáfora visual de avanço estratégico contra o caos e a desordem mental"
+                            title: "Mecanismo Central (3-45s)", 
+                            text: `A análise estratégica revela que os padrões de comportamento humano respondem diretamente à pressão e à busca por recompensas imediatas. Quando você compreende a lógica por trás de ${cleanTitle.toLowerCase()}, a sua capacidade de tomar decisões deliberadas supera qualquer ruído externo.`,
+                            visualDescription: directive ? `${directive}: formação tática e avanço estratégico inabalável` : "Metáfora visual de avanço estratégico contra o caos e a desordem mental"
                         },
                         { 
                             title: "Hack Prático (45-58s)", 
-                            text: "Aplique a regra dos 5 minutos: faça o primeiro movimento tão simples que seja impossível falhar.",
-                            visualDescription: directive ? `${directive}: mãos firmes empunhando armamento clássico prontas para a ação imediata` : "Mãos em ação decidida executando a primeira tarefa sem hesitação"
+                            text: `A regra prática imediata: aplique o primeiro movimento prático em menos de 5 minutos, antes que a hesitação e a dúvida assumam o comando.`,
+                            visualDescription: directive ? `${directive}: mãos firmes em ação decidida executando a tarefa` : "Mãos em ação decidida executando a primeira tarefa sem hesitação"
                         },
                         { 
                             title: "CTA & Retenção (58-68s)", 
-                            text: "Siga o Psicosegredo para dominar sua química mental e salve este vídeo para aplicar amanhã.",
-                            visualDescription: directive ? `${directive}: comandante vitorioso em penhasco épico contemplando o horizonte conquistado` : "Líder vitorioso no horizonte contemplando o domínio conquistado"
+                            text: `Siga o canal para insights estratégicos diários de comportamento e salve este vídeo para aplicar ainda hoje.`,
+                            visualDescription: directive ? `${directive}: comandante vitorioso em penhasco contemplando o horizonte` : "Líder vitorioso no horizonte contemplando o domínio conquistado"
                         }
                     ],
-                    narrationText: "Você não é preguiçoso: a neurociência comprova que a sua falta de ânimo tem uma explicação biológica exata. A procrastinação não é defeito de caráter, é uma resposta imediata da sua amígdala tentando proteger seu cérebro do desconforto de uma tarefa exigente. Quando você passa horas no celular, seu circuito de recompensa é inundado de dopamina sem esforço, tornando qualquer trabalho real insuportável. Para quebrar esse ciclo agora: use a regra dos 5 minutos. Comprometa-se a agir por apenas trezentos segundos. O cérebro elimina o atrito inicial e o córtex pré-frontal assume o comando. Siga nosso canal para reprogramar sua mente e comente FOCO para receber o método completo.",
-                    firstComment: "🧠 Protocolo neurocientífico contra procrastinação desbloqueado no link fixado: https://meulink.com/antiprocrastinacao"
+                    narrationText: `Se você quer entender a verdade sobre ${cleanTitle.toLowerCase()}, pare tudo agora: existe um mecanismo oculto que quase ninguém percebeu. A análise estratégica revela que os padrões de comportamento humano respondem diretamente à pressão e à busca por recompensas imediatas. Quando você compreende a lógica comportamental e biológica por trás disso, a sua capacidade de tomar decisões deliberadas supera qualquer ruído externo. Não é sobre pressa, é sobre clareza de direção e foco disciplinado. A regra prática imediata: aplique o primeiro movimento prático em menos de 5 minutos, antes que a dúvida e a hesitação mental assumam o comando. Siga nosso canal para reprogramar sua mente todos os dias e comente abaixo qual o seu maior desafio.`,
+                    firstComment: `♟️ Qual foi sua maior percepção sobre ${cleanTitle.slice(0, 30)}? O protocolo completo está no link fixado!`
                 }
             };
 
@@ -2556,6 +2578,9 @@ try {
                 });
                 if (res.ok) {
                     scriptData = await res.json();
+                    if (scriptData && scriptData.script) {
+                        scriptData = scriptData.script;
+                    }
                 }
             } catch (e) {
                 // Fallback client-side se offline
@@ -2669,8 +2694,18 @@ try {
 
             const channel = document.getElementById('studioChannelSelect')?.value || 'psicosegredo';
             const scriptIdx = parseInt(document.getElementById('studioCatalogSelect')?.value, 10) || 0;
-            const customTopic = studioCurrentMode === 'topic' ? (document.getElementById('studioCustomTopicInput')?.value.trim() || null) : null;
             const sourceUrl = studioCurrentMode === 'youtube' ? (document.getElementById('studioYoutubeUrlInput')?.value.trim() || null) : null;
+
+            if (studioCurrentMode === 'youtube' && !sourceUrl) {
+                showToast('Por favor, informe a URL do vídeo do YouTube para renderizar.', 'warning');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-play"></i> <span>Renderizar Vídeo Agora</span>';
+                return;
+            }
+
+            const customTopic = studioCurrentMode === 'topic' 
+                ? (document.getElementById('studioCustomTopicInput')?.value.trim() || null) 
+                : (studioCurrentMode === 'youtube' && studioScriptData?.title ? studioScriptData.title : null);
             const visualDirective = document.getElementById('studioVisualDirectiveInput')?.value.trim() || null;
             const platform = document.querySelector('input[name="studioPlatformRadio"]:checked')?.value || 'YOUTUBE_SHORTS';
             const visualMode = document.getElementById('studioVisualModeSelect')?.value || 'hybrid';
@@ -2912,11 +2947,36 @@ try {
                 linkContainer.innerHTML = '';
             }
 
+            // Preview do Vídeo Gerado
+            const previewContainer = document.getElementById('detailVideoPreviewContainer');
+            const previewVideo = document.getElementById('detailVideoPlayer');
+            const previewDownload = document.getElementById('detailDownloadVideoLink');
+
+            if (post.videoDriveId && (post.videoDriveId.includes('pipeline') || post.videoDriveId.endsWith('.mp4'))) {
+                const streamUrl = `/api/v1/dashboard/pipeline/media?path=${encodeURIComponent(post.videoDriveId)}`;
+                previewVideo.src = streamUrl;
+                previewDownload.href = streamUrl;
+                previewContainer.classList.remove('hidden');
+            } else {
+                if (previewVideo) {
+                    previewVideo.pause();
+                    previewVideo.removeAttribute('src');
+                    previewVideo.load();
+                }
+                if (previewContainer) previewContainer.classList.add('hidden');
+            }
+
             document.getElementById('modalPostDetails').classList.remove('hidden');
             document.getElementById('modalPostDetails').classList.add('flex');
         }
 
         function closePostDetailsModal() {
+            const previewVideo = document.getElementById('detailVideoPlayer');
+            if (previewVideo) {
+                previewVideo.pause();
+                previewVideo.removeAttribute('src');
+                previewVideo.load();
+            }
             document.getElementById('modalPostDetails').classList.add('hidden');
             document.getElementById('modalPostDetails').classList.remove('flex');
         }

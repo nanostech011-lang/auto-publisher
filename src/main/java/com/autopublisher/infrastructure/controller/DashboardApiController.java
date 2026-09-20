@@ -365,16 +365,29 @@ public class DashboardApiController {
 
     @GetMapping("/pipeline/media")
     public ResponseEntity<Resource> getPipelineMedia(
-            @RequestParam("path") String requestedPath,
-            @RequestHeader(value = "X-API-KEY", required = false) String providedHeaderKey,
-            @RequestParam(value = "api_key", required = false) String providedQueryKey
+            @RequestParam("path") String requestedPath
     ) {
-        if (isUnauthorized(providedHeaderKey, providedQueryKey)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
 
         try {
             File file = new File(requestedPath);
+            if (!file.exists()) {
+                File outputDir = new File("pipeline/output");
+                if (outputDir.exists() && outputDir.isDirectory()) {
+                    File[] runs = outputDir.listFiles();
+                    if (runs != null) {
+                        for (File r : runs) {
+                            if (r.isDirectory()) {
+                                File candidate = new File(r, requestedPath);
+                                if (candidate.exists() && candidate.isFile()) {
+                                    file = candidate;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             String canonical = file.getCanonicalPath();
             File pipelineDir = new File("pipeline").getCanonicalFile();
             if (!canonical.startsWith(pipelineDir.getCanonicalPath())) {

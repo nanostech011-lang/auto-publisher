@@ -1,5 +1,13 @@
 import fs from 'fs';
 import path from 'path';
+
+// Carregamento nativo de variaveis de ambiente (.env) sem dependencia externa
+try {
+  if (typeof process.loadEnvFile === 'function' && fs.existsSync('.env')) {
+    process.loadEnvFile('.env');
+  }
+} catch (ignored) {}
+
 import { analyzeAndAdaptYouTubeVideo, generateThematicScenes } from './youtube_analyzer.js';
 
 /**
@@ -109,9 +117,11 @@ export async function generateScript({
 }) {
   const channel = customProfile || loadChannelProfile(channelId);
 
+  const effectiveGeminiKey = geminiKey || process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+
   // 1. Se foi fornecido um Link do YouTube, aciona o analisador de conteúdo
   if (sourceUrl && (sourceUrl.includes('youtube.com') || sourceUrl.includes('youtu.be'))) {
-    return await analyzeAndAdaptYouTubeVideo({ url: sourceUrl, channelProfile: channel, visualDirective, geminiKey });
+    return await analyzeAndAdaptYouTubeVideo({ url: sourceUrl, channelProfile: channel, visualDirective, geminiKey: effectiveGeminiKey });
   }
 
   // 2. Se for busca por tema livre ou catálogo
@@ -167,7 +177,7 @@ export async function generateScript({
         { title: 'Hack Prático (45-58s)', text: hack },
         { title: 'CTA & Retenção (58-65s)', text: cta }
       ],
-      scenes: await generateThematicScenes(topic, `${core1} ${core2}`, channel.visual_profile?.aesthetic, visualDirective, fullNarration, geminiKey),
+      scenes: await generateThematicScenes(topic, `${core1} ${core2}`, channel.visual_profile?.aesthetic, visualDirective, fullNarration, effectiveGeminiKey),
       metadata: {
         title: customTitle,
         description: `${customTitle}\n\n${ctaProfile.description_template || ''}\n\nTags: #${tags.slice(0, 5).join(' #')}`,
@@ -204,7 +214,7 @@ export async function generateScript({
       { title: 'Hack Prático (45-58s)', text: selectedScript.narrationText.slice(350, 500) },
       { title: 'CTA & Retenção (58-65s)', text: selectedScript.narrationText.slice(500) }
     ],
-    scenes: (visualDirective && visualDirective.trim().length > 0) ? await generateThematicScenes(selectedScript.topic, selectedScript.title, channel.visual_profile?.aesthetic, visualDirective, selectedScript.narrationText, geminiKey) : selectedScript.scenes,
+    scenes: (visualDirective && visualDirective.trim().length > 0) ? await generateThematicScenes(selectedScript.topic, selectedScript.title, channel.visual_profile?.aesthetic, visualDirective, selectedScript.narrationText, effectiveGeminiKey) : selectedScript.scenes,
     metadata: {
       title: selectedScript.title,
       description,

@@ -81,10 +81,10 @@ public class YouTubePublisherAdapter implements SocialMediaPublisherPort {
             YouTube.Videos.Insert insertRequest = getActiveYouTube().videos()
                     .insert(List.of("snippet", "status"), videoObject, mediaContent);
 
-            // 4. Forca Resumable Upload com chunks de ~10MB gerenciados pelo SDK
+            // 4. Forca Resumable Upload com chunks de 5MB gerenciados pelo SDK (Zero-Copy)
             MediaHttpUploader uploader = insertRequest.getMediaHttpUploader();
             uploader.setDirectUploadEnabled(false);
-            uploader.setChunkSize(MediaHttpUploader.MINIMUM_CHUNK_SIZE * 4);
+            uploader.setChunkSize(MediaHttpUploader.MINIMUM_CHUNK_SIZE * 20);
 
             log.info("Despachando chunks de video para o YouTube...");
             Video uploadedVideo = insertRequest.execute();

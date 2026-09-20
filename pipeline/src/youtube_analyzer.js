@@ -1,5 +1,13 @@
+import fs from 'fs';
 import { YoutubeTranscript } from 'youtube-transcript';
 import { translateDirectiveToCinematicEnglish, buildProfessionalScenePrompt } from './ai_prompt_generator.js';
+
+// Carregamento nativo de variaveis de ambiente (.env) sem dependencia externa
+try {
+  if (typeof process.loadEnvFile === 'function' && fs.existsSync('.env')) {
+    process.loadEnvFile('.env');
+  }
+} catch (ignored) {}
 
 /**
  * Extrai o ID do vídeo do YouTube a partir de qualquer formato de URL
@@ -64,7 +72,21 @@ export async function fetchVideoTranscript(videoId) {
       };
     }
   } catch (e) {
-    // Legendas desativadas ou indisponíveis
+    // Tenta obter com idiomas especificos caso o automatico falhe
+    const langs = ['pt', 'pt-BR', 'en'];
+    for (const lang of langs) {
+      try {
+        const transcript = await YoutubeTranscript.fetchTranscript(videoId, { lang });
+        if (transcript && transcript.length > 0) {
+          const fullText = transcript.map(t => t.text).join(' ').replace(/\s+/g, ' ').trim();
+          return {
+            available: true,
+            text: fullText,
+            segmentsCount: transcript.length
+          };
+        }
+      } catch (ignored) {}
+    }
   }
 
   return {
@@ -147,7 +169,7 @@ export async function analyzeTranscriptWithGemini({
   visualDirective = null,
   apiKey = null
 }) {
-  const effectiveKey = apiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+  const effectiveKey = apiKey || process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY;
   if (!effectiveKey) return null;
 
   const channelName = channelProfile.name || '@psicosegredo';
@@ -191,7 +213,7 @@ ${visualDirective ? `Diretriz Visual Obrigatória: "${visualDirective}"` : ''}
 ${cleanTranscript ? `Transcrição: """${cleanTranscript}"""` : 'Sem transcrição disponível. Desenvolva o roteiro a partir do tema central e título do vídeo.'}`;
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 9500);
+  const timeoutId = setTimeout(() => controller.abort(), 35000);
 
   try {
     const res = await fetch(url, {
@@ -206,14 +228,18 @@ ${cleanTranscript ? `Transcrição: """${cleanTranscript}"""` : 'Sem transcriç�
         systemInstruction: { parts: [{ text: systemInstruction }] },
         generationConfig: {
           temperature: 0.35,
-          maxOutputTokens: 1400,
+          maxOutputTokens: 4096,
           responseMimeType: 'application/json'
         }
       })
     });
     clearTimeout(timeoutId);
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      console.warn(`[YouTube Analyzer] Gemini API retornou HTTP ${res.status}: ${errText.slice(0, 160)}`);
+      return null;
+    }
 
     const data = await res.json();
     const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -227,6 +253,7 @@ ${cleanTranscript ? `Transcrição: """${cleanTranscript}"""` : 'Sem transcriç�
     return parsed;
   } catch (err) {
     clearTimeout(timeoutId);
+    console.warn(`[YouTube Analyzer] Exceção ao consultar Gemini API: ${err.message}`);
     return null;
   }
 }
@@ -239,6 +266,8 @@ export async function analyzeAndAdaptYouTubeVideo({ url, channelProfile = {}, vi
   if (!videoId) {
     throw new Error(`URL do YouTube inválida: "${url}". Forneça um link válido como https://www.youtube.com/watch?v=... ou https://youtu.be/...`);
   }
+
+  const effectiveGeminiKey = geminiKey || process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY;
 
   const [metadata, transcriptData] = await Promise.all([
     fetchVideoMetadata(videoId),
@@ -263,7 +292,7 @@ export async function analyzeAndAdaptYouTubeVideo({ url, channelProfile = {}, vi
       authorName: metadata.authorName,
       channelProfile,
       visualDirective,
-      apiKey: geminiKey
+      apiKey: effectiveGeminiKey
     });
   } catch (e) {
     console.warn(`[YouTube Analyzer] Falha no Gemini Flash, usando fallback heurístico:`, e.message);
@@ -339,7 +368,7 @@ export async function analyzeAndAdaptYouTubeVideo({ url, channelProfile = {}, vi
       };
     });
   } else {
-    scenes = await generateThematicScenes(baseTitle, insight, visualAesthetic, visualDirective, narrationText, geminiKey);
+    scenes = await generateThematicScenes(baseTitle, insight, visualAesthetic, visualDirective, narrationText, effectiveGeminiKey);
   }
 
   return {

@@ -63,4 +63,13 @@ class JobTriggerControllerTest {
 
         verify(publishUseCase).execute();
     }
+
+    @Test
+    @DisplayName("Deve retornar 401 Unauthorized quando nenhuma chave de seguranca estiver configurada no servidor (Fail-Secure)")
+    void shouldReturn401WhenNoApiKeyConfigured() {
+        JobTriggerController controller = new JobTriggerController(publishUseCase, "");
+        var response = controller.triggerPublishing("alguma-chave");
+        org.assertj.core.api.Assertions.assertThat(response.getStatusCode())
+                .isEqualTo(org.springframework.http.HttpStatus.UNAUTHORIZED);
+    }
 }

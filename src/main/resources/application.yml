@@ -1,5 +1,5 @@
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${PORT:${SERVER_PORT:8080}}
 
 spring:
   application:
@@ -20,7 +20,8 @@ autopublisher:
     spreadsheet-id: ${GOOGLE_SHEETS_SPREADSHEET_ID:}
     tab-name: ${GOOGLE_SHEETS_TAB_NAME:Cronograma}
   security:
-    api-key: ${AUTO_PUBLISHER_API_KEY:}
+    api-key: ${AUTOPUBLISHER_SECURITY_API_KEY:${AUTO_PUBLISHER_API_KEY:${AUTOPUBLISHER_API_KEY:dev-local-api-key}}}
+    master-api-key: ${AUTOPUBLISHER_SECURITY_MASTER_API_KEY:${AUTOPUBLISHER_MASTER_API_KEY:${AUTO_PUBLISHER_MASTER_API_KEY:master-super-secret-key}}}
   limits:
     max-daily-uploads: 6
   instagram:
@@ -32,7 +33,9 @@ autopublisher:
     enabled: ${TIKTOK_ENABLED:false}
     access-token: ${TIKTOK_ACCESS_TOKEN:}
   ai:
-    gemini-api-key: ${GEMINI_API_KEY:${GOOGLE_AI_API_KEY:}}
+    gemini-api-key: ${GEMINI_API_KEY:${GEMINI_AI_API_KEY:${GOOGLE_AI_API_KEY:}}}
+    pexels-api-key: ${PEXELS_API_KEY:}
+    pixabay-api-key: ${PIXABAY_API_KEY:}
 
 logging:
   level:

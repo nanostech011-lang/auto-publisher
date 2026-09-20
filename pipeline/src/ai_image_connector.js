@@ -20,7 +20,7 @@ export async function generateImageWithImagen3({ prompt, outputPath, apiKey }) {
     return { success: false, error: 'Google Imagen 3 indisponível na cota da chave para esta sessão' };
   }
 
-  const effectiveKey = apiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+  const effectiveKey = apiKey || process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY;
   if (!effectiveKey) {
     return { success: false, error: 'GEMINI_API_KEY não configurada' };
   }
@@ -187,17 +187,17 @@ export async function generateImageWithPollinationsFlux({ prompt, outputPath, se
 
   const startTime = Date.now();
 
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= 2; attempt++) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 22000);
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     try {
       const res = await fetch(url, { signal: controller.signal });
       clearTimeout(timeoutId);
 
       if (res.status === 429) {
-        console.log(`  [AI Connector] ↳ Fila cheia no Flux (429), aguardando 4.5s para reprocessar (tentativa ${attempt}/3)...`);
-        await new Promise(r => setTimeout(r, 4500));
+        console.log(`  [AI Connector] ↳ Fila cheia no Flux (429), aguardando 2s para reprocessar (tentativa ${attempt}/2)...`);
+        await new Promise(r => setTimeout(r, 2000));
         continue;
       }
 
@@ -219,7 +219,7 @@ export async function generateImageWithPollinationsFlux({ prompt, outputPath, se
     }
   }
 
-  return { success: false, error: 'Falha ou timeout no Pollinations Flux após 3 tentativas' };
+  return { success: false, error: 'Falha ou timeout no Pollinations Flux após 2 tentativas' };
 }
 
 /**
@@ -238,17 +238,16 @@ export async function generateImageWithPollinationsTurbo({ prompt, outputPath, s
   const url = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=1080&height=1920&nologo=true&seed=${sceneSeed}&negative_prompt=${negParam}`;
   const startTime = Date.now();
 
-  for (let attempt = 1; attempt <= 2; attempt++) {
+  for (let attempt = 1; attempt <= 1; attempt++) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 18000);
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     try {
       const res = await fetch(url, { signal: controller.signal });
       clearTimeout(timeoutId);
 
       if (res.status === 429) {
-        console.log(`  [AI Connector] ↳ Fila cheia no Turbo (429), aguardando 3.5s para reprocessar (tentativa ${attempt}/2)...`);
-        await new Promise(r => setTimeout(r, 3500));
+        console.log(`  [AI Connector] ↳ Fila cheia no Turbo (429)...`);
         continue;
       }
 
@@ -288,7 +287,7 @@ export async function generateHighQualitySceneImage({
   seed = null,
   apiKey = null
 }) {
-  const effectiveKey = apiKey || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+  const effectiveKey = apiKey || process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY;
 
   // 1. Gera prompt cinematográfico profissional em inglês se necessário
   let finalPrompt = prompt;

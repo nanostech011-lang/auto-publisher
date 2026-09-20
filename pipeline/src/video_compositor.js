@@ -10,6 +10,34 @@ const ffprobeBinary = process.env.FFPROBE_PATH || (fs.existsSync('/usr/bin/ffpro
 ffmpeg.setFfmpegPath(ffmpegBinary);
 ffmpeg.setFfprobePath(ffprobeBinary);
 
+let detectedVideoCodec = null;
+
+/**
+ * Detecta o encoder de vídeo mais rápido e eficiente disponível.
+ * Em contêineres Docker/Cloud Run, libx264 é o padrão universal que garante
+ * estabilidade absoluta sem falhas de drivers de GPU ausentes (MFX session -9).
+ */
+export async function detectOptimalVideoEncoder() {
+  if (detectedVideoCodec) return detectedVideoCodec;
+
+  if (process.env.FORCE_HARDWARE_ENCODER === 'true' || process.env.ENABLE_NVENC === 'true') {
+    return new Promise((resolve) => {
+      ffmpeg.getAvailableEncoders((err, encoders) => {
+        if (!err && encoders && encoders['h264_nvenc']) {
+          console.log('[FFmpeg Compositor] Opt-in de aceleração NVIDIA NVENC ativado!');
+          detectedVideoCodec = { codec: 'h264_nvenc', preset: 'p4' };
+        } else {
+          detectedVideoCodec = { codec: 'libx264', preset: 'fast' };
+        }
+        resolve(detectedVideoCodec);
+      });
+    });
+  }
+
+  detectedVideoCodec = { codec: 'libx264', preset: 'fast' };
+  return detectedVideoCodec;
+}
+
 /**
  * Monta o video final completo com cortes, audio de locucao, trilha dark e legendas dinamicas queimadas
  */
@@ -21,6 +49,7 @@ export async function composeFinalVideo({
   totalDurationSeconds,
   bgMusicPath = null
 }) {
+  const encoderConfig = await detectOptimalVideoEncoder();
   const dir = path.dirname(outputVideoPath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -55,10 +84,10 @@ export async function composeFinalVideo({
     }
 
     // Pipeline de pós-produção cinematográfica:
-    // 1. Color grading (vinheta suave + curva de contraste sutil + grão analógico 35mm)
+    // 1. Color grading (vinheta suave + curva de contraste sutil cinematográfica)
     // 2. Queima de legendas com nitidez máxima por cima do vídeo graduado
     const complexFilters = [
-      `[0:v]vignette=angle=PI/5:mode=forward,curves=r='0/0 0.2/0.18 0.5/0.49 0.8/0.82 1/1':g='0/0 0.2/0.19 0.5/0.50 0.8/0.81 1/1':b='0/0.02 0.2/0.21 0.5/0.51 0.8/0.80 1/0.98',noise=alls=4:allf=t[graded]`,
+      `[0:v]vignette=angle=PI/5:mode=forward,curves=r='0/0 0.2/0.18 0.5/0.49 0.8/0.82 1/1':g='0/0 0.2/0.19 0.5/0.50 0.8/0.81 1/1':b='0/0.02 0.2/0.21 0.5/0.51 0.8/0.80 1/0.98'[graded]`,
       `[graded]subtitles='${escapedAssPath}'[v_out]`
     ];
 
@@ -81,13 +110,14 @@ export async function composeFinalVideo({
       .outputOptions([
         '-map [v_out]',
         audioMap,
-        '-c:v libx264',
+        `-c:v ${encoderConfig.codec}`,
         '-pix_fmt yuv420p',
-        '-preset fast',
+        `-preset ${encoderConfig.preset}`,
         '-b:v 4500k',
         '-c:a aac',
         '-b:a 192k',
         `-t ${totalDurationSeconds}`,
+        '-threads 2',
         '-movflags +faststart'
       ])
       .output(outputVideoPath)

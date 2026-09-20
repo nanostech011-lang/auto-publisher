@@ -1,13 +1,14 @@
 package com.autopublisher.infrastructure.adapter.sheets;
 
-import com.autopublisher.infrastructure.config.DynamicGoogleClientProvider;
-
 import com.autopublisher.application.port.out.ScheduleRepositoryPort;
 import com.autopublisher.domain.model.Platform;
 import com.autopublisher.domain.model.PostSchedule;
 import com.autopublisher.domain.model.PrivacyStatus;
 import com.autopublisher.domain.model.PublishStatus;
 import com.autopublisher.domain.model.VideoMetadata;
+import com.autopublisher.infrastructure.config.DynamicGoogleClientProvider;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.model.ValueRange;
 import org.slf4j.Logger;
@@ -15,7 +16,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -23,10 +26,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Adaptador de infraestrutura para o Google Sheets (implementa ScheduleRepositoryPort).
  * Executa leituras em lote e gravacoes cirurgicas nas colunas L ate P.
+ * Suporta fallback automatico em memoria para ambiente local e testes quando GOOGLE_SHEETS_SPREADSHEET_ID nao estiver configurado.
  */
 @Component
 public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
@@ -45,6 +50,8 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
     private final String tabName;
 
     private DynamicGoogleClientProvider dynamicClientProvider;
+    private final List<PostSchedule> localMemoryPosts = new CopyOnWriteArrayList<>();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public GoogleSheetsAdapter(
             Sheets sheetsService,
@@ -76,8 +83,10 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
     @Override
     public List<PostSchedule> findPendingPostsDue(LocalDateTime referenceTime) {
         if (getActiveSpreadsheetId() == null || getActiveSpreadsheetId().trim().isEmpty()) {
-            log.warn("GOOGLE_SHEETS_SPREADSHEET_ID nao configurado. Nenhuma postagem sera lida.");
-            return Collections.emptyList();
+            syncManifestsFromDisk();
+            return localMemoryPosts.stream()
+                    .filter(p -> p.status() == PublishStatus.PENDENTE && p.isDue(referenceTime))
+                    .toList();
         }
 
         String range = String.format("%s!A2:Q", getActiveTabName());
@@ -125,7 +134,26 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
     @Override
     public void updateStatus(int rowIndex, PublishStatus status, String publishedUrl, String logMessage, int attempts) {
         if (getActiveSpreadsheetId() == null || getActiveSpreadsheetId().trim().isEmpty()) {
-            log.warn("GOOGLE_SHEETS_SPREADSHEET_ID nao configurado. Ignorando gravacao de status na linha {}.", rowIndex);
+            for (int i = 0; i < localMemoryPosts.size(); i++) {
+                PostSchedule p = localMemoryPosts.get(i);
+                if (p.rowIndex() == rowIndex) {
+                    PostSchedule updated = new PostSchedule(
+                            p.id(),
+                            p.rowIndex(),
+                            p.scheduledTime(),
+                            p.platform(),
+                            p.videoDriveId(),
+                            p.thumbnailDriveId(),
+                            p.metadata(),
+                            status,
+                            attempts,
+                            p.firstComment()
+                    );
+                    localMemoryPosts.set(i, updated);
+                    log.info("[Local Dev] Post {} na linha {} atualizado para status {}", p.id(), rowIndex, status);
+                    break;
+                }
+            }
             return;
         }
 
@@ -156,8 +184,8 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
     @Override
     public List<PostSchedule> findAllPosts() {
         if (getActiveSpreadsheetId() == null || getActiveSpreadsheetId().trim().isEmpty()) {
-            log.warn("GOOGLE_SHEETS_SPREADSHEET_ID nao configurado. Nenhum post sera retornado.");
-            return Collections.emptyList();
+            syncManifestsFromDisk();
+            return new ArrayList<>(localMemoryPosts);
         }
 
         String range = String.format("%s!A2:Q", getActiveTabName());
@@ -197,7 +225,10 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
     @Override
     public void appendPost(PostSchedule post) {
         if (getActiveSpreadsheetId() == null || getActiveSpreadsheetId().trim().isEmpty()) {
-            throw new IllegalStateException("GOOGLE_SHEETS_SPREADSHEET_ID nao configurado.");
+            localMemoryPosts.removeIf(p -> p.id().equals(post.id()));
+            localMemoryPosts.add(post);
+            log.info("[Local Dev] Post {} salvo na fila local com sucesso (Google Sheets nao configurado).", post.id());
+            return;
         }
 
         String range = String.format("%s!A:Q", getActiveTabName());
@@ -236,6 +267,95 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
         } catch (IOException e) {
             log.error("Falha ao anexar novo post na planilha Google Sheets: {}", e.getMessage(), e);
             throw new RuntimeException("Erro ao anexar post no Google Sheets: " + e.getMessage(), e);
+        }
+    }
+
+    private void syncManifestsFromDisk() {
+        try {
+            File outputDir = new File("pipeline/output");
+            if (!outputDir.exists() || !outputDir.isDirectory()) {
+                return;
+            }
+            File[] runs = outputDir.listFiles();
+            if (runs == null) return;
+
+            for (File runDir : runs) {
+                if (!runDir.isDirectory()) continue;
+                File[] manifests = runDir.listFiles((dir, name) -> name.endsWith("_manifest.json"));
+                if (manifests == null) continue;
+
+                for (File manifest : manifests) {
+                    try {
+                        String content = Files.readString(manifest.toPath());
+                        parseAndLoadManifest(content, runDir);
+                    } catch (Exception e) {
+                        log.debug("Nao foi possivel carregar manifesto {}: {}", manifest.getName(), e.getMessage());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Erro ao escanear manifestos locais: {}", e.getMessage());
+        }
+    }
+
+    private void parseAndLoadManifest(String jsonContent, File runDir) {
+        try {
+            JsonNode node = objectMapper.readTree(jsonContent);
+            String id = node.path("id").asText();
+            if (id == null || id.isBlank() || localMemoryPosts.stream().anyMatch(p -> p.id().equals(id))) {
+                return;
+            }
+            String dateStr = node.path("scheduledTime").asText();
+            LocalDateTime scheduled = parseDateTime(dateStr);
+            if (scheduled == null) scheduled = LocalDateTime.now();
+
+            String platformStr = node.path("platform").asText("YOUTUBE_SHORTS");
+            Platform platform;
+            try {
+                platform = Platform.fromString(platformStr);
+            } catch (Exception e) {
+                platform = Platform.YOUTUBE_SHORTS;
+            }
+
+            File vFile = new File(runDir, node.path("videoDriveId").asText("video_final_9x16.mp4"));
+            String videoId = vFile.exists() ? vFile.getAbsolutePath().replace('\\', '/') : node.path("videoDriveId").asText("video_final_9x16.mp4");
+
+            File tFile = new File(runDir, node.path("thumbnailDriveId").asText("thumbnail.png"));
+            String thumbId = tFile.exists() ? tFile.getAbsolutePath().replace('\\', '/') : node.path("thumbnailDriveId").asText("thumbnail.png");
+            String title = node.path("title").asText("Vídeo Sem Título");
+            String description = node.path("description").asText("");
+            String tagsStr = node.path("tags").asText("");
+            List<String> tags = tagsStr.isBlank() ? Collections.emptyList() : Arrays.stream(tagsStr.split(",")).map(String::trim).toList();
+            int categoryId = node.path("categoryId").asInt(28);
+            boolean madeForKids = node.path("madeForKids").asBoolean(false);
+            String privacyStr = node.path("privacy").asText("PUBLIC");
+            PrivacyStatus privacy;
+            try {
+                privacy = PrivacyStatus.valueOf(privacyStr);
+            } catch (Exception e) {
+                privacy = PrivacyStatus.PUBLIC;
+            }
+            String firstComment = node.hasNonNull("firstComment") ? node.path("firstComment").asText() : null;
+
+            VideoMetadata metadata = new VideoMetadata(title, description, tags, categoryId, madeForKids, privacy);
+            int nextRow = localMemoryPosts.size() + 2;
+
+            PostSchedule post = new PostSchedule(
+                    id,
+                    nextRow,
+                    scheduled,
+                    platform,
+                    videoId,
+                    thumbId,
+                    metadata,
+                    PublishStatus.PENDENTE,
+                    0,
+                    firstComment
+            );
+            localMemoryPosts.add(post);
+            log.info("[Local Dev] Post carregado a partir do manifesto: {} - '{}'", id, title);
+        } catch (Exception e) {
+            log.debug("Erro ao converter manifesto em PostSchedule: {}", e.getMessage());
         }
     }
 
@@ -278,40 +398,31 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
         String rawTags = getCell(row, 7);
         List<String> tags = rawTags.isEmpty()
                 ? Collections.emptyList()
-                : Arrays.stream(rawTags.split(","))
-                .map(String::trim)
-                .filter(t -> !t.isEmpty())
-                .toList();
+                : Arrays.stream(rawTags.split(",")).map(String::trim).toList();
 
-        String rawCategory = getCell(row, 8);
-        Integer categoryId = 24; // Default Entretenimento
-        if (!rawCategory.isEmpty()) {
-            try {
-                categoryId = Integer.parseInt(rawCategory);
-            } catch (NumberFormatException ignored) {
+        int categoryId = 24;
+        try {
+            String rawCategory = getCell(row, 8);
+            if (!rawCategory.isEmpty()) {
+                categoryId = Integer.parseInt(rawCategory.trim());
             }
+        } catch (NumberFormatException e) {
+            log.warn("Linha {}: Categoria invalida, usando 24 (Entretenimento): {}", physicalRowIndex, getCell(row, 8));
         }
 
-        String rawMadeForKids = getCell(row, 9);
-        boolean madeForKids = Boolean.parseBoolean(rawMadeForKids);
+        boolean madeForKids = "TRUE".equalsIgnoreCase(getCell(row, 9));
+        PrivacyStatus privacy = PrivacyStatus.fromString(getCell(row, 10));
+        PublishStatus status = PublishStatus.fromString(getCell(row, 11));
 
-        String rawPrivacy = getCell(row, 10);
-        PrivacyStatus privacy = PrivacyStatus.fromString(rawPrivacy);
-
-        String rawStatus = getCell(row, 11);
-        PublishStatus status = PublishStatus.fromString(rawStatus);
-
-        String rawAttempts = getCell(row, 15);
         int attempts = 0;
-        if (!rawAttempts.isEmpty()) {
-            try {
-                attempts = Integer.parseInt(rawAttempts);
-            } catch (NumberFormatException ignored) {
+        try {
+            String rawAttempts = getCell(row, 15);
+            if (!rawAttempts.isEmpty()) {
+                attempts = Integer.parseInt(rawAttempts.trim());
             }
-        }
+        } catch (NumberFormatException ignored) {}
 
-        String rawFirstComment = getCell(row, 16);
-        String firstComment = rawFirstComment.isEmpty() ? null : rawFirstComment;
+        String firstComment = getCell(row, 16);
 
         VideoMetadata metadata = new VideoMetadata(title, description, tags, categoryId, madeForKids, privacy);
 
@@ -325,26 +436,25 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
                 metadata,
                 status,
                 attempts,
-                firstComment
+                firstComment.isEmpty() ? null : firstComment
         );
     }
 
     private String getCell(List<Object> row, int index) {
-        if (index >= row.size() || row.get(index) == null) {
-            return "";
+        if (row != null && index < row.size() && row.get(index) != null) {
+            return row.get(index).toString().trim();
         }
-        return row.get(index).toString().trim();
+        return "";
     }
 
-    private LocalDateTime parseDateTime(String text) {
-        if (text == null || text.trim().isEmpty()) {
+    private LocalDateTime parseDateTime(String rawDate) {
+        if (rawDate == null || rawDate.trim().isEmpty()) {
             return null;
         }
         for (DateTimeFormatter formatter : DATE_FORMATTERS) {
             try {
-                return LocalDateTime.parse(text.trim(), formatter);
-            } catch (DateTimeParseException ignored) {
-            }
+                return LocalDateTime.parse(rawDate.trim(), formatter);
+            } catch (DateTimeParseException ignored) {}
         }
         return null;
     }
