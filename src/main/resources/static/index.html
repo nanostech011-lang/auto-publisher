@@ -1531,7 +1531,12 @@ try {
 
         // Gestão de API Key
         function getApiKey() {
-            return localStorage.getItem('auto_publisher_api_key') || 'dev-local-api-key';
+            let key = localStorage.getItem('auto_publisher_api_key');
+            if (!key) {
+                key = 'dev-local-api-key';
+                localStorage.setItem('auto_publisher_api_key', key);
+            }
+            return key;
         }
 
         function initApiKey() {
@@ -2767,12 +2772,30 @@ try {
                     appendStudioLog(`Job ID [${job.jobId}] criado no backend.`);
                     startPollingStudioJob(job.jobId);
                     return;
+                } else {
+                    let errMsg = `HTTP ${res.status}`;
+                    try {
+                        const errData = await res.json();
+                        errMsg = errData.message || errData.error || errMsg;
+                    } catch (ignored) {}
+                    appendStudioLog(`[ERRO] Falha ao iniciar renderização no backend: ${errMsg}`);
+                    if (res.status === 401 || res.status === 403) {
+                        showToast(`Acesso não autorizado (${errMsg}). Configure a chave de API nas Configurações.`, 'error');
+                        appendStudioLog(`[DICA DE AUTENTICAÇÃO] Certifique-se de que a chave X-API-KEY esteja configurada (padrão local: dev-local-api-key).`);
+                    } else {
+                        showToast(`Erro na requisição: ${errMsg}`, 'error');
+                    }
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> <span>Gerar Vídeo Agora com IA</span>';
+                    return;
                 }
             } catch (e) {
-                appendStudioLog(`Backend offline (${e.message}). Executando renderização assistida...`);
+                appendStudioLog(`[ERRO DE CONEXÃO] Backend inalcançável: ${e.message}`);
+                showToast(`Falha de conexão com o servidor local: ${e.message}`, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> <span>Gerar Vídeo Agora com IA</span>';
+                return;
             }
-
-            simulateStudioPipelineOffline(channel, platform);
         }
 
         let studioLastFlowData = null;

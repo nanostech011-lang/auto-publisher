@@ -60,6 +60,8 @@ export function findWordSequenceIndex(wordBoundaries, targetTokens, startIndex =
 
   let bestMatch = null;
   let highestScore = 0;
+  const maxPossibleScore = 2.0 + Math.min(searchTokens.length - 1, 3) * 1.5;
+  const minRequiredScore = Math.max(1.5, maxPossibleScore * 0.62);
 
   for (let i = startIndex; i < endSearch; i++) {
     let matchScore = 0;
@@ -67,7 +69,8 @@ export function findWordSequenceIndex(wordBoundaries, targetTokens, startIndex =
 
     // 1. Verifica casamento do primeiro token
     if (boundaryWord === searchTokens[0]) {
-      matchScore += 2.0;
+      const isShortWord = boundaryWord.length <= 2;
+      matchScore += isShortWord ? 1.0 : 2.0;
 
       // 2. Confere os tokens subsequentes para evitar falsos positivos
       for (let j = 1; j < searchTokens.length; j++) {
@@ -92,7 +95,7 @@ export function findWordSequenceIndex(wordBoundaries, targetTokens, startIndex =
       }
     }
 
-    if (matchScore > highestScore && matchScore >= 1.5) {
+    if (matchScore > highestScore && matchScore >= minRequiredScore) {
       highestScore = matchScore;
       bestMatch = {
         boundaryIndex: i,
@@ -100,8 +103,8 @@ export function findWordSequenceIndex(wordBoundaries, targetTokens, startIndex =
         confidence: matchScore
       };
 
-      // Casamento perfeito dos primeiros tokens: encerra busca imediatamente
-      if (matchScore >= 3.5) {
+      // Casamento forte dos primeiros tokens: encerra busca imediatamente
+      if (matchScore >= maxPossibleScore * 0.85) {
         break;
       }
     }
@@ -164,8 +167,7 @@ export function findOptimalPauseCut(wordBoundaries, targetTimeMs, minMs, maxMs) 
   }
 
   let bestIndex = -1;
-  let maxPause = -1;
-  let closestDist = Infinity;
+  let bestScore = -Infinity;
 
   for (let i = 1; i < wordBoundaries.length; i++) {
     const pause = wordBoundaries[i].startMs - wordBoundaries[i - 1].endMs;
@@ -174,14 +176,13 @@ export function findOptimalPauseCut(wordBoundaries, targetTimeMs, minMs, maxMs) 
     if (midPoint >= minMs && midPoint <= maxMs) {
       const dist = Math.abs(midPoint - targetTimeMs);
 
-      // Prioriza pausas longas (> 200ms) de pontuação; se empatadas, a mais próxima do target
-      if (pause > 200 && (pause > maxPause || (Math.abs(pause - maxPause) < 100 && dist < closestDist))) {
-        maxPause = pause;
+      // Pontua pela duração da pausa combinada com a proximidade do target
+      const pauseBonus = Math.min(Math.max(pause, 0), 600) * 1.5;
+      const score = pauseBonus - (dist * 0.8);
+
+      if (score > bestScore) {
+        bestScore = score;
         bestIndex = i;
-        closestDist = dist;
-      } else if (maxPause < 200 && dist < closestDist) {
-        bestIndex = i;
-        closestDist = dist;
       }
     }
   }
@@ -271,7 +272,9 @@ export function alignScenesWithWordBoundaries({
   const alignmentDetails = new Array(numScenes);
   alignmentDetails[0] = { type: 'audio_start', word: wordBoundaries[0]?.word || '' };
 
-  const minSceneDurationMs = 800; // Mínimo de 0.8s por cena (cortes dinâmicos para Shorts/TikTok)
+  const avgDurationMs = totalDurationMs / numScenes;
+  const minSceneDurationMs = Math.min(1800, Math.floor(avgDurationMs * 0.7));
+  const maxSceneDurationMs = Math.max(4500, Math.ceil(avgDurationMs * 1.4));
   const totalBaseDuration = scenes.reduce((acc, s) => acc + (s.duration || 5), 0) || (numScenes * 5);
 
   let boundaryCursor = 0;
@@ -281,7 +284,10 @@ export function alignScenesWithWordBoundaries({
   for (let i = 1; i < numScenes; i++) {
     const prevCut = cutMs[i - 1];
     const remainingScenes = numScenes - i;
-    const maxAllowedCutMs = totalDurationMs - (remainingScenes * minSceneDurationMs);
+    const maxAllowedCutMs = Math.min(
+      prevCut + maxSceneDurationMs,
+      totalDurationMs - (remainingScenes * minSceneDurationMs)
+    );
     const minAllowedCutMs = prevCut + minSceneDurationMs;
 
     const currentScene = scenes[i];
@@ -335,6 +341,15 @@ export function alignScenesWithWordBoundaries({
 
     cutMs[i] = resolvedCutMs;
     accumulatedBaseDuration += (currentScene.duration || 5);
+  }
+
+  // 3. Quantização em frames (padrão 30 fps = 33.33ms) com preservação de limites viáveis
+  const frameMs = 1000 / 30;
+  for (let i = 1; i < numScenes; i++) {
+    const quantized = Math.round(cutMs[i] / frameMs) * frameMs;
+    if (quantized >= cutMs[i - 1] + minSceneDurationMs && quantized <= cutMs[i + 1] - minSceneDurationMs) {
+      cutMs[i] = Math.round(quantized);
+    }
   }
 
   // Constrói a lista final de cenas alinhadas com verificação de invariantes

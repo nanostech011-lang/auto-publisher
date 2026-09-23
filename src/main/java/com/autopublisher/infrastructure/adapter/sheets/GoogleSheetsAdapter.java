@@ -82,7 +82,7 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
 
     @Override
     public List<PostSchedule> findPendingPostsDue(LocalDateTime referenceTime) {
-        if (getActiveSpreadsheetId() == null || getActiveSpreadsheetId().trim().isEmpty()) {
+        if (getActiveSpreadsheetId() == null || getActiveSpreadsheetId().trim().isEmpty() || isDummySpreadsheetId(getActiveSpreadsheetId())) {
             syncManifestsFromDisk();
             return localMemoryPosts.stream()
                     .filter(p -> p.status() == PublishStatus.PENDENTE && p.isDue(referenceTime))
@@ -125,35 +125,19 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
 
             return pendingPosts;
 
-        } catch (IOException e) {
-            log.error("Falha ao comunicar com a Google Sheets API: {}", e.getMessage(), e);
-            throw new RuntimeException("Erro ao consultar Google Sheets: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.warn("Falha ao comunicar com a Google Sheets API ({}), usando fila local de manifestos.", e.getMessage());
+            syncManifestsFromDisk();
+            return localMemoryPosts.stream()
+                    .filter(p -> p.status() == PublishStatus.PENDENTE && p.isDue(referenceTime))
+                    .toList();
         }
     }
 
     @Override
     public void updateStatus(int rowIndex, PublishStatus status, String publishedUrl, String logMessage, int attempts) {
-        if (getActiveSpreadsheetId() == null || getActiveSpreadsheetId().trim().isEmpty()) {
-            for (int i = 0; i < localMemoryPosts.size(); i++) {
-                PostSchedule p = localMemoryPosts.get(i);
-                if (p.rowIndex() == rowIndex) {
-                    PostSchedule updated = new PostSchedule(
-                            p.id(),
-                            p.rowIndex(),
-                            p.scheduledTime(),
-                            p.platform(),
-                            p.videoDriveId(),
-                            p.thumbnailDriveId(),
-                            p.metadata(),
-                            status,
-                            attempts,
-                            p.firstComment()
-                    );
-                    localMemoryPosts.set(i, updated);
-                    log.info("[Local Dev] Post {} na linha {} atualizado para status {}", p.id(), rowIndex, status);
-                    break;
-                }
-            }
+        if (getActiveSpreadsheetId() == null || getActiveSpreadsheetId().trim().isEmpty() || isDummySpreadsheetId(getActiveSpreadsheetId())) {
+            updateLocalMemoryPost(rowIndex, status, publishedUrl, logMessage, attempts);
             return;
         }
 
@@ -176,14 +160,42 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
                     .setValueInputOption("USER_ENTERED")
                     .execute();
             log.info("Status da linha {} atualizado com sucesso para: {}", rowIndex, status);
-        } catch (IOException e) {
-            log.error("Falha ao atualizar status na linha {} do Google Sheets: {}", rowIndex, e.getMessage(), e);
+        } catch (Exception e) {
+            log.warn("Falha ao atualizar status na linha {} do Google Sheets ({}), atualizando em memória local.", rowIndex, e.getMessage());
+            updateLocalMemoryPost(rowIndex, status, publishedUrl, logMessage, attempts);
         }
+    }
+
+    private void updateLocalMemoryPost(int rowIndex, PublishStatus status, String publishedUrl, String logMessage, int attempts) {
+        for (int i = 0; i < localMemoryPosts.size(); i++) {
+            PostSchedule p = localMemoryPosts.get(i);
+            if (p.rowIndex() == rowIndex) {
+                PostSchedule updated = new PostSchedule(
+                        p.id(),
+                        p.rowIndex(),
+                        p.scheduledTime(),
+                        p.platform(),
+                        p.videoDriveId(),
+                        p.thumbnailDriveId(),
+                        p.metadata(),
+                        status,
+                        attempts,
+                        p.firstComment()
+                );
+                localMemoryPosts.set(i, updated);
+                log.info("[Local Dev] Post {} na linha {} atualizado para status {}", p.id(), rowIndex, status);
+                break;
+            }
+        }
+    }
+
+    private boolean isDummySpreadsheetId(String id) {
+        return id == null || id.isBlank() || id.contains("1AbCdEfGhIjKlMnOpQrStUvWxYz123456789") || id.startsWith("seu-");
     }
 
     @Override
     public List<PostSchedule> findAllPosts() {
-        if (getActiveSpreadsheetId() == null || getActiveSpreadsheetId().trim().isEmpty()) {
+        if (getActiveSpreadsheetId() == null || getActiveSpreadsheetId().trim().isEmpty() || isDummySpreadsheetId(getActiveSpreadsheetId())) {
             syncManifestsFromDisk();
             return new ArrayList<>(localMemoryPosts);
         }
@@ -196,7 +208,8 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
 
             List<List<Object>> rows = response.getValues();
             if (rows == null || rows.isEmpty()) {
-                return Collections.emptyList();
+                syncManifestsFromDisk();
+                return new ArrayList<>(localMemoryPosts);
             }
 
             List<PostSchedule> allPosts = new ArrayList<>();
@@ -216,18 +229,19 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
                 }
             }
             return allPosts;
-        } catch (IOException e) {
-            log.error("Falha ao consultar todos os posts do Google Sheets: {}", e.getMessage(), e);
-            throw new RuntimeException("Erro ao consultar Google Sheets: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.warn("Google Sheets inacessível ou credenciais inválidas ({}), utilizando fila local e manifestos.", e.getMessage());
+            syncManifestsFromDisk();
+            return new ArrayList<>(localMemoryPosts);
         }
     }
 
     @Override
     public void appendPost(PostSchedule post) {
-        if (getActiveSpreadsheetId() == null || getActiveSpreadsheetId().trim().isEmpty()) {
+        if (getActiveSpreadsheetId() == null || getActiveSpreadsheetId().trim().isEmpty() || isDummySpreadsheetId(getActiveSpreadsheetId())) {
             localMemoryPosts.removeIf(p -> p.id().equals(post.id()));
             localMemoryPosts.add(post);
-            log.info("[Local Dev] Post {} salvo na fila local com sucesso (Google Sheets nao configurado).", post.id());
+            log.info("[Local Dev] Post {} salvo na fila local com sucesso (Google Sheets não configurado ou em modo local).", post.id());
             return;
         }
 
@@ -264,9 +278,10 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
                     .setInsertDataOption("INSERT_ROWS")
                     .execute();
             log.info("Novo post {} inserido com sucesso na aba {}", post.id(), getActiveTabName());
-        } catch (IOException e) {
-            log.error("Falha ao anexar novo post na planilha Google Sheets: {}", e.getMessage(), e);
-            throw new RuntimeException("Erro ao anexar post no Google Sheets: " + e.getMessage(), e);
+        } catch (Exception e) {
+            log.warn("Falha ao anexar novo post na planilha Google Sheets ({}), mantendo post {} na fila local.", e.getMessage(), post.id());
+            localMemoryPosts.removeIf(p -> p.id().equals(post.id()));
+            localMemoryPosts.add(post);
         }
     }
 
@@ -317,10 +332,16 @@ public class GoogleSheetsAdapter implements ScheduleRepositoryPort {
                 platform = Platform.YOUTUBE_SHORTS;
             }
 
-            File vFile = new File(runDir, node.path("videoDriveId").asText("video_final_9x16.mp4"));
+            File vFile = new File(runDir, "video_final_9x16.mp4");
+            if (!vFile.exists()) {
+                vFile = new File(runDir, node.path("videoDriveId").asText("video_final_9x16.mp4"));
+            }
             String videoId = vFile.exists() ? vFile.getAbsolutePath().replace('\\', '/') : node.path("videoDriveId").asText("video_final_9x16.mp4");
 
-            File tFile = new File(runDir, node.path("thumbnailDriveId").asText("thumbnail.png"));
+            File tFile = new File(runDir, "thumbnail.png");
+            if (!tFile.exists()) {
+                tFile = new File(runDir, node.path("thumbnailDriveId").asText("thumbnail.png"));
+            }
             String thumbId = tFile.exists() ? tFile.getAbsolutePath().replace('\\', '/') : node.path("thumbnailDriveId").asText("thumbnail.png");
             String title = node.path("title").asText("Vídeo Sem Título");
             String description = node.path("description").asText("");

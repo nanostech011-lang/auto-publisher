@@ -48,6 +48,13 @@ Gestão ágil de demandas dividida em 9 épicos detalhados com critérios de ace
 *   **PRD de Geração Upstream:** Especificação completa da esteira autônoma que transforma temas em vídeos verticais prontos (áudio TTS Edge-TTS, legendas dinâmicas karaokê, b-roll dark 9:16, FFmpeg compositor e injeção automática no Google Drive/Sheets).
 *   **Contexto do Canal Piloto:** Especificação da identidade, estética dark chiaroscuro e roteiros validados do canal piloto em [docs/automacao.md](automacao.md).
 
+### 7. Qualidade do Pipeline de Vídeo (v3)
+*   [**Plano de Melhoria dos Vídeos — revisão de 23/09/2026**](Plano_Melhoria_Videos_2026-09-23.md) *(vigente)*: diagnóstico refeito sobre uma execução real do código atual, com sondagens HTTP ao vivo contra os provedores. Registra o que já foi corrigido desde 15/09, o que regrediu, a quebra nova do gerador de roteiro (`gemini-2.0-flash` descontinuado) e o plano faseado P0–P7 com aceite mensurável por fase.
+*   [**Plano de Refatoração — Qualidade de Saída**](Plano_Refatoracao_Qualidade_Pipeline.md) *(superado pela revisão acima, mantido pelo diagnóstico causal)*: diagnóstico com evidência medida (resolução real dos assets, nitidez, marca d'água, densidade de cortes), as 5 causas-raiz da degradação visual, decisões de custo pendentes e o plano faseado F0–F8 ordenado por impacto visível ÷ esforço.
+*   [**SDD v3.0 — Estágios Tipados com Gate de Qualidade**](SDD_Pipeline_Conteudo_IA_v3.md): especificação de implementação. Arquitetura alvo, contratos de dados (`Script`, `VisualBeat`, `StyleContract`, `TimelineScene`, `RunManifest`), spec módulo a módulo com filtros FFmpeg concretos, matriz de resiliência verificada em runtime e o QC gate de 13 checagens.
+*   [**Catálogo de Achados da Auditoria**](Auditoria_Qualidade_Pipeline_Achados.md): os 143 achados (44 críticos) com evidência, causa-raiz, impacto no vídeo final e correção concreta, agrupados por dimensão do pipeline.
+*   [**SDD v2.0**](SDD_Pipeline_Conteudo_IA_v2.md) *(superado pela v3)*: design original da esteira de conteúdo IA.
+
 ---
 
 ## 🚀 Fluxo Operacional End-to-End (Upstream + Downstream)

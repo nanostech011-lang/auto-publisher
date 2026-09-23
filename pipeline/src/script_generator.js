@@ -10,6 +10,17 @@ try {
 
 import { analyzeAndAdaptYouTubeVideo, generateThematicScenes } from './youtube_analyzer.js';
 import { generateViralScriptWithGemini } from './gemini_script_generator.js';
+import { globalScriptLedger } from './script_ledger.js';
+
+/**
+ * Formata descrição para publicação higienizando hashtags (sem espaços) e substituindo {platform}
+ */
+export function formatPublishingDescription({ title, ctaTemplate, tags, platform = 'YouTube Shorts' }) {
+  const cleanTags = (tags || []).map(t => String(t).replace(/\s+/g, '')).filter(Boolean);
+  const formattedCta = (ctaTemplate || '').replace(/\{platform\}/gi, platform);
+  const hashtags = cleanTags.slice(0, 5).map(t => `#${t.replace(/^#/, '')}`).join(' ');
+  return `${title}\n\n${formattedCta}\n\nTags: ${hashtags}`.trim();
+}
 
 /**
  * Banco de roteiros validados e calibrados para nichos canônicos
@@ -282,8 +293,14 @@ export async function generateScript({
 
       console.log('[Script Generator] Gemini não retornou roteiro válido — usando template local.');
     }
-    const customTitle = `${topic.slice(0, 50)} #Shorts`;
-    const hook = `Se você busca dominar ${topic.slice(0, 35)} com verdadeira maestria, existe um princípio silencioso que poucos têm a coragem de praticar no dia a dia.`;
+    const truncateWords = (str, maxLen) => {
+      if (!str || str.length <= maxLen) return str || '';
+      const sliced = str.slice(0, maxLen);
+      const lastSpace = sliced.lastIndexOf(' ');
+      return lastSpace > 0 ? sliced.slice(0, lastSpace) : sliced;
+    };
+    const customTitle = `${truncateWords(topic, 50)} #Shorts`;
+    const hook = `Se você busca dominar ${truncateWords(topic, 35)} com verdadeira maestria, existe um princípio silencioso que poucos têm a coragem de praticar no dia a dia.`;
     const core1 = `A maioria das pessoas falha constantemente porque tenta buscar respostas fáceis e atalhos superficiais. Elas reagem a cada estímulo externo, esquecendo que o verdadeiro domínio nasce da calma interior e do controle rigoroso da própria atenção.`;
     const core2 = `Quando você aprende a silenciar o ruído ao seu redor e constrói seus alicerces passo a passo, cada pequena decisão ganha um peso colossal através do efeito composto. Não é sobre pressa desordenada, é sobre direção clara e disciplina constante.`;
     const hack = `A partir de hoje, aplique a regra de ouro da clareza absoluta: descarte qualquer distração irrelevante, proteja a sua serenidade como seu bem mais precioso e aja com firmeza serena.`;
@@ -296,34 +313,50 @@ export async function generateScript({
     const tags = pubProfile.default_tags || ['shorts', 'desenvolvimento', 'foco'];
     const ctaProfile = pubProfile.affiliate_cta || {};
 
-    return {
-      channelId: channel.channel_id || channelId,
-      channelName: channel.name || `@${channelId}`,
-      scriptId: `custom_${Date.now()}`,
-      topic,
+    const formattedDesc = formatPublishingDescription({
       title: customTitle,
-      narrationText: fullNarration,
-      wordCount,
-      estimatedDurationSeconds: Math.round((wordCount / 135) * 60),
-      rewardsEligible: true,
-      blocks: [
-        { title: 'Gancho (0-3s)', text: hook },
-        { title: 'Foco Central (3-45s)', text: `${core1} ${core2}` },
-        { title: 'Hack Prático (45-58s)', text: hack },
-        { title: 'CTA & Retenção (58-65s)', text: cta }
-      ],
-      scenes: await generateThematicScenes(topic, `${core1} ${core2}`, channel.visual_profile?.aesthetic, visualDirective, fullNarration, effectiveGeminiKey),
-      metadata: {
+      ctaTemplate: ctaProfile.description_template,
+      tags
+    });
+
+      const customResult = {
+        channelId: channel.channel_id || channelId,
+        channelName: channel.name || `@${channelId}`,
+        scriptId: `custom_${Date.now()}`,
+        topic,
         title: customTitle,
-        description: `${customTitle}\n\n${ctaProfile.description_template || ''}\n\nTags: #${tags.slice(0, 5).join(' #')}`,
-        tags: tags.join(', '),
-        categoryId: pubProfile.youtube_category_id || 24,
-        madeForKids: pubProfile.made_for_kids || false,
-        privacy: pubProfile.privacy || 'PUBLIC',
-        firstComment: ctaProfile.first_comment || 'Deixe seu comentário e siga o canal!'
-      }
-    };
-  }
+        narrationText: fullNarration,
+        wordCount,
+        estimatedDurationSeconds: Math.round((wordCount / 135) * 60),
+        rewardsEligible: true,
+        blocks: [
+          { title: 'Gancho (0-3s)', text: hook },
+          { title: 'Foco Central (3-45s)', text: `${core1} ${core2}` },
+          { title: 'Hack Prático (45-58s)', text: hack },
+          { title: 'CTA & Retenção (58-65s)', text: cta }
+        ],
+        scenes: await generateThematicScenes(topic, `${core1} ${core2}`, channel.visual_profile?.aesthetic, visualDirective, fullNarration, effectiveGeminiKey),
+        metadata: {
+          title: customTitle,
+          description: formattedDesc,
+          tags: tags.map(t => t.replace(/\s+/g, '')).join(', '),
+          categoryId: pubProfile.youtube_category_id || 24,
+          madeForKids: pubProfile.made_for_kids || false,
+          privacy: pubProfile.privacy || 'PUBLIC',
+          firstComment: ctaProfile.first_comment || 'Deixe seu comentário e siga o canal!'
+        }
+      };
+
+      globalScriptLedger.recordScript({
+        id: customResult.scriptId,
+        channelId: customResult.channelId,
+        topic: customResult.topic,
+        title: customResult.title,
+        narrationText: customResult.narrationText
+      });
+
+      return customResult;
+    }
 
   let narrationText = selectedScript.narrationText;
   if (channel.name && channel.name !== '@psicosegredo') {
@@ -336,10 +369,14 @@ export async function generateScript({
   const tags = pubProfile.default_tags || ['shorts', 'viral', channelId];
   const cta = pubProfile.affiliate_cta || {};
 
-  const description = `${selectedScript.title}\n\n${cta.description_template || ''}\n\nTags: #${tags.slice(0, 5).join(' #')}`;
+  const description = formatPublishingDescription({
+    title: selectedScript.title,
+    ctaTemplate: cta.description_template,
+    tags
+  });
   const firstComment = cta.first_comment || 'Siga para mais conteúdos diários.';
 
-  return {
+  const catalogResult = {
     channelId: channel.channel_id || channelId,
     channelName: channel.name || `@${channelId}`,
     scriptId: selectedScript.id,
@@ -359,11 +396,21 @@ export async function generateScript({
     metadata: {
       title: selectedScript.title,
       description,
-      tags: tags.join(', '),
+      tags: tags.map(t => t.replace(/\s+/g, '')).join(', '),
       categoryId: pubProfile.youtube_category_id || 24,
       madeForKids: pubProfile.made_for_kids || false,
       privacy: pubProfile.privacy || 'PUBLIC',
       firstComment
     }
   };
+
+  globalScriptLedger.recordScript({
+    id: catalogResult.scriptId,
+    channelId: catalogResult.channelId,
+    topic: catalogResult.topic,
+    title: catalogResult.title,
+    narrationText: catalogResult.narrationText
+  });
+
+  return catalogResult;
 }

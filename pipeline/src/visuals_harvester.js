@@ -1,9 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execFile } from 'child_process';
-import ffmpeg from 'fluent-ffmpeg';
-import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
-import ffprobeInstaller from '@ffprobe-installer/ffprobe';
+import ffmpeg, { ffmpegBinary, ffprobeBinary } from './ffmpeg_env.js';
 import { generateHighQualitySceneImage } from './ai_image_connector.js';
 import { generateCinematicTake } from './ai_video_connector.js';
 import {
@@ -11,12 +9,8 @@ import {
   fetchAndPrepareStockPhoto,
   buildSmartContextualQueries
 } from './stock_video_connector.js';
-
-const ffmpegBinary = process.env.FFMPEG_PATH || (fs.existsSync('/usr/bin/ffmpeg') ? '/usr/bin/ffmpeg' : ffmpegInstaller.path);
-const ffprobeBinary = process.env.FFPROBE_PATH || (fs.existsSync('/usr/bin/ffprobe') ? '/usr/bin/ffprobe' : ffprobeInstaller.path);
-
-ffmpeg.setFfmpegPath(ffmpegBinary);
-ffmpeg.setFfprobePath(ffprobeBinary);
+import { validateAssetQuality } from './asset_quality_gate.js';
+import { globalAssetCache } from './asset_cache.js';
 
 /**
  * Cria uma cena de vídeo 9:16 procedural com estética dark chiaroscuro usando filtros avançados do FFmpeg.
@@ -226,30 +220,29 @@ export function createCinematicMotionClip({
     });
   }
 
-  // Motores de movimento cinematográfico de alta fidelidade operando sobre matriz 2x (2160x3840)
-  // Utilizam funções monotônicas contínuas baseadas no frame de saída (on) normalizado pela duração exata (dSec)
-  // ELIMINA COMPLETAMENTE qualquer jitter, salto ou reset ("volta ao início")
+  // Cadeia otimizada: corta 58px de rodapé (remove marca d'água Pollinations), escala com Lanczos para 1080x1920 nativo e aplica unsharp
+  const basePrep = `crop=iw:ih-58:0:0,scale=1080:1920:flags=lanczos:force_original_aspect_ratio=increase,crop=1080:1920,unsharp=5:5:0.9:5:5:0.0`;
   let motionFilter = '';
 
   switch (motionType) {
     case 'pan_left_right':
-      motionFilter = `scale=2160:3840:flags=bicubic:force_original_aspect_ratio=increase,crop=2160:3840,zoompan=z=1.12:d=1:x='(iw-iw/zoom)*min(1,on/(30*${dSec}))':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
+      motionFilter = `${basePrep},zoompan=z=1.12:d=1:x='(iw-iw/zoom)*min(1,on/(30*${dSec}))':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
       break;
     case 'pan_right_left':
-      motionFilter = `scale=2160:3840:flags=bicubic:force_original_aspect_ratio=increase,crop=2160:3840,zoompan=z=1.12:d=1:x='(iw-iw/zoom)*max(0,1-on/(30*${dSec}))':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
+      motionFilter = `${basePrep},zoompan=z=1.12:d=1:x='(iw-iw/zoom)*max(0,1-on/(30*${dSec}))':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
       break;
     case 'reveal_zoom_out':
       // Zoom out contínuo e suave de 1.15 até 1.03 proporcional à duração do take (SEM RESET)
-      motionFilter = `scale=2160:3840:flags=bicubic:force_original_aspect_ratio=increase,crop=2160:3840,zoompan=z='max(1.03,1.15-(0.12*on/(30*${dSec})))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
+      motionFilter = `${basePrep},zoompan=z='max(1.03,1.15-(0.12*on/(30*${dSec})))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
       break;
     case 'atmospheric_drift':
       // Respiração cinematográfica suave e contínua
-      motionFilter = `scale=2160:3840:flags=bicubic:force_original_aspect_ratio=increase,crop=2160:3840,zoompan=z='min(1.14,1.03+(0.09*on/(30*${dSec})))':d=1:x='iw/2-(iw/zoom/2)+(iw*0.015)*sin(2*PI*on/(30*${dSec}))':y='ih/2-(ih/zoom/2)+(ih*0.012)*cos(2*PI*on/(30*${dSec}))':s=1080x1920:fps=30`;
+      motionFilter = `${basePrep},zoompan=z='min(1.14,1.03+(0.09*on/(30*${dSec})))':d=1:x='iw/2-(iw/zoom/2)+(iw*0.015)*sin(2*PI*on/(30*${dSec}))':y='ih/2-(ih/zoom/2)+(ih*0.012)*cos(2*PI*on/(30*${dSec}))':s=1080x1920:fps=30`;
       break;
     case 'push_in':
     default:
       // Zoom in contínuo e suave de 1.03 até 1.16 proporcional à duração do take (SEM RESET)
-      motionFilter = `scale=2160:3840:flags=bicubic:force_original_aspect_ratio=increase,crop=2160:3840,zoompan=z='min(1.16,1.03+(0.13*on/(30*${dSec})))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
+      motionFilter = `${basePrep},zoompan=z='min(1.16,1.03+(0.13*on/(30*${dSec})))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
       break;
   }
 
@@ -585,34 +578,63 @@ export async function harvestVisualScenes({
       }
     }
 
-    // 2. Tentativa de B-Roll de Stock Video Real (Pexels / Pixabay) para vídeos dinâmicos
-    const shouldAttemptStockVideo = visualMode === 'video' || (visualMode === 'hybrid' && (isHook || i % 2 === 1 || scene.suggestedType === 'stock_video'));
+    // 2. Priorização Inteligente de Stock (Pexels / Pixabay) para Ação Concreta e 1080x1920 Nativo
+    const isConcreteSubject = /man|woman|person|people|hands|desk|office|phone|working|walking|running|gym|student|worker|city|crowd|money|finance/i.test(contextualQueries[0] || '');
+    const shouldPrioritizeStock = effectivePexelsKey && (scene.suggestedType === 'stock_video' || isConcreteSubject || visualMode === 'video');
 
-    if (shouldAttemptStockVideo && effectivePexelsKey) {
-      console.log(`  -> Consultando B-Roll de vídeo real (Pexels/Pixabay) para: "${contextualQueries[0]}"...`);
-      const stockResult = await fetchAndPrepareStockBroll({
-        query: contextualQueries[0],
-        candidateQueries: contextualQueries,
-        outputPath: clipPath,
-        durationSeconds: scene.duration,
-        isHookScene: isHook,
-        isLastScene: isLast,
-        pexelsApiKey: effectivePexelsKey,
-        usedVideoIds: usedStockVideoIds
-      });
+    if (shouldPrioritizeStock) {
+      console.log(`  -> [Stock Priority] Priorizando acervo de estoque 1080x1920 para sujeito concreto: "${contextualQueries[0]}"`);
 
-      if (stockResult.success && fs.existsSync(clipPath) && fs.statSync(clipPath).size > 20480) {
-        console.log(`  -> B-Roll real integrado com sucesso via ${stockResult.provider}!`);
-        videoClips.push(clipPath);
-        continue;
+      // 2.1 Tenta B-Roll de vídeo real primeiro
+      if (visualMode === 'video' || visualMode === 'hybrid') {
+        const stockResult = await fetchAndPrepareStockBroll({
+          query: contextualQueries[0],
+          candidateQueries: contextualQueries,
+          outputPath: clipPath,
+          durationSeconds: scene.duration,
+          isHookScene: isHook,
+          isLastScene: isLast,
+          pexelsApiKey: effectivePexelsKey,
+          usedVideoIds: usedStockVideoIds
+        });
+
+        if (stockResult.success && fs.existsSync(clipPath)) {
+          const gate = await validateAssetQuality({ filePath: clipPath, strict: false });
+          if (gate.passed) {
+            console.log(`  -> B-Roll real aprovado pelo Quality Gate via ${stockResult.provider}!`);
+            videoClips.push(clipPath);
+            continue;
+          } else {
+            console.warn(`  -> B-Roll rejeitado pelo Quality Gate (${gate.code}): ${gate.reason}. Acionando foto stock...`);
+          }
+        }
+      }
+
+      // 2.2 Tenta Foto Stock de alta resolução se o vídeo não estiver disponível
+      if (!assetForClip) {
+        const photoResult = await fetchAndPrepareStockPhoto({
+          query: contextualQueries[0],
+          candidateQueries: contextualQueries,
+          outputPath: sceneImgPath,
+          pexelsApiKey: effectivePexelsKey,
+          usedPhotoIds: usedStockPhotoIds
+        });
+
+        if (photoResult.success && fs.existsSync(photoResult.outputPath)) {
+          const gate = await validateAssetQuality({ filePath: photoResult.outputPath, strict: false });
+          if (gate.passed) {
+            assetForClip = photoResult.outputPath;
+            console.log(`  -> Foto contextual 1080x1920 aprovada pelo Quality Gate via ${photoResult.provider}`);
+          }
+        }
       }
     }
 
-    // 3. Geração de Imagem Ultra HD 1080x1920 (Google Imagen 3 se habilitado)
+    // 3. Geração de Imagem IA (Pollinations / Imagen) com Cache e Circuit Breaker
     const sceneSeed = fixedVideoSeed + (i * 1039) + 77; // Semente estritamente única por take
     const blockType = i === 0 ? 'hook' : (i >= scenes.length - 2 ? 'cta' : (i >= Math.floor(scenes.length * 0.65) ? 'hack' : 'body'));
 
-    if (apiKey) {
+    if (!assetForClip && apiKey) {
       const generated = await generateHighQualitySceneImage({
         prompt: scenePrompt,
         spokenPhrase: scene.phrase || '',
@@ -625,14 +647,18 @@ export async function harvestVisualScenes({
         apiKey: apiKey
       });
 
-      if (generated && fs.existsSync(generated.outputPath) && fs.statSync(generated.outputPath).size > 5000) {
-        assetForClip = generated.outputPath;
-        console.log(`  -> Imagem pronta via ${generated.provider} (${generated.sizeKb} KB)`);
+      if (generated && fs.existsSync(generated.outputPath)) {
+        const gate = await validateAssetQuality({ filePath: generated.outputPath, strict: false });
+        if (gate.passed) {
+          assetForClip = generated.outputPath;
+          console.log(`  -> Imagem IA pronta e validada via ${generated.provider} (${generated.sizeKb} KB)`);
+        } else {
+          console.warn(`  -> Imagem IA rejeitada pelo Quality Gate (${gate.code}): ${gate.reason}`);
+        }
       }
     }
 
-    // 4. Integração de Fotos Contextuais em Alta Resolução (Pexels & Pixabay Photos)
-    // Garante que cada take tenha uma imagem 9:16 perfeitamente alinhada com o roteiro, sem repetições
+    // 4. Fallback Secundário de Stock Photo (caso a IA tenha oscilado ou sido reprovada)
     if (!assetForClip && effectivePexelsKey) {
       console.log(`  -> Consultando acervo fotográfico contextual 9:16 (Pexels / Pixabay)...`);
       const photoResult = await fetchAndPrepareStockPhoto({
@@ -643,9 +669,12 @@ export async function harvestVisualScenes({
         usedPhotoIds: usedStockPhotoIds
       });
 
-      if (photoResult.success && fs.existsSync(photoResult.outputPath) && fs.statSync(photoResult.outputPath).size > 5000) {
-        assetForClip = photoResult.outputPath;
-        console.log(`  -> Foto contextual integrada via ${photoResult.provider} (termo: "${photoResult.matchedQuery}")`);
+      if (photoResult.success && fs.existsSync(photoResult.outputPath)) {
+        const gate = await validateAssetQuality({ filePath: photoResult.outputPath, strict: false });
+        if (gate.passed) {
+          assetForClip = photoResult.outputPath;
+          console.log(`  -> Foto contextual integrada via ${photoResult.provider} (termo: "${photoResult.matchedQuery}")`);
+        }
       }
     }
 

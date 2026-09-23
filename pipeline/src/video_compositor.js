@@ -1,14 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import ffmpeg from 'fluent-ffmpeg';
-import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
-import ffprobeInstaller from '@ffprobe-installer/ffprobe';
-
-const ffmpegBinary = process.env.FFMPEG_PATH || (fs.existsSync('/usr/bin/ffmpeg') ? '/usr/bin/ffmpeg' : ffmpegInstaller.path);
-const ffprobeBinary = process.env.FFPROBE_PATH || (fs.existsSync('/usr/bin/ffprobe') ? '/usr/bin/ffprobe' : ffprobeInstaller.path);
-
-ffmpeg.setFfmpegPath(ffmpegBinary);
-ffmpeg.setFfprobePath(ffprobeBinary);
+import ffmpeg, { ffmpegBinary, ffprobeBinary } from './ffmpeg_env.js';
 
 let detectedVideoCodec = null;
 
@@ -84,13 +76,19 @@ export async function composeFinalVideo({
   outputVideoPath,
   totalDurationSeconds,
   bgMusicPath = null,
-  enableSubtitles = true
+  enableSubtitles = true,
+  audioProfile = {}
 }) {
   const encoderConfig = await detectOptimalVideoEncoder();
   const dir = path.dirname(outputVideoPath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
+
+  // Parâmetros de áudio cinematográfico do canal
+  const targetLufs = audioProfile.target_lufs || -14;
+  const bgMusicVol = audioProfile.bg_music_volume || 0.18;
+  const fadeOutSec = audioProfile.fade_out_seconds || 2.5;
 
   // Cria arquivo de lista de concatenacao para o FFmpeg
   const scratchDir = path.dirname(audioPath);
@@ -146,23 +144,31 @@ export async function composeFinalVideo({
     const colorGrade = `[0:v]vignette=angle=PI/5:mode=forward,curves=r='0/0 0.2/0.18 0.5/0.49 0.8/0.82 1/1':g='0/0 0.2/0.19 0.5/0.50 0.8/0.81 1/1':b='0/0.02 0.2/0.21 0.5/0.51 0.8/0.80 1/0.98'`;
 
     if (shouldBurnSubtitles) {
+      const fontsDir = path.resolve('pipeline/assets/fonts').replace(/\\/g, '/').replace(/:/g, '\\:');
       complexFilters.push(`${colorGrade}[graded]`);
-      complexFilters.push(`[graded]ass='${escapedAssPath}'[v_out]`);
+      complexFilters.push(`[graded]ass=filename='${escapedAssPath}':fontsdir='${fontsDir}'[v_out]`);
     } else {
       complexFilters.push(`${colorGrade}[v_out]`);
     }
 
     let audioMap = '-map [a_out]';
     if (hasBgMusic) {
-      const fadeOutStart = Math.max(1, (totalDurationSeconds || 60) - 2.5);
+      const fadeOutStart = Math.max(1, (totalDurationSeconds || 60) - fadeOutSec);
       complexFilters.push(
-        `[1:a]loudnorm=I=-14:TP=-1:LRA=11:linear=true,volume=1.0[a_voice]`,
-        `[2:a]volume=0.12,afade=t=out:st=${fadeOutStart}:d=2.5[a_bg]`,
-        `[a_voice][a_bg]amix=inputs=2:duration=first:dropout_transition=2[a_out]`
+        // P4.1: Cadeia de voz: highpass 80Hz + compressor transparente + split para chave de sidechain
+        `[1:a]highpass=f=80,acompressor=threshold=0.08:ratio=3:attack=15:release=150,aformat=channel_layouts=stereo:sample_rates=48000,asplit=2[voice_play][voice_key]`,
+        // Trilha de fundo com fade out suave no encerramento
+        `[2:a]aformat=channel_layouts=stereo:sample_rates=48000,volume=${bgMusicVol},afade=t=out:st=${fadeOutStart}:d=${fadeOutSec}[bg_raw]`,
+        // P4.4: Ducking automático via sidechain (voz abaixa a música em tempo real)
+        `[bg_raw][voice_key]sidechaincompress=threshold=0.04:ratio=4:attack=20:release=250[bg_ducked]`,
+        // P4.3: Mixagem sem atenuação desnecessária com ducking
+        `[voice_play][bg_ducked]amix=inputs=2:duration=first:dropout_transition=2[mixed_raw]`,
+        // Masterização EBU R128 no mix final completo
+        `[mixed_raw]loudnorm=I=${targetLufs}:TP=-1.5:LRA=9:linear=true,aformat=channel_layouts=stereo:sample_rates=48000[a_out]`
       );
     } else {
       complexFilters.push(
-        `[1:a]loudnorm=I=-14:TP=-1:LRA=11:linear=true[a_out]`
+        `[1:a]highpass=f=80,acompressor=threshold=0.08:ratio=3:attack=15:release=150,loudnorm=I=${targetLufs}:TP=-1.5:LRA=9:linear=true,aformat=channel_layouts=stereo:sample_rates=48000[a_out]`
       );
     }
 
@@ -173,12 +179,11 @@ export async function composeFinalVideo({
         audioMap,
         `-c:v ${encoderConfig.codec}`,
         '-pix_fmt yuv420p',
-        `-preset ${encoderConfig.preset}`,
-        '-profile:v high',
-        '-level:v 4.2',
-        '-b:v 6000k',
-        '-maxrate 8000k',
-        '-bufsize 12000k',
+        `-preset ${encoderConfig.preset || 'slow'}`,
+        '-crf 20',
+        '-color_primaries bt709',
+        '-color_trc bt709',
+        '-colorspace bt709',
         '-c:a aac',
         '-b:a 192k',
         `-t ${totalDurationSeconds}`,
@@ -190,19 +195,26 @@ export async function composeFinalVideo({
         console.log(`[FFmpeg CMD] ${cmdLine.slice(0, 200)}...`);
       })
       .on('end', () => {
-        // Valida que o arquivo gerado tem tamanho mínimo aceitável (> 100KB)
         const stats = fs.statSync(outputVideoPath);
         if (stats.size < 102400) {
           const errMsg = `Arquivo de saída suspeito: apenas ${stats.size} bytes. Possível falha silenciosa do FFmpeg.`;
           console.error(`[FFmpeg Compositor] ❌ ${errMsg}`);
           return reject(new Error(errMsg));
         }
-        console.log(`Renderizacao concluida! Video gerado: ${outputVideoPath} (${(stats.size / 1024 / 1024).toFixed(2)} MB)`);
-        resolve({
-          videoPath: outputVideoPath,
-          sizeBytes: stats.size,
-          durationSeconds: totalDurationSeconds,
-          subtitlesBurned: shouldBurnSubtitles
+
+        // P6.4: ffprobe obrigatório para devolver a duração medida real
+        ffmpeg.ffprobe(outputVideoPath, (probeErr, metadata) => {
+          const measuredDuration = (!probeErr && metadata?.format?.duration)
+            ? Number(metadata.format.duration.toFixed(2))
+            : totalDurationSeconds;
+
+          console.log(`Renderizacao concluida! Video gerado: ${outputVideoPath} (${(stats.size / 1024 / 1024).toFixed(2)} MB, ${measuredDuration}s medidos)`);
+          resolve({
+            videoPath: outputVideoPath,
+            sizeBytes: stats.size,
+            durationSeconds: measuredDuration,
+            subtitlesBurned: shouldBurnSubtitles
+          });
         });
       })
       .on('error', (err, stdout, stderr) => {

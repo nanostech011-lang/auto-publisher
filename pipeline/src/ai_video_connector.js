@@ -193,53 +193,7 @@ export async function generateVideoWithVeo({
   }
 }
 
-/**
- * Fallback Tier 2: Motor de Vídeo IA Generativo (Pollinations Video / CogVideo / Wan)
- * Gera clipe dinâmico em MP4 via modelo de vídeo difuso aberto de alta resolução.
- */
-export async function generateVideoWithPollinations({
-  prompt,
-  outputPath,
-  durationSeconds = 5,
-  seed = null
-}) {
-  const dir = path.dirname(outputPath);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
 
-  const cleanPrompt = encodeURIComponent(prompt.slice(0, 260));
-  const s = seed !== null ? seed : Math.floor(Math.random() * 1000000);
-  const url = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=720&height=1280&model=video&nologo=true&seed=${s}`;
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout
-
-  try {
-    const startTime = Date.now();
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeoutId);
-
-    if (res.ok) {
-      const buffer = Buffer.from(await res.arrayBuffer());
-      // Valida se o buffer recebido é um arquivo MP4/WebM válido (mais de 20KB)
-      if (buffer.length > 20480) {
-        fs.writeFileSync(outputPath, buffer);
-        return {
-          success: true,
-          provider: 'Pollinations AI Video (Text-to-Video)',
-          outputPath,
-          sizeBytes: buffer.length,
-          latencyMs: Date.now() - startTime
-        };
-      }
-    }
-  } catch (err) {
-    clearTimeout(timeoutId);
-  }
-
-  return { success: false, error: 'Falha ou indisponibilidade no motor de vídeo secundário' };
-}
 
 /**
  * Orquestrador central de geração de takes cinematográficos de vídeo.
@@ -296,24 +250,6 @@ export async function generateCinematicTake({
       console.log(`  [AI Video] Google Veo indisponível: ${veoResult.error}`);
     }
 
-    // 2. Tentativa Fallback: Motor de Vídeo Aberto apenas quando solicitado explicitamente em modo 'video'
-    if (visualMode === 'video') {
-      console.log('  [AI Video] ↳ Tentando motor de vídeo IA alternativo...');
-      const altVideo = await generateVideoWithPollinations({
-        prompt,
-        outputPath,
-        durationSeconds
-      });
-
-      if (altVideo.success && fs.existsSync(outputPath)) {
-        return {
-          success: true,
-          isRealVideo: true,
-          provider: altVideo.provider,
-          outputPath
-        };
-      }
-    }
   }
 
   // Se não foi possível gerar vídeo IA direto, sinaliza para usar imagem HD + Motion Engine

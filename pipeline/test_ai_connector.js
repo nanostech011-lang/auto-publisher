@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import fs from 'node:fs';
 import { translateDirectiveToCinematicEnglish, buildProfessionalScenePrompt, deriveVisualSubjectFromPhrase } from './src/ai_prompt_generator.js';
-import { generateImageWithImagen3, generateHighQualitySceneImage } from './src/ai_image_connector.js';
+import { generateHighQualitySceneImage } from './src/ai_image_connector.js';
 
 test('translateDirectiveToCinematicEnglish deve traduzir e enriquecer termos em portugues', () => {
   const result = translateDirectiveToCinematicEnglish('guerreiros persas com armaduras douradas');
@@ -62,25 +62,8 @@ test('buildProfessionalScenePrompt deve gerar prompt no estilo Studio Ghibli e M
   assert.ok(!prompt.toLowerCase().includes('photograph'), 'Prompt de Ghibli nao deve conter fotografia real');
 });
 
-test('generateImageWithImagen3 deve falhar com erro amigavel quando chave nao fornecida', async () => {
-  const origKey = process.env.GEMINI_API_KEY;
-  const origGoogleKey = process.env.GOOGLE_AI_API_KEY;
-  delete process.env.GEMINI_API_KEY;
-  delete process.env.GOOGLE_AI_API_KEY;
-
-  try {
-    const result = await generateImageWithImagen3({
-      prompt: 'Test prompt',
-      outputPath: 'pipeline/scratch/test_fail.jpg',
-      apiKey: ''
-    });
-
-    assert.equal(result.success, false);
-    assert.ok(result.error.includes('GEMINI_API_KEY') || result.error.includes('indisponível'));
-  } finally {
-    if (origKey) process.env.GEMINI_API_KEY = origKey;
-    if (origGoogleKey) process.env.GOOGLE_AI_API_KEY = origGoogleKey;
-  }
+test('generateHighQualitySceneImage deve estar definido como função exportada', async () => {
+  assert.equal(typeof generateHighQualitySceneImage, 'function');
 });
 
 test('generateHighQualitySceneImage deve lidar com chave invalida sem lancar excecao', async () => {
@@ -228,8 +211,8 @@ test('generateAssSubtitles deve produzir tags de escala pop spring animada e tem
   assert.ok(content.includes('PlayResX: 1080'), 'Resolução X 1080');
   assert.ok(content.includes('PlayResY: 1920'), 'Resolução Y 1920');
 
-  // Verifica a presença do efeito Spring Bounce / Pop
-  assert.ok(/\\fscx\d+\\fscy\d+/.test(content), 'Deve conter tag de escala de pop spring');
+  // Verifica a presença do destaque por borda e blur (estabilidade visual sem reflow fscx)
+  assert.ok(/\\bord\d+\\blur\d+/.test(content), 'Deve conter tag de borda e blur para destaque da palavra ativa');
   assert.ok(content.includes(toAssInlineColor ? toAssInlineColor(SUBTITLE_THEMES.GOLD_PUNCH.activeWordColor) : '&H00FFFF&') || content.includes(SUBTITLE_THEMES.GOLD_PUNCH.activeWordColor), 'Deve conter cor ativa do tema GOLD_PUNCH');
 });
 

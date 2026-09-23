@@ -203,27 +203,13 @@ export function deriveVisualSubjectFromPhrase(phrase, visualDirective = null, st
       'majestic panoramic vista of a knight standing atop a lush grassy hill looking over a cozy distant medieval village with stone chimneys and golden sunset clouds'
     ];
 
-    if (p.includes('fogo') || p.includes('fogueira') || p.includes('brasa') || p.includes('chama') || p.includes('queimar')) {
-      return ghibliScenes[1];
-    }
-    if (p.includes('vagalume') || p.includes('luciola') || p.includes('luz mágica')) {
-      return ghibliScenes[4];
-    }
-    if (p.includes('estrela') || p.includes('céu') || p.includes('noite') || p.includes('lua')) {
-      return ghibliScenes[6];
-    }
-    if (p.includes('volante') || p.includes('mapa') || p.includes('bússola') || p.includes('direção') || p.includes('decisão') || p.includes('escolha')) {
-      return ghibliScenes[3];
-    }
-    if (p.includes('riacho') || p.includes('água') || p.includes('ponte') || p.includes('rio')) {
-      return ghibliScenes[2];
-    }
-    if (p.includes('chá') || p.includes('caneca') || p.includes('mão') || p.includes('manopla')) {
-      return ghibliScenes[5];
-    }
-    if (p.includes('siga') || p.includes('vitória') || p.includes('topo') || p.includes('horizonte')) {
-      return ghibliScenes[9];
-    }
+    if (/\b(fogo|fogueira|brasa|brasas|chama|chamas|queimar)\b/i.test(p)) return ghibliScenes[1];
+    if (/\b(vagalume|vaga-lume|luciola|luz\s+m[aá]gica)\b/i.test(p)) return ghibliScenes[4];
+    if (/\b(estrela|estrelas|c[eé]u|noite|lua)\b/i.test(p)) return ghibliScenes[6];
+    if (/\b(volante|mapa|b[uú]ssola|dire[cç][aã]o|decis[aã]o|escolha)\b/i.test(p)) return ghibliScenes[3];
+    if (/\b(riacho|corrego|[aá]gua|ponte|rio)\b/i.test(p)) return ghibliScenes[2];
+    if (/\b(ch[aá]|caneca|m[aã]o|m[aã]os|manopla)\b/i.test(p)) return ghibliScenes[5];
+    if (/\b(siga|vit[oó]ria|topo|horizonte)\b/i.test(p)) return ghibliScenes[9];
 
     // Variação estrita por índice de cena para garantir que nunca se repita
     return ghibliScenes[idx % ghibliScenes.length];
@@ -250,30 +236,14 @@ export function deriveVisualSubjectFromPhrase(phrase, visualDirective = null, st
       'triumphant anime warrior standing atop a storm-swept mountain summit at golden sunrise, wind whipping torn cape, gazing at the dawn horizon with supreme mastery'
     ];
 
-    if (p.includes('olhar') || p.includes('olhos') || p.includes('foco') || p.includes('perceber')) {
-      return animeScenes[0];
-    }
-    if (p.includes('pausa') || p.includes('respire') || p.includes('calma') || p.includes('medita')) {
-      return animeScenes[1];
-    }
-    if (p.includes('volante') || p.includes('katana') || p.includes('espada') || p.includes('arma') || p.includes('decisão')) {
-      return animeScenes[2];
-    }
-    if (p.includes('fogo') || p.includes('fogueira') || p.includes('brasa') || p.includes('chama')) {
-      return animeScenes[3];
-    }
-    if (p.includes('duas mentes') || p.includes('conflito') || p.includes('luta') || p.includes('duelo')) {
-      return animeScenes[4];
-    }
-    if (p.includes('mão') || p.includes('punho') || p.includes('agir') || p.includes('hack') || p.includes('regra')) {
-      return animeScenes[5];
-    }
-    if (p.includes('estrela') || p.includes('noite') || p.includes('céu')) {
-      return animeScenes[6];
-    }
-    if (p.includes('siga') || p.includes('vitória') || p.includes('topo') || p.includes('montanha') || p.includes('amanhecer')) {
-      return animeScenes[7];
-    }
+    if (/\b(olhar|olhos|foco|perceber)\b/i.test(p)) return animeScenes[0];
+    if (/\b(pausa|respire|calma|medita)\b/i.test(p)) return animeScenes[1];
+    if (/\b(volante|katana|espada|arma|decis[aã]o)\b/i.test(p)) return animeScenes[2];
+    if (/\b(fogo|fogueira|brasa|brasas|chama|chamas)\b/i.test(p)) return animeScenes[3];
+    if (/\b(duas\s+mentes|conflito|luta|duelo)\b/i.test(p)) return animeScenes[4];
+    if (/\b(m[aã]o|m[aã]os|punho|punhos|agir|hack|regra)\b/i.test(p)) return animeScenes[5];
+    if (/\b(estrela|estrelas|noite|c[eé]u)\b/i.test(p)) return animeScenes[6];
+    if (/\b(siga|vit[oó]ria|topo|montanha|amanhecer)\b/i.test(p)) return animeScenes[7];
 
     return animeScenes[idx % animeScenes.length];
   }
@@ -290,11 +260,11 @@ export function deriveVisualSubjectFromPhrase(phrase, visualDirective = null, st
       'weathered stone tablet inscribed with Latin stoic virtues, illuminated by golden lantern light'
     ];
 
-    if (p.includes('pausa') || p.includes('respire') || p.includes('calma')) return stoicScenes[0];
-    if (p.includes('tempo') || p.includes('relógio') || p.includes('hora')) return stoicScenes[1];
-    if (p.includes('siga') || p.includes('vitória') || p.includes('topo')) return stoicScenes[2];
-    if (p.includes('volante') || p.includes('bússola') || p.includes('controle')) return stoicScenes[3];
-    if (p.includes('noite') || p.includes('estrela') || p.includes('fogo')) return stoicScenes[5];
+    if (/\b(pausa|respire|calma)\b/i.test(p)) return stoicScenes[0];
+    if (/\b(tempo|rel[oó]gio|hora|horas)\b/i.test(p)) return stoicScenes[1];
+    if (/\b(siga|vit[oó]ria|topo)\b/i.test(p)) return stoicScenes[2];
+    if (/\b(volante|b[uú]ssola|controle)\b/i.test(p)) return stoicScenes[3];
+    if (/\b(noite|estrela|estrelas|fogo)\b/i.test(p)) return stoicScenes[5];
 
     return stoicScenes[idx % stoicScenes.length];
   }
@@ -310,10 +280,10 @@ export function deriveVisualSubjectFromPhrase(phrase, visualDirective = null, st
       'cybernetic figure standing on high rooftop overlooking endless futuristic neon metropolis at twilight'
     ];
 
-    if (p.includes('olhar') || p.includes('olhos')) return cyberScenes[0];
-    if (p.includes('mente') || p.includes('cérebro')) return cyberScenes[2];
-    if (p.includes('mão') || p.includes('controle')) return cyberScenes[3];
-    if (p.includes('cidade') || p.includes('siga')) return cyberScenes[5];
+    if (/\b(olhar|olhos|vis[aã]o)\b/i.test(p)) return cyberScenes[0];
+    if (/\b(mente|mentes|c[eé]rebro)\b/i.test(p)) return cyberScenes[2];
+    if (/\b(m[aã]o|m[aã]os|controle)\b/i.test(p)) return cyberScenes[3];
+    if (/\b(cidade|siga)\b/i.test(p)) return cyberScenes[5];
 
     return cyberScenes[idx % cyberScenes.length];
   }
@@ -338,14 +308,14 @@ export function deriveVisualSubjectFromPhrase(phrase, visualDirective = null, st
     'cinematic documentary photograph of a solitary traveler standing on a rugged mountain peak overlooking sea of clouds at golden sunrise'
   ];
 
-  if (p.includes('olho') || p.includes('olhar') || p.includes('contato visual')) return photoScenes[0];
-  if (p.includes('fogo') || p.includes('fogueira') || p.includes('brasa') || p.includes('chama')) return photoScenes[1];
-  if (p.includes('cérebro') || p.includes('mente') || p.includes('amígdala') || p.includes('sinapse')) return photoScenes[2];
-  if (p.includes('volante') || p.includes('bússola') || p.includes('mapa')) return photoScenes[3];
-  if (p.includes('silêncio') || p.includes('duas mentes') || p.includes('confronto')) return photoScenes[4];
-  if (p.includes('estrela') || p.includes('noite') || p.includes('lua')) return photoScenes[5];
-  if (p.includes('mão') || p.includes('hack') || p.includes('prática') || p.includes('agir')) return photoScenes[6];
-  if (p.includes('siga') || p.includes('vitória') || p.includes('topo')) return photoScenes[7];
+  if (/\b(olho|olhos|olhar|contato\s+visual)\b/i.test(p)) return photoScenes[0];
+  if (/\b(fogo|fogueira|brasa|brasas|chama|chamas)\b/i.test(p)) return photoScenes[1];
+  if (/\b(c[eé]rebro|mente|mentes|am[ií]gdala|sinapse|sinapses)\b/i.test(p)) return photoScenes[2];
+  if (/\b(volante|b[uú]ssola|mapa)\b/i.test(p)) return photoScenes[3];
+  if (/\b(sil[eê]ncio|duas\s+mentes|confronto|impasse)\b/i.test(p)) return photoScenes[4];
+  if (/\b(estrela|estrelas|noite|lua|c[eé]u)\b/i.test(p)) return photoScenes[5];
+  if (/\b(m[aã]o|m[aã]os|hack|pr[aá]tica|agir)\b/i.test(p)) return photoScenes[6];
+  if (/\b(siga|vit[oó]ria|topo|alvorecer|amanhecer)\b/i.test(p)) return photoScenes[7];
 
   return photoScenes[idx % photoScenes.length];
 }

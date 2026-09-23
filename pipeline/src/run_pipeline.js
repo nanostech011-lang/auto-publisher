@@ -9,12 +9,16 @@ try {
 } catch (ignored) {}
 
 import { generateScript, loadChannelProfile } from './script_generator.js';
+import { resolveChannelConfig } from './config_resolver.js';
 import { synthesizeVoiceWithTimestamps } from './voice_synthesizer.js';
 import { generateAssSubtitles, generateSrtSubtitles } from './subtitle_generator.js';
 import { alignScenesWithWordBoundaries } from './scene_aligner.js';
+import { planBeatsAndSubTakes } from './beat_planner.js';
 import { harvestVisualScenes, createProceduralThumbnail } from './visuals_harvester.js';
 import { composeFinalVideo } from './video_compositor.js';
 import { ingestGeneratedPost } from './publisher_ingestor.js';
+import { runQualityControlGate } from './qc_gate.js';
+import { uploadPostAssetsToDrive } from './drive_uploader.js';
 
 // Parser simples de argumentos CLI
 function parseArgs() {
@@ -134,7 +138,8 @@ async function renderWithFallback({
   finalVideoPath,
   targetDurationSeconds,
   bgMusicPath,
-  enableSubtitles
+  enableSubtitles,
+  audioProfile = {}
 }) {
   let renderResult = null;
   let usedSubtitles = enableSubtitles;
@@ -148,7 +153,8 @@ async function renderWithFallback({
       outputVideoPath: finalVideoPath,
       totalDurationSeconds: targetDurationSeconds,
       bgMusicPath,
-      enableSubtitles
+      enableSubtitles,
+      audioProfile
     });
 
     // Validação de tamanho mínimo (500 KB = 512000 bytes)
@@ -215,7 +221,7 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
   console.log(`Plataforma Alvo: ${options.platform}`);
   console.log(`Modo Visual: ${options.visualMode.toUpperCase()}`);
   console.log(`Legendas Queimadas: ${options.enableSubtitles ? 'SIM (com fallback automático)' : 'NÃO'}`);
-  console.log(`Provedor de Imagens IA: ${effectiveGeminiKey ? 'Google Imagen 3 (imagen-3.0-generate-002) [Ativo]' : 'Fallback Flux HD (Alta Fidelidade Gratuita)'}`);
+  console.log(`Provedor de Imagens IA: Pollinations AI (sana 576x1024 com upscale Lanczos 1080x1920)`);
   console.log(`Provedor de B-Roll: ${effectivePexelsKey ? 'Pexels Video API (Alta Fidelidade HD) [Ativo]' : 'Fallback Cinemagraph Procedural'}\n`);
 
   const runId = `run_${Date.now()}_${batchIndex + 1}`;
@@ -226,7 +232,7 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
 
   // 1. Carrega Perfil e Roteiro
   console.log('>>> [1/6] Carregando perfil e gerando roteiro estruturado...');
-  const baseProfile = loadChannelProfile(options.channel);
+  const baseProfile = resolveChannelConfig(options.channel);
   const channelProfile = {
     ...baseProfile,
     channel_id: options.channel,
@@ -327,17 +333,23 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
   console.log(`Legendas ASS e SRT compiladas.`);
 
   // 4. Coleta / Geração dos Cortes Visuais (9:16) e Thumbnail
-  console.log('\n>>> [4/6] Calibrando sincronização fonética de cenas (WordBoundaries)...');
-  // Sincronização exata da duração com o áudio real gerado (+ 0.3s de respiração natural para fade out)
+  console.log('\n>>> [4/6] Calibrando sincronização fonética e densidade de cortes (Beat Planner)...');
   const rawAudioDuration = Number(voiceResult.durationSeconds) || 0;
-  // Padding de 1.2s: garante elegibilidade ao TikTok Rewards (mínimo 60s)
-  // e cria fade-out natural no final sem cortar o áudio abruptamente
+  // Duração alvo estritamente sincronizada com o áudio medido para eliminar desvio A/V (QC-12)
   const targetDurationSeconds = rawAudioDuration > 0
-    ? Math.max(60.0, Number((rawAudioDuration + 1.2).toFixed(2)))
-    : 61.2;
+    ? (rawAudioDuration >= 60.0 ? rawAudioDuration : Math.max(60.0, rawAudioDuration))
+    : 60.0;
+
+  // 4.1 Subdivide beats longos para cumprir a densidade cinematográfica (2 a 4 segundos por take)
+  const cutsInterval = channelProfile?.format?.cuts_interval_seconds || '2-4';
+  const plannedScenes = planBeatsAndSubTakes({
+    scenes: scriptData.scenes,
+    totalDurationSeconds: targetDurationSeconds,
+    cutsIntervalStr: cutsInterval
+  });
 
   const alignedScenes = alignScenesWithWordBoundaries({
-    scenes: scriptData.scenes,
+    scenes: plannedScenes,
     wordBoundaries: voiceResult.wordBoundaries,
     totalDurationSeconds: targetDurationSeconds,
     narrationText: scriptData.narrationText
@@ -416,8 +428,100 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
     finalVideoPath,
     targetDurationSeconds,
     bgMusicPath,
-    enableSubtitles: options.enableSubtitles
+    enableSubtitles: options.enableSubtitles,
+    audioProfile: channelProfile.audio_profile || {}
   });
+
+  // 5.5 Quality Control Gate (13 Checagens Contratuais)
+  console.log('\n>>> [QC Gate] Executando Gate de Qualidade com 13 checagens contratuais...');
+  let qcReport = null;
+  try {
+    qcReport = await runQualityControlGate({
+      videoPath: renderResult.videoPath,
+      assPath: subtitlesPath,
+      scriptData: scriptData,
+      scenes: alignedScenes,
+      outputDir: outputDir,
+      channelConfig: channelProfile,
+      strict: false
+    });
+  } catch (qcErr) {
+    console.warn(`[QC Gate] Alerta durante validação de qualidade: ${qcErr.message}`);
+  }
+
+  // 5.8 Upload dos ativos para o Google Drive (com fallback offline transparente)
+  console.log('\n>>> [Drive Upload] Preparando upload de ativos para Google Drive...');
+  let driveAssets = { videoDriveId: null, thumbnailDriveId: null, isOffline: true };
+  try {
+    driveAssets = await uploadPostAssetsToDrive({
+      videoPath: renderResult.videoPath,
+      thumbnailPath: thumbPath,
+      channelConfig: channelProfile,
+      options: options
+    });
+  } catch (driveErr) {
+    console.warn(`[Drive Upload] Alerta no upload para o Drive: ${driveErr.message}. Prosseguindo com IDs locais.`);
+  }
+
+  // 5.9 Salvamento de Manifestos Estruturados (SDD v3.0 §3.7 e §7)
+  try {
+    fs.writeFileSync(path.join(outputDir, 'script.json'), JSON.stringify(scriptData, null, 2), 'utf8');
+    fs.writeFileSync(path.join(outputDir, 'scenes.json'), JSON.stringify(alignedScenes, null, 2), 'utf8');
+
+    const promptsManifest = alignedScenes.map((s, idx) => ({
+      takeIndex: idx + 1,
+      startTime: s.startTime,
+      endTime: s.endTime,
+      duration: s.duration,
+      prompt: s.prompt || s.phrase || '',
+      visualType: s.visualType || 'image',
+      source: s.source || 'ai_generated',
+      motionType: s.motionType || 'zoom_in'
+    }));
+    fs.writeFileSync(path.join(outputDir, 'prompts.json'), JSON.stringify(promptsManifest, null, 2), 'utf8');
+
+    const runManifest = {
+      runId,
+      startedAt: new Date().toISOString(),
+      options: {
+        channel: options.channel,
+        platform: options.platform,
+        visualMode: options.visualMode,
+        enableSubtitles: options.enableSubtitles
+      },
+      resolvedConfig: channelProfile,
+      script: {
+        title: scriptData.title,
+        wordCount: scriptData.wordCount,
+        generator: scriptData.generator || 'gemini',
+        degraded: scriptData.degraded || false
+      },
+      timeline: alignedScenes.map((s, idx) => ({
+        takeIndex: idx + 1,
+        startTime: s.startTime,
+        endTime: s.endTime,
+        duration: s.duration,
+        phrase: s.phrase,
+        visualType: s.visualType
+      })),
+      stages: [
+        { id: 'script', status: 'ok', durationSeconds: voiceResult.durationSeconds },
+        { id: 'tts', status: 'ok', voiceId },
+        { id: 'subtitles', status: 'ok', theme: channelSubTheme },
+        { id: 'visuals', status: 'ok', clipsCount: videoClips.length },
+        { id: 'render', status: 'ok', durationSeconds: renderResult.durationSeconds },
+        { id: 'qc', status: qcReport?.approved ? 'approved' : 'evaluated' },
+        { id: 'drive_upload', status: driveAssets.isOffline ? 'offline' : 'uploaded' }
+      ],
+      qc: qcReport ? { approved: qcReport.approved, score: qcReport.score, checks: qcReport.checks } : null,
+      videoPath: renderResult.videoPath,
+      thumbnailPath: thumbPath,
+      driveAssets
+    };
+    fs.writeFileSync(path.join(outputDir, 'run.json'), JSON.stringify(runManifest, null, 2), 'utf8');
+  } catch (mErr) {
+    console.warn('[Pipeline] Aviso: Falha ao gravar manifestos estruturados:', mErr.message);
+  }
 
   // 6. Ingestão no AutoPublisher Pro com suporte a agendamento escalonado
   console.log('\n>>> [6/6] Realizando ingestao no AutoPublisher Pro...');
@@ -426,9 +530,35 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
     thumbnailPath: thumbPath,
     scriptData: scriptData,
     platform: options.platform,
+    driveVideoId: driveAssets.videoDriveId,
+    driveThumbnailId: driveAssets.thumbnailDriveId,
     batchIndex: batchIndex,
     totalBatch: totalBatch
   });
+
+  // Salva report.json consolidado (SDD v3.0 §3.7 e §7)
+  try {
+    const reportManifest = {
+      runId,
+      timestamp: new Date().toISOString(),
+      channel: options.channel,
+      platform: options.platform,
+      title: scriptData.title,
+      videoDuration: renderResult.durationSeconds,
+      audioDuration: voiceResult.durationSeconds,
+      avSyncDriftMs: Math.round(Math.abs(renderResult.durationSeconds - voiceResult.durationSeconds) * 1000),
+      takesCount: alignedScenes.length,
+      subtitlesBurned: renderResult.subtitlesBurned !== false,
+      qcScore: qcReport?.score || null,
+      qcApproved: qcReport?.approved || false,
+      driveVideoId: driveAssets.videoDriveId,
+      driveThumbnailId: driveAssets.thumbnailDriveId,
+      ingestStatus: ingestResult.source
+    };
+    fs.writeFileSync(path.join(outputDir, 'report.json'), JSON.stringify(reportManifest, null, 2), 'utf8');
+  } catch (rErr) {
+    console.warn('[Pipeline] Aviso: Falha ao gravar report.json:', rErr.message);
+  }
 
   const subtitleStatus = renderResult.subtitlesBurned === false
     ? '⚠️  SEM LEGENDA (fallback automático acionado)'

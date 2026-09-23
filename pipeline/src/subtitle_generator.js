@@ -38,6 +38,17 @@ function formatSrtTime(ms) {
 }
 
 /**
+ * Utilitario para escapar caracteres especiais de scripts ASS (\, {, })
+ */
+export function escapeAssText(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/\\/g, '\\\\')
+    .replace(/\{/g, '\\{')
+    .replace(/\}/g, '\\}');
+}
+
+/**
  * Converte qualquer formato de cor hex (&H0000D7FF, &H00FFFF, FFFF00) para o formato padrão inline do ASS (\1c&HBBGGRR&)
  */
 export function toAssInlineColor(color) {
@@ -53,23 +64,38 @@ export function toAssInlineColor(color) {
 }
 
 /**
- * Agrupa palavras individuais em blocos curtos e dinâmicos de 2 a 3 palavras para máxima retenção vertical (Hormozi / Shorts style).
+ * Agrupa palavras individuais em blocos prosódicos dinâmicos com análise em dois passes:
+ * respeitando pausas naturais de fala (fronteiras fortes >= 260ms) e pontuação.
  */
 export function groupWordsIntoChunks(wordBoundaries, wordsPerChunk = 3) {
+  if (!wordBoundaries || !Array.isArray(wordBoundaries) || wordBoundaries.length === 0) return [];
   const chunks = [];
   let currentWords = [];
 
   for (let i = 0; i < wordBoundaries.length; i++) {
     const wb = wordBoundaries[i];
+    const nextWb = wordBoundaries[i + 1];
     currentWords.push(wb);
 
-    const isPunctuation = /[.?!,;:]$/.test(wb.word);
-    if (currentWords.length >= wordsPerChunk || isPunctuation || i === wordBoundaries.length - 1) {
-      const startMs = currentWords[0].startMs;
-      const endMs = currentWords[currentWords.length - 1].endMs;
+    const isStrongPunctuation = /[.?!;:]$/.test(wb.word);
+    const isWeakPunctuation = /[,]$/.test(wb.word);
+    const gapToNext = nextWb ? (nextWb.startMs - wb.endMs) : 0;
+    const isStrongGap = gapToNext >= 260;
+    const isWeakGap = gapToNext >= 110;
+
+    const currentDuration = wb.endMs - currentWords[0].startMs;
+
+    const shouldBreak =
+      isStrongPunctuation ||
+      isStrongGap ||
+      (currentWords.length >= wordsPerChunk && (isWeakPunctuation || isWeakGap || currentDuration >= 600)) ||
+      currentWords.length >= wordsPerChunk + 1 ||
+      i === wordBoundaries.length - 1;
+
+    if (shouldBreak) {
       chunks.push({
-        startMs,
-        endMs,
+        startMs: currentWords[0].startMs,
+        endMs: currentWords[currentWords.length - 1].endMs,
         words: [...currentWords]
       });
       currentWords = [];
@@ -81,56 +107,55 @@ export function groupWordsIntoChunks(wordBoundaries, wordsPerChunk = 3) {
 
 export const SUBTITLE_THEMES = {
   GOLD_PUNCH: {
-    fontName: 'Arial',
+    fontName: 'Montserrat-Black',
     fontSize: 74,
     primaryColor: '&H00FFFFFF',     // Branco puro (&HAABBGGRR: AA=00, BB=FF, GG=FF, RR=FF)
     activeWordColor: '&H0000FFFF',  // Amarelo Neon Luminous (BGR: BB=00, GG=FF, RR=FF -> RGB 255, 255, 0)
     outlineColor: '&H00000000',     // Preto puro
     outlineWidth: 5.0,
     shadowWidth: 2.5,
-    marginV: 380,
+    marginV: 560,
     popScale: 132
   },
   CYAN_ELECTRIC: {
-    fontName: 'Arial',
+    fontName: 'Montserrat-Black',
     fontSize: 74,
     primaryColor: '&H00FFFFFF',     // Branco puro
     activeWordColor: '&H00FFFF00',  // Ciano elétrico (BGR: BB=FF, GG=FF, RR=00 -> RGB 0, 255, 255)
     outlineColor: '&H00000000',     // Preto puro
     outlineWidth: 5.0,
     shadowWidth: 2.5,
-    marginV: 380,
+    marginV: 560,
     popScale: 132
   },
   EMERALD_NEON: {
-    fontName: 'Arial',
+    fontName: 'Montserrat-Black',
     fontSize: 74,
-    primaryColor: '\u0026H00FFFFFF',
-    activeWordColor: '\u0026H0000FF00',  // Verde Neon (BGR: BB=00, GG=FF, RR=00 -> RGB 0, 255, 0)
-    outlineColor: '\u0026H00000000',
+    primaryColor: '&H00FFFFFF',
+    activeWordColor: '&H0000FF00',  // Verde Neon (BGR: BB=00, GG=FF, RR=00 -> RGB 0, 255, 0)
+    outlineColor: '&H00000000',
     outlineWidth: 5.0,
     shadowWidth: 2.5,
-    marginV: 380,
+    marginV: 560,
     popScale: 132
   },
   TIKTOK_VIRAL: {
-    // Estilo TikTok / CapCut: texto amarelo neon bold em caixa alta,
-    // fundo retangular preto semitransparente por baixo — maximiza legibilidade em qualquer cena
-    fontName: 'Arial',
+    fontName: 'Montserrat-Black',
     fontSize: 80,
-    primaryColor: '\u0026H0000FFFF',     // Amarelo neon (BGR: 00,FF,FF = RGB 255,255,0)
-    activeWordColor: '\u0026H000000FF',  // Vermelho vivo para a palavra ativa (BGR: 00,00,FF = RGB 255,0,0)
-    outlineColor: '\u0026H00000000',     // Preto para outline
+    primaryColor: '&H0000FFFF',     // Amarelo neon
+    activeWordColor: '&H000000FF',  // Vermelho vivo para a palavra ativa
+    outlineColor: '&H00000000',     // Preto para outline
     outlineWidth: 6.0,
     shadowWidth: 3.0,
-    marginV: 350,
+    marginV: 560,
     popScale: 136
   }
 };
 
 /**
- * Gera arquivo de legenda Advanced SubStation Alpha (.ass) com estilo karaokê animado
- * e efeito Spring Pop (bounce) nas palavras ativas para máxima retenção de audiência.
+ * Gera arquivo de legenda Advanced SubStation Alpha (.ass) com estilo profissional:
+ * 1 evento Dialogue por card para eliminar reflow/tremor, animação de entrada fade,
+ * e sweep de cor dinâmica por palavra via tag \t.
  */
 export function generateAssSubtitles({
   wordBoundaries,
@@ -155,7 +180,6 @@ export function generateAssSubtitles({
   const oWidth = outlineWidth || chosenTheme.outlineWidth;
   const sWidth = shadowWidth || chosenTheme.shadowWidth;
   const mV = marginV || chosenTheme.marginV;
-  const pScale = chosenTheme.popScale || 122;
 
   const inlineActive = toAssInlineColor(aColor);
   const inlinePrimary = toAssInlineColor(pColor);
@@ -165,7 +189,7 @@ export function generateAssSubtitles({
   const header = `[Script Info]
 Title: AutoPublisher Pro Subtitles
 ScriptType: v4.00+
-WrapStyle: 0
+WrapStyle: 2
 ScaledBorderAndShadow: yes
 YCbCr Matrix: None
 PlayResX: 1080
@@ -185,48 +209,33 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     const chunk = chunks[cIdx];
     const nextChunk = chunks[cIdx + 1];
 
-    // Para cada palavra ativa dentro do chunk, gera uma linha no .ass
-    for (let i = 0; i < chunk.words.length; i++) {
-      const activeWord = chunk.words[i];
-      const nextWordInChunk = chunk.words[i + 1];
+    // Duração do card estendida até o próximo chunk se o gap for curto (< 350ms)
+    const gapToNext = nextChunk ? Math.min(350, Math.max(0, nextChunk.startMs - chunk.endMs)) : 0;
+    const cardEndMs = chunk.endMs + gapToNext;
 
-      const startStr = formatAssTime(activeWord.startMs);
+    const startStr = formatAssTime(chunk.startMs);
+    const endStr = formatAssTime(cardEndMs);
 
-      // Garante que palavras curtas (artigos/preposições de 30-70ms) permaneçam destacadas
-      // por no mínimo 130ms (pelo menos 4 frames a 30fps) para registro nítido na visão do usuário
-      const rawWordDur = activeWord.endMs - activeWord.startMs;
-      const minActiveMs = Math.max(130, rawWordDur);
+    const activeBord = Math.round(Number(oWidth || 4) + 3);
+    const inactiveBord = Math.round(Number(oWidth || 4));
 
-      let targetEndMs;
-      if (nextWordInChunk) {
-        // Se há próxima palavra no chunk, estende até o início dela ou garante duração mínima
-        targetEndMs = Math.max(activeWord.startMs + minActiveMs, nextWordInChunk.startMs);
-      } else {
-        // Se é a última palavra do chunk, mantém na tela até o fim do chunk ou até o início do próximo chunk (máx 350ms)
-        const gapToNextChunk = nextChunk ? Math.min(350, Math.max(0, nextChunk.startMs - chunk.endMs)) : 0;
-        targetEndMs = Math.max(activeWord.startMs + minActiveMs, chunk.endMs + gapToNextChunk);
-      }
+    const words = chunk.words;
+    const midPoint = words.length > 2 ? Math.ceil(words.length / 2) : -1;
 
-      const endStr = formatAssTime(Math.max(activeWord.endMs, targetEndMs));
+    // Constrói a linha única com sweep de cor por palavra via \t
+    const formattedWords = words.map((w, idx) => {
+      const upper = escapeAssText(w.word.toUpperCase());
+      const tIn = Math.max(0, w.startMs - chunk.startMs);
+      const rawDur = w.endMs - w.startMs;
+      const minActiveMs = Math.max(130, rawDur);
+      const tOut = Math.min(cardEndMs - chunk.startMs, tIn + minActiveMs);
 
-      // Monta o texto do chunk destacando a palavra ativa com cores vibrantes e animação pop
-      const formattedChunk = chunk.words
-        .map((w, idx) => {
-          const upper = w.word.toUpperCase();
-          if (idx === i) {
-            // Palavra ativa: Cor vibrante + Efeito Spring Pop punchy
-            if (popAnimation) {
-              return `{\\1c${inlineActive}\\t(0,80,\\fscx${pScale}\\fscy${pScale})\\t(80,180,\\fscx106\\fscy106)}${upper}{\\r}`;
-            }
-            return `{\\1c${inlineActive}\\fscx112\\fscy112}${upper}{\\r}`;
-          }
-          // Palavras inativas do chunk em branco nítido
-          return `{\\1c${inlinePrimary}\\fscx100\\fscy100}${upper}{\\r}`;
-        })
-        .join(' ');
+      const lineBreak = (idx === midPoint) ? '\\N' : '';
+      return `${lineBreak}{\\1c${inlinePrimary}\\t(${tIn},${tIn + 35},\\1c${inlineActive}\\bord${activeBord}\\blur3)\\t(${tOut},${tOut + 35},\\1c${inlinePrimary}\\bord${inactiveBord}\\blur0)}${upper}{\\r}`;
+    });
 
-      eventLines.push(`Dialogue: 0,${startStr},${endStr},Default,,0,0,0,,${formattedChunk}`);
-    }
+    const cardText = `{\\fad(70,90)}${formattedWords.join(' ')}`;
+    eventLines.push(`Dialogue: 0,${startStr},${endStr},Default,,0,0,0,,${cardText}`);
   }
 
   const fullAssContent = header + eventLines.join('\n') + '\n';
@@ -241,7 +250,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 }
 
 /**
- * Gera arquivo de legenda tradicional .srt
+ * Gera arquivo de legenda tradicional .srt em caixa mista para YouTube CC e SEO
  */
 export function generateSrtSubtitles({ wordBoundaries, outputSrtPath, wordsPerChunk = 4 }) {
   const chunks = groupWordsIntoChunks(wordBoundaries, wordsPerChunk);
@@ -249,7 +258,8 @@ export function generateSrtSubtitles({ wordBoundaries, outputSrtPath, wordsPerCh
 
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
-    const text = chunk.words.map(w => w.word.toUpperCase()).join(' ');
+    // Caixa mista preservando capitalização original para acessibilidade e SEO do YouTube CC
+    const text = chunk.words.map(w => w.word).join(' ');
     const block = `${i + 1}\n${formatSrtTime(chunk.startMs)} --> ${formatSrtTime(chunk.endMs)}\n${text}\n`;
     srtBlocks.push(block);
   }

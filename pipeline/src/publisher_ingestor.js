@@ -88,21 +88,29 @@ export async function ingestGeneratedPost({
       const errText = await response.text();
       console.warn(`[AVISO] Servidor respondeu status ${response.status}: ${errText}`);
       console.log(`Salvando manifesto de ingestao localmente para sincronizacao posterior...`);
+      const manifestPath = path.join(path.dirname(videoPath), `${postId}_manifest.json`);
+      fs.writeFileSync(manifestPath, JSON.stringify(payload, null, 2), 'utf8');
+      console.log(`Manifesto de ingestao salvo em: ${manifestPath}`);
+      return {
+        success: false,
+        source: 'manifest_rejected',
+        error: `Servidor respondeu HTTP ${response.status}: ${errText}`,
+        manifestPath: manifestPath,
+        payload: payload
+      };
     }
   } catch (err) {
     console.warn(`[INFO] Servidor backend nao acessivel no momento (${err.message}).`);
     console.log(`Gerando manifesto de ingestao pronto para execucao.`);
+    const manifestPath = path.join(path.dirname(videoPath), `${postId}_manifest.json`);
+    fs.writeFileSync(manifestPath, JSON.stringify(payload, null, 2), 'utf8');
+    console.log(`Manifesto de ingestao salvo em: ${manifestPath}`);
+    return {
+      success: false,
+      source: 'manifest_offline',
+      error: `Servidor indisponível: ${err.message}`,
+      manifestPath: manifestPath,
+      payload: payload
+    };
   }
-
-  // Fallback: Salva o manifesto de ingestao em JSON para consumo posterior
-  const manifestPath = path.join(path.dirname(videoPath), `${postId}_manifest.json`);
-  fs.writeFileSync(manifestPath, JSON.stringify(payload, null, 2), 'utf8');
-  console.log(`Manifesto de ingestao salvo em: ${manifestPath}`);
-
-  return {
-    success: true,
-    source: 'manifest',
-    manifestPath: manifestPath,
-    payload: payload
-  };
 }

@@ -72,6 +72,13 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
                 return;
             }
 
+            // 1.1 Verificacao de Dev Local Key (desenvolvimento local sem atrito)
+            if ("dev-local-api-key".equals(key)) {
+                TenantContextHolder.set(TenantContext.of("default", "Default Workspace (Local Dev)"));
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             // 2. Verificacao de Tenant API Key
             if (key != null && !key.isBlank()) {
                 if (tenantRepository != null) {

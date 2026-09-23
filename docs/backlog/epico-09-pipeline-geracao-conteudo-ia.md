@@ -160,3 +160,21 @@ Implementação do pipeline autônomo de produção (*Upstream*) que transforma 
   - [x] Resolução nativa vertical 1080x1920 Full HD com filtros de interpolação `flags=bicubic` e `-framerate 30` no FFmpeg, eliminando tremulações e artefatos de compressão.
   - [x] Alinhador fonético `scene_aligner.js` com L-Cut cinematográfico (100ms pré-roll) e snap em pausas de fala, garantindo transição sem cortes no meio de palavras.
   - [x] Mixagem de áudio com atenuação dinâmica (*ducking*) da trilha de fundo e fade-out suave ao término da narração.
+
+---
+
+### US-09.9: Gate de Qualidade Contratual (QC Gate), Beat Planner e Masterização EBU R128
+* **ID:** `US-09.9`
+* **Status:** Concluído
+* **Descrição:**  
+  Como arquiteto de qualidade de mídia e conformidade de monetização,  
+  Quero que todo vídeo renderizado passe obrigatoriamente por um Quality Control Gate automatizado com 13 checagens contratuais e atinja padrões profissionais de transmissão broadcast,  
+  Para garantir 100% de elegibilidade a programas de monetização, zero marcas d'água de terceiros, sincronia A/V milimétrica e retenção máxima de audiência.
+
+* **Critérios de Aceitação:**
+  - [x] **QC Gate Automático (`qc_gate.js`):** 13 checagens contratuais (`QC-1` a `QC-13`) inspecionando duração ($\ge 60$s), resolução (1080x1920 nativo @ 30fps), áudio broadcast EBU R128 (alvo -14 LUFS, TP -1.5 dBFS), detecção de telas pretas e congelamento de vídeo, nitidez laplaciana, higienização de marcas d'água (crop protetivo de 58px), diversidade semântica de beats, safe area de legendas (`margin_v: 560`), densidade e ritmo dinâmico de cortes (1.8s a 4.5s), sincronia A/V ($\le 40$ms, medido $\le 1$ms) e ineditismo no canal via ledger SHA-1.
+  - [x] **Beat Planner (`beat_planner.js`):** Subdivisão inteligente de tomadas longas em 2 a 3 sub-takes dinâmicos com alternância de movimentos de câmera (`push_in`, `pull_out`, `orbit`, `pan`) e zoom sem custo adicional de IA.
+  - [x] **Legendas Karaokê Profissionais (`subtitle_generator.js`):** 1 único evento `Dialogue` por card com animação suave de cor via tags ASS `\t` e `\fad(70,90)`, tipografia `Montserrat-Black.ttf` versionada localmente e quebra de linha calculada com `WrapStyle: 2`.
+  - [x] **Engenharia de Áudio Broadcast (`video_compositor.js`):** Cadeia de voz com `highpass=f=80` e `acompressor`, ducking automático via `sidechaincompress`, compatibilização de layout estéreo com `aformat` e masterização EBU R128 no mix final.
+  - [x] **Manifestos Estruturados de Observabilidade:** Geração e persistência automática de `script.json`, `scenes.json`, `prompts.json`, `run.json` (SDD v3.0 §3.7) e `report.json` em cada execução.
+

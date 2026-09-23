@@ -10,7 +10,6 @@ import fs from 'fs';
 import path from 'path';
 import {
   generateVideoWithVeo,
-  generateVideoWithPollinations,
   generateCinematicTake
 } from './src/ai_video_connector.js';
 

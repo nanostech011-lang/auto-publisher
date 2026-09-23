@@ -54,8 +54,8 @@ function selectHookFormula(channelNiche = '') {
     }
   ];
 
-  // Seleciona fórmula baseado no índice do dia para consistência mas variação diária
-  const idx = new Date().getDate() % formulas.length;
+  // Sorteio aleatório diversificado para evitar que todos os vídeos do mesmo dia usem a mesma fórmula
+  const idx = Math.floor(Math.random() * formulas.length);
   return formulas[idx];
 }
 
@@ -128,7 +128,8 @@ async function callGeminiFlash(prompt, apiKey, retries = 2) {
   const effectiveKey = apiKey || process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY;
   if (!effectiveKey) return null;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${effectiveKey}`;
+  const modelName = 'gemini-flash-lite-latest';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${effectiveKey}`;
 
   const payload = {
     contents: [{ parts: [{ text: prompt }] }],
@@ -192,13 +193,14 @@ async function callGeminiFlash(prompt, apiKey, retries = 2) {
 function extractJsonFromResponse(rawText) {
   if (!rawText) return null;
 
+  let candidateText = rawText.trim();
   const jsonSeparator = rawText.indexOf('---JSON---');
-  if (jsonSeparator === -1) return null;
-
-  const jsonSection = rawText.slice(jsonSeparator + 10).trim();
+  if (jsonSeparator !== -1) {
+    candidateText = rawText.slice(jsonSeparator + 10).trim();
+  }
 
   // Remove possíveis blocos de código markdown ```json ... ```
-  const cleanJson = jsonSection
+  const cleanJson = candidateText
     .replace(/^```json\s*/i, '')
     .replace(/^```\s*/i, '')
     .replace(/\s*```\s*$/, '')
@@ -206,30 +208,38 @@ function extractJsonFromResponse(rawText) {
 
   try {
     const parsed = JSON.parse(cleanJson);
-    // Validação mínima
-    if (!parsed.title || !Array.isArray(parsed.scenes) || parsed.scenes.length < 3) {
-      return null;
+    if (parsed.title && Array.isArray(parsed.scenes) && parsed.scenes.length >= 3) {
+      return parsed;
     }
-    return parsed;
   } catch (e) {
-    // Tenta extrair JSON com regex como fallback
     const jsonMatch = cleanJson.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       try {
-        return JSON.parse(jsonMatch[0]);
-      } catch (e2) {
-        return null;
-      }
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.title && Array.isArray(parsed.scenes) && parsed.scenes.length >= 3) {
+          return parsed;
+        }
+      } catch (e2) {}
     }
-    return null;
   }
+  return null;
 }
 
 /**
- * Extrai o texto de narração da resposta do Gemini (parte antes do JSON).
+ * Extrai o texto de narração da resposta do Gemini (parte antes do JSON ou campo narrationText).
  */
 function extractNarrationText(rawText) {
   if (!rawText) return null;
+
+  // Se a resposta for JSON puro estruturado
+  if (rawText.trim().startsWith('{')) {
+    try {
+      const parsed = JSON.parse(rawText.trim());
+      if (parsed.narrationText && parsed.narrationText.length > 50) {
+        return parsed.narrationText.trim();
+      }
+    } catch {}
+  }
 
   const jsonSeparator = rawText.indexOf('---JSON---');
   const narration = jsonSeparator !== -1

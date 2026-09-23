@@ -1,6 +1,17 @@
 import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import fs from 'fs';
 import path from 'path';
+import ffmpeg from './ffmpeg_env.js';
+
+function xmlEscape(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
 
 /**
  * Sintetizador de voz neural Edge-TTS com extracao de word boundaries (timestamps por palavra).
@@ -18,7 +29,7 @@ export async function synthesizeVoiceWithTimestamps({
   }
 
   const tts = new MsEdgeTTS();
-  await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3, {
+  await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3, {
     wordBoundaryEnabled: true,
     sentenceBoundaryEnabled: true
   });
@@ -29,9 +40,10 @@ export async function synthesizeVoiceWithTimestamps({
   }
 
   const wordBoundaries = [];
+  const safeText = xmlEscape(text);
 
   return new Promise((resolve, reject) => {
-    const { audioStream, metadataStream } = tts.toStream(text, {
+    const { audioStream, metadataStream } = tts.toStream(safeText, {
       rate: rate,
       pitch: pitch
     });
@@ -80,20 +92,25 @@ export async function synthesizeVoiceWithTimestamps({
     fileWriteStream.on('finish', () => {
       tts.close();
       const stats = fs.statSync(outputAudioPath);
-      // Duracao estimada a partir do ultimo word boundary ou do arquivo MP3 (48kbps = 6000 bytes/seg)
-      let durationMs = 0;
-      if (wordBoundaries.length > 0) {
-        durationMs = wordBoundaries[wordBoundaries.length - 1].endMs + 300;
-      } else {
-        durationMs = Math.round((stats.size / 6000) * 1000);
-      }
 
-      resolve({
-        audioPath: outputAudioPath,
-        fileSizeBytes: stats.size,
-        durationMs: durationMs,
-        durationSeconds: Number((durationMs / 1000).toFixed(2)),
-        wordBoundaries: wordBoundaries
+      // Medição exata da duração através de ffprobe, evitando desvio de sincronia
+      ffmpeg.ffprobe(outputAudioPath, (err, metadata) => {
+        let durationMs = 0;
+        if (!err && metadata?.format?.duration) {
+          durationMs = Math.round(metadata.format.duration * 1000);
+        } else if (wordBoundaries.length > 0) {
+          durationMs = wordBoundaries[wordBoundaries.length - 1].endMs + 300;
+        } else {
+          durationMs = Math.round((stats.size / 12000) * 1000);
+        }
+
+        resolve({
+          audioPath: outputAudioPath,
+          fileSizeBytes: stats.size,
+          durationMs: durationMs,
+          durationSeconds: Number((durationMs / 1000).toFixed(2)),
+          wordBoundaries: wordBoundaries
+        });
       });
     });
 

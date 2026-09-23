@@ -8,98 +8,10 @@ try {
   }
 } catch (ignored) {}
 import { buildProfessionalScenePrompt } from './ai_prompt_generator.js';
+import { globalCircuitBreaker } from './circuit_breaker.js';
+import { globalAssetCache } from './asset_cache.js';
 
-let imagenDisabledForSession = false;
 
-/**
- * Conector oficial da Google Imagen 3 (Vertex AI / Google AI Studio API)
- * Utiliza o modelo de ponta 'imagen-3.0-generate-002' com resolução 9:16 nativa.
- */
-export async function generateImageWithImagen3({ prompt, outputPath, apiKey }) {
-  if (imagenDisabledForSession) {
-    return { success: false, error: 'Google Imagen 3 indisponível na cota da chave para esta sessão' };
-  }
-
-  const effectiveKey = apiKey || process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY;
-  if (!effectiveKey) {
-    return { success: false, error: 'GEMINI_API_KEY não configurada' };
-  }
-
-  const dir = path.dirname(outputPath);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${effectiveKey}`;
-
-  const payload = {
-    instances: [
-      { prompt: prompt }
-    ],
-    parameters: {
-      sampleCount: 1,
-      aspectRatio: '9:16',
-      outputMimeType: 'image/jpeg',
-      personGeneration: 'ALLOW_ADULT',
-      safetySetting: 'block_only_high'
-    }
-  };
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout
-
-  try {
-    const startTime = Date.now();
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': effectiveKey
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal
-    });
-
-    clearTimeout(timeoutId);
-    const latencyMs = Date.now() - startTime;
-
-    if (!res.ok) {
-      if (res.status === 404 || res.status === 403 || res.status === 429) {
-        imagenDisabledForSession = true;
-      }
-      let errorMsg = `HTTP ${res.status} ${res.statusText}`;
-      try {
-        const errorJson = await res.json();
-        if (errorJson.error && errorJson.error.message) {
-          errorMsg = `${errorMsg}: ${errorJson.error.message}`;
-        }
-      } catch (ignored) {}
-      return { success: false, error: errorMsg };
-    }
-
-    const json = await res.json();
-    const base64Data = json?.predictions?.[0]?.bytesBase64Encoded;
-
-    if (!base64Data || typeof base64Data !== 'string') {
-      return { success: false, error: 'Resposta da Imagen 3 não conteve bytesBase64Encoded válidos' };
-    }
-
-    const buffer = Buffer.from(base64Data, 'base64');
-    if (buffer.length < 5000) {
-      return { success: false, error: `Imagem recebida corrompida ou muito pequena (${buffer.length} bytes)` };
-    }
-
-    fs.writeFileSync(outputPath, buffer);
-    return {
-      success: true,
-      provider: 'Google Imagen 3 (imagen-3.0-generate-002)',
-      sizeBytes: buffer.length,
-      latencyMs,
-      outputPath
-    };
-  } catch (err) {
-    clearTimeout(timeoutId);
-    return { success: false, error: err.message };
-  }
-}
 
 export function getNegativePromptForDirective(visualDirective = '', prompt = '') {
   const combined = `${visualDirective || ''} ${prompt || ''}`.toLowerCase();
@@ -214,7 +126,7 @@ export async function generateImageWithPollinationsFlux({ prompt, outputPath, se
           fs.writeFileSync(outputPath, buffer);
           return {
             success: true,
-            provider: 'Pollinations AI (Flux HD 1080p)',
+            provider: 'Pollinations AI (sana 576x1024)',
             sizeBytes: buffer.length,
             latencyMs: Date.now() - startTime,
             outputPath
@@ -309,67 +221,90 @@ export async function generateHighQualitySceneImage({
     });
   }
 
-  // 2. Tentativa Primária: Google Imagen 3 (se a chave do Google AI estiver configurada)
-  if (effectiveKey) {
-    console.log(`  [AI Connector] Disparando Google Imagen 3 (imagen-3.0-generate-002)...`);
-    const imagenResult = await generateImageWithImagen3({
-      prompt: finalPrompt,
-      outputPath,
-      apiKey: effectiveKey
-    });
 
-    if (imagenResult.success) {
-      const sizeKb = (imagenResult.sizeBytes / 1024).toFixed(0);
-      console.log(`  [AI Connector] ✓ Sucesso com Google Imagen 3 (${sizeKb} KB em ${imagenResult.latencyMs}ms)`);
+
+  // 2. Cache content-addressed: verifica se este prompt/estilo já foi gerado
+  const cacheKey = globalAssetCache.buildCacheKey({
+    prompt: finalPrompt,
+    aesthetic: channelAesthetic,
+    visualDirective,
+    type: 'image',
+    seed
+  });
+
+  if (globalAssetCache.has(cacheKey)) {
+    const cached = globalAssetCache.get(cacheKey, outputPath);
+    if (cached) {
+      const sizeKb = (fs.statSync(outputPath).size / 1024).toFixed(0);
+      console.log(`  [AI Connector] ⚡ Cache HIT para asset de imagem (${sizeKb} KB)`);
       return {
         outputPath,
-        provider: imagenResult.provider,
+        provider: `${cached.metadata?.provider || 'Pollinations'} (Cached)`,
+        prompt: finalPrompt,
+        sizeKb
+      };
+    }
+  }
+
+  // 3. Verifica disponibilidade do provedor no Circuit Breaker
+  if (!globalCircuitBreaker.isAvailable('pollinations')) {
+    console.warn(`  [AI Connector] ↳ Provedor Pollinations em cooldown no Circuit Breaker (${globalCircuitBreaker.getBlockReason('pollinations')})`);
+    return null;
+  }
+
+  // 4. Fallback Tier 1: Pollinations AI com Modelo Flux/Sana
+  try {
+    const fluxResult = await generateImageWithPollinationsFlux({
+      prompt: finalPrompt,
+      outputPath,
+      seed,
+      visualDirective
+    });
+
+    if (fluxResult.success) {
+      globalCircuitBreaker.recordSuccess('pollinations');
+      globalAssetCache.set(cacheKey, outputPath, { provider: fluxResult.provider });
+      const sizeKb = (fluxResult.sizeBytes / 1024).toFixed(0);
+      console.log(`  [AI Connector] ✓ Sucesso com Fallback Flux HD (${sizeKb} KB em ${fluxResult.latencyMs}ms)`);
+      return {
+        outputPath,
+        provider: fluxResult.provider,
         prompt: finalPrompt,
         sizeKb
       };
     } else {
-      console.warn(`  [AI Connector] ⚠️ Google Imagen 3 indisponível: ${imagenResult.error}`);
-      console.log(`  [AI Connector] ↳ Acionando fallback automático de alta fidelidade (Flux HD)...`);
+      globalCircuitBreaker.recordFailure('pollinations', fluxResult.error);
     }
+  } catch (err) {
+    globalCircuitBreaker.recordFailure('pollinations', err);
   }
 
-  // 3. Fallback Tier 1: Pollinations AI com Modelo Flux (Gratuito, sem chave, alta fidelidade orientada ao estilo)
-  const fluxResult = await generateImageWithPollinationsFlux({
-    prompt: finalPrompt,
-    outputPath,
-    seed,
-    visualDirective
-  });
+  // 5. Fallback Tier 2: Pollinations AI Turbo
+  if (globalCircuitBreaker.isAvailable('pollinations')) {
+    console.log(`  [AI Connector] ↳ Tentando Fallback Secundário Turbo...`);
+    try {
+      const turboResult = await generateImageWithPollinationsTurbo({
+        prompt: finalPrompt,
+        outputPath,
+        seed,
+        visualDirective
+      });
 
-  if (fluxResult.success) {
-    const sizeKb = (fluxResult.sizeBytes / 1024).toFixed(0);
-    console.log(`  [AI Connector] ✓ Sucesso com Fallback Flux HD (${sizeKb} KB em ${fluxResult.latencyMs}ms)`);
-    return {
-      outputPath,
-      provider: fluxResult.provider,
-      prompt: finalPrompt,
-      sizeKb
-    };
-  }
-
-  // 4. Fallback Tier 2: Pollinations AI Turbo
-  console.log(`  [AI Connector] ↳ Tentando Fallback Secundário Turbo...`);
-  const turboResult = await generateImageWithPollinationsTurbo({
-    prompt: finalPrompt,
-    outputPath,
-    seed,
-    visualDirective
-  });
-
-  if (turboResult.success) {
-    const sizeKb = (turboResult.sizeBytes / 1024).toFixed(0);
-    console.log(`  [AI Connector] ✓ Sucesso com Fallback Turbo (${sizeKb} KB em ${turboResult.latencyMs}ms)`);
-    return {
-      outputPath,
-      provider: turboResult.provider,
-      prompt: finalPrompt,
-      sizeKb
-    };
+      if (turboResult.success) {
+        globalCircuitBreaker.recordSuccess('pollinations');
+        globalAssetCache.set(cacheKey, outputPath, { provider: turboResult.provider });
+        const sizeKb = (turboResult.sizeBytes / 1024).toFixed(0);
+        console.log(`  [AI Connector] ✓ Sucesso com Fallback Turbo (${sizeKb} KB em ${turboResult.latencyMs}ms)`);
+        return {
+          outputPath,
+          provider: turboResult.provider,
+          prompt: finalPrompt,
+          sizeKb
+        };
+      }
+    } catch (turboErr) {
+      globalCircuitBreaker.recordFailure('pollinations', turboErr);
+    }
   }
 
   // Se todas as IAs remotas oscilarem, retorna null para ativar fallback local

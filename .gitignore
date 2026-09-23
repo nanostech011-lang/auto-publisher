@@ -65,6 +65,9 @@ docs/manual/test_run/
 # Bloqueio de mídias geradas e scratch temporário
 pipeline/scratch/**/*
 pipeline/output/**/*
+pipeline/.cache/
+pipeline/state/*
+!pipeline/state/.gitkeep
 !pipeline/scratch/.gitkeep
 !pipeline/output/.gitkeep
 !pipeline/assets/fonts/.gitkeep

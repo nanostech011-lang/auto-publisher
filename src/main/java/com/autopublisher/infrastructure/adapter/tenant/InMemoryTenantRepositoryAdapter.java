@@ -67,6 +67,7 @@ public class InMemoryTenantRepositoryAdapter implements TenantRepositoryPort {
         );
 
         save(defaultTenant);
+        tenantIdByApiKey.putIfAbsent("dev-local-api-key", "default");
         log.info("[SaaS] Tenant default inicializado com sucesso (id='default')");
     }
 
