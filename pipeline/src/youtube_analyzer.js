@@ -58,34 +58,73 @@ export async function fetchVideoMetadata(videoId) {
 }
 
 /**
- * Extrai transcrição/legendas do vídeo do YouTube
+ * Higieniza o texto da transcrição preservando rigorosamente a acentuação em Português (PT-BR)
+ * e decodificando entidades HTML/numéricas comuns do YouTube (ex: &atilde;, &#39;, &eacute;)
+ */
+export function cleanPtBrTranscriptText(text) {
+  if (!text || typeof text !== 'string') return '';
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&aacute;/gi, 'á')
+    .replace(/&agrave;/gi, 'à')
+    .replace(/&atilde;/gi, 'ã')
+    .replace(/&acirc;/gi, 'â')
+    .replace(/&eacute;/gi, 'é')
+    .replace(/&egrave;/gi, 'è')
+    .replace(/&ecirc;/gi, 'ê')
+    .replace(/&iacute;/gi, 'í')
+    .replace(/&icirc;/gi, 'î')
+    .replace(/&oacute;/gi, 'ó')
+    .replace(/&otilde;/gi, 'õ')
+    .replace(/&ocirc;/gi, 'ô')
+    .replace(/&uacute;/gi, 'ú')
+    .replace(/&ccedil;/gi, 'ç')
+    .replace(/&Aacute;/g, 'Á')
+    .replace(/&Agrave;/g, 'À')
+    .replace(/&Atilde;/g, 'Ã')
+    .replace(/&Acirc;/g, 'Â')
+    .replace(/&Eacute;/g, 'É')
+    .replace(/&Ecirc;/g, 'Ê')
+    .replace(/&Iacute;/g, 'Í')
+    .replace(/&Oacute;/g, 'Ó')
+    .replace(/&Otilde;/g, 'Õ')
+    .replace(/&Ocirc;/g, 'Ô')
+    .replace(/&Uacute;/g, 'Ú')
+    .replace(/&Ccedil;/g, 'Ç')
+    .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))
+    .replace(/&#x([0-9a-f]+);/gi, (match, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Extrai transcrição/legendas do vídeo do YouTube priorizando estritamente Português Brasileiro (PT-BR)
  */
 export async function fetchVideoTranscript(videoId) {
-  try {
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
-    if (transcript && transcript.length > 0) {
-      const fullText = transcript.map(t => t.text).join(' ').replace(/\s+/g, ' ').trim();
-      return {
-        available: true,
-        text: fullText,
-        segmentsCount: transcript.length
-      };
-    }
-  } catch (e) {
-    // Tenta obter com idiomas especificos caso o automatico falhe
-    const langs = ['pt', 'pt-BR', 'en'];
-    for (const lang of langs) {
-      try {
-        const transcript = await YoutubeTranscript.fetchTranscript(videoId, { lang });
-        if (transcript && transcript.length > 0) {
-          const fullText = transcript.map(t => t.text).join(' ').replace(/\s+/g, ' ').trim();
+  // 1. Prioriza faixas de áudio/legenda em Português do Brasil (pt-BR e pt) para preservar acentos e expressões nativas
+  const preferredLangs = ['pt-BR', 'pt', null, 'en'];
+  for (const lang of preferredLangs) {
+    try {
+      const options = lang ? { lang } : undefined;
+      const transcript = await YoutubeTranscript.fetchTranscript(videoId, options);
+      if (transcript && transcript.length > 0) {
+        const fullText = cleanPtBrTranscriptText(transcript.map(t => t.text).join(' '));
+        if (fullText.length > 20) {
           return {
             available: true,
             text: fullText,
+            lang: lang || 'pt-BR',
             segmentsCount: transcript.length
           };
         }
-      } catch (ignored) {}
+      }
+    } catch (ignored) {
+      // Tenta a próxima linguagem da cadeia de prioridade
     }
   }
 

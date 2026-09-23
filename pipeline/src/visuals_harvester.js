@@ -231,23 +231,23 @@ export function createCinematicMotionClip({
 
   switch (motionType) {
     case 'pan_left_right':
-      motionFilter = `${basePrep},zoompan=z=1.12:d=1:x='(iw-iw/zoom)*min(1,on/(30*${dSec}))':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
+      motionFilter = `${basePrep},zoompan=z=1.10:d=1:x='trunc((iw-iw/zoom)*min(1,on/(30*${dSec})))':y='trunc(ih/2-(ih/zoom/2))':s=1080x1920:fps=30`;
       break;
     case 'pan_right_left':
-      motionFilter = `${basePrep},zoompan=z=1.12:d=1:x='(iw-iw/zoom)*max(0,1-on/(30*${dSec}))':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
+      motionFilter = `${basePrep},zoompan=z=1.10:d=1:x='trunc((iw-iw/zoom)*max(0,1-on/(30*${dSec})))':y='trunc(ih/2-(ih/zoom/2))':s=1080x1920:fps=30`;
       break;
     case 'reveal_zoom_out':
-      // Zoom out contínuo e suave de 1.15 até 1.03 proporcional à duração do take (SEM RESET)
-      motionFilter = `${basePrep},zoompan=z='max(1.03,1.15-(0.12*on/(30*${dSec})))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
+      // Zoom out contínuo e suave de 1.10 até 1.01 proporcional à duração do take (estável e sem tremor)
+      motionFilter = `${basePrep},zoompan=z='max(1.01,1.10-(0.09*on/(30*${dSec})))':d=1:x='trunc(iw/2-(iw/zoom/2))':y='trunc(ih/2-(ih/zoom/2))':s=1080x1920:fps=30`;
       break;
     case 'atmospheric_drift':
-      // Respiração cinematográfica suave e contínua
-      motionFilter = `${basePrep},zoompan=z='min(1.14,1.03+(0.09*on/(30*${dSec})))':d=1:x='iw/2-(iw/zoom/2)+(iw*0.015)*sin(2*PI*on/(30*${dSec}))':y='ih/2-(ih/zoom/2)+(ih*0.012)*cos(2*PI*on/(30*${dSec}))':s=1080x1920:fps=30`;
+      // Drift diagonal suave e linear sem oscilação senoidal brusca
+      motionFilter = `${basePrep},zoompan=z='min(1.10,1.01+(0.08*on/(30*${dSec})))':d=1:x='trunc((iw/2-(iw/zoom/2))+(iw*0.03*(on/(30*${dSec}))))':y='trunc((ih/2-(ih/zoom/2))+(ih*0.02*(on/(30*${dSec}))))':s=1080x1920:fps=30`;
       break;
     case 'push_in':
     default:
-      // Zoom in contínuo e suave de 1.03 até 1.16 proporcional à duração do take (SEM RESET)
-      motionFilter = `${basePrep},zoompan=z='min(1.16,1.03+(0.13*on/(30*${dSec})))':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=30`;
+      // Zoom in contínuo e suave de 1.01 até 1.11 proporcional à duração do take (estável e sem tremor)
+      motionFilter = `${basePrep},zoompan=z='min(1.11,1.01+(0.10*on/(30*${dSec})))':d=1:x='trunc(iw/2-(iw/zoom/2))':y='trunc(ih/2-(ih/zoom/2))':s=1080x1920:fps=30`;
       break;
   }
 
@@ -257,12 +257,9 @@ export function createCinematicMotionClip({
     durationSeconds: dSec
   });
 
-  // Emulação de Película 35mm: piso de ruído cinematográfico que iguala a textura das fotos com vídeos reais B-roll
-  const filmGrain = ',noise=alls=6:allf=t+u';
-
   const fullFilter = fxFilters.length > 0
-    ? `${motionFilter},${fxFilters.join(',')}${filmGrain}${transitionFade}`
-    : `${motionFilter}${filmGrain}${transitionFade}`;
+    ? `${motionFilter},${fxFilters.join(',')}${transitionFade}`
+    : `${motionFilter}${transitionFade}`;
 
   return new Promise((resolve, reject) => {
     ffmpeg()

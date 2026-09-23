@@ -35,4 +35,11 @@ test('Testes unitarios do YouTube Analyzer', async (t) => {
     const wordCount = fullNarration.trim().split(/\s+/).length;
     assert.ok(wordCount >= 145, `Contagem de palavras deve ser >= 145 para elegibilidade (obteve: ${wordCount})`);
   });
+
+  await t.test('cleanPtBrTranscriptText deve decodificar entidades HTML e preservar acentuação completa em PT-BR', async () => {
+    const { cleanPtBrTranscriptText } = await import('./src/youtube_analyzer.js');
+    const dirty = 'Voc&ecirc; n&atilde;o est&aacute; prestando aten&ccedil;&atilde;o &#39;amigo&#39; &amp; &eacute; crucial.';
+    const cleaned = cleanPtBrTranscriptText(dirty);
+    assert.strictEqual(cleaned, "Você não está prestando atenção 'amigo' & é crucial.");
+  });
 });
