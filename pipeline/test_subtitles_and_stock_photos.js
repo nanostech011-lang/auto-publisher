@@ -111,3 +111,29 @@ test('Stock Connector - searchPexelsPhoto e fetchAndPrepareStockPhoto lidam com 
   });
   assert.equal(fetchRes.success, false);
 });
+
+test('Stock Connector - buildSmartContextualQueries mapeia disciplinas, ansiedade, tecnologia e rotina com precisão', () => {
+  const queriesHabitos = buildSmartContextualQueries({
+    phrase: 'A constância e a disciplina diária vencem o talento sem rotina.',
+    visualDirective: ''
+  });
+  assert.ok(queriesHabitos.some(q => q.includes('athlete') || q.includes('routine') || q.includes('focused')), 'Deve conter query de disciplina ou rotina');
+
+  const queriesAnsiedade = buildSmartContextualQueries({
+    phrase: 'Respire fundo, acalme o seu medo e encontre a paz interior.',
+    visualDirective: ''
+  });
+  assert.ok(queriesAnsiedade.some(q => q.includes('breathing') || q.includes('peaceful') || q.includes('calm')), 'Deve conter query de respiração/calma');
+
+  const queriesTech = buildSmartContextualQueries({
+    phrase: 'A inteligência artificial e a tecnologia mudaram as regras do jogo.',
+    visualDirective: ''
+  });
+  assert.ok(queriesTech.some(q => q.includes('code') || q.includes('artificial') || q.includes('hacker')), 'Deve conter query de tecnologia/IA');
+
+  const queriesSono = buildSmartContextualQueries({
+    phrase: 'Acordar cedo na madrugada enquanto o mundo dorme.',
+    visualDirective: ''
+  });
+  assert.ok(queriesSono.some(q => q.includes('waking') || q.includes('sleep') || q.includes('sunrise')), 'Deve conter query de despertar/madrugada');
+});

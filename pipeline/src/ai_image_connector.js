@@ -34,7 +34,7 @@ export function getNegativePromptForDirective(visualDirective = '', prompt = '')
   }
 
   // Padrão realista documental
-  return 'anime, cartoon, illustration, drawing, 3d render, doll, plastic, smooth skin, cgi, fake, painting, blurry, doll-like, oversaturated, artificial, deformed, bad anatomy, bad hands, digital art, videogame, render, airbrushed';
+  return 'anime, cartoon, illustration, drawing, 3d render, doll, plastic, smooth skin, cgi, fake, painting, blurry, doll-like, oversaturated, artificial, deformed, bad anatomy, bad hands, digital art, videogame, render, airbrushed, low resolution, compression artifacts, jpeg artifacts, smooth plastic texture';
 }
 
 export const REALISTIC_NEGATIVE_PROMPT = getNegativePromptForDirective();
@@ -75,7 +75,7 @@ export function makeCompactFallbackPrompt(prompt, visualDirective = '') {
   } else {
     // Garante tokens fotográficos de alta fidelidade e textura natural para temas realistas
     if (!compact.toLowerCase().includes('photograph') && !compact.toLowerCase().includes('35mm')) {
-      compact += ', real photograph, authentic texture, 35mm film, documentary photography';
+      compact += ', 35mm photograph, authentic skin pores, sharp focus, 8k resolution, documentary photography, natural rim lighting';
     }
   }
 
@@ -126,7 +126,7 @@ export async function generateImageWithPollinationsFlux({ prompt, outputPath, se
           fs.writeFileSync(outputPath, buffer);
           return {
             success: true,
-            provider: 'Pollinations AI (sana 576x1024)',
+            provider: `Pollinations AI (${imageModel} 1080x1920)`,
             sizeBytes: buffer.length,
             latencyMs: Date.now() - startTime,
             outputPath
@@ -154,7 +154,7 @@ export async function generateImageWithPollinationsTurbo({ prompt, outputPath, s
   const negPrompt = getNegativePromptForDirective(visualDirective, prompt);
   const negParam = encodeURIComponent(negPrompt);
 
-  const url = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=1080&height=1920&nologo=true&seed=${sceneSeed}&negative_prompt=${negParam}`;
+  const url = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=1080&height=1920&nologo=true&seed=${sceneSeed}&model=turbo&negative_prompt=${negParam}`;
   const startTime = Date.now();
 
   for (let attempt = 1; attempt <= 1; attempt++) {
@@ -176,7 +176,7 @@ export async function generateImageWithPollinationsTurbo({ prompt, outputPath, s
           fs.writeFileSync(outputPath, buffer);
           return {
             success: true,
-            provider: 'Pollinations AI (Turbo)',
+            provider: 'Pollinations AI (Turbo 1080x1920)',
             sizeBytes: buffer.length,
             latencyMs: Date.now() - startTime,
             outputPath

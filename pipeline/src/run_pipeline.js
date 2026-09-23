@@ -3,8 +3,12 @@ import fs from 'fs';
 
 // Carregamento nativo de variaveis de ambiente (.env) sem dependencia externa
 try {
-  if (typeof process.loadEnvFile === 'function' && fs.existsSync('.env')) {
-    process.loadEnvFile('.env');
+  if (typeof process.loadEnvFile === 'function') {
+    if (fs.existsSync('.env')) {
+      process.loadEnvFile('.env');
+    } else if (fs.existsSync('../.env')) {
+      process.loadEnvFile('../.env');
+    }
   }
 } catch (ignored) {}
 

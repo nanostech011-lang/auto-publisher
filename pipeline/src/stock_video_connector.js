@@ -207,6 +207,21 @@ export function buildSmartContextualQueries({ scene = {}, phrase = '', visualDir
   if (/vitória|vitoria|siga|conquista|líder|lider|horizonte/i.test(text)) {
     queries.push('silhouette standing sunrise mountain', 'victory freedom horizon', 'success sunrise cinematic');
   }
+  if (/disciplin|hábito|habito|rotina|constância|constancia/i.test(text)) {
+    queries.push('disciplined athlete training dawn', 'routine clock sunrise desk', 'determined focused person');
+  }
+  if (/ansiedad|estresse|respir|calma|paz|medo/i.test(text)) {
+    queries.push('calm breathing meditation silhouette', 'peaceful mountain mist sunrise', 'deep breath peaceful forest');
+  }
+  if (/tecnologia|futuro|código|codigo|inteligência|inteligencia/i.test(text)) {
+    queries.push('futuristic glowing code matrix', 'ai artificial intelligence neural', 'hacker typing dark screen');
+  }
+  if (/sono|dormir|acordar|madrugada|noite/i.test(text)) {
+    queries.push('person waking up early morning bed', 'peaceful sleep dark room', 'sunrise morning window coffee');
+  }
+  if (/academia|treino|corpo|saúde|saude|exercício|exercicio/i.test(text)) {
+    queries.push('fitness athlete gym workout', 'runner sunrise morning road', 'healthy energy training');
+  }
 
   // 4. Tradução dos termos individuais da frase
   const phraseTranslated = translateStockQueryToEnglish(text);
@@ -506,7 +521,8 @@ export async function searchPexelsPhoto({ query, apiKey = null, usedPhotoIds = n
         continue;
       }
 
-      const imgUrl = photo.src?.portrait || photo.src?.large2x || photo.src?.large || photo.src?.original;
+      // Prioriza fontes de altíssima definição Full HD/4K (large2x ou original) antes de portrait/small
+      const imgUrl = photo.src?.large2x || photo.src?.original || photo.src?.large || photo.src?.portrait;
       if (imgUrl) {
         if (usedPhotoIds) usedPhotoIds.add(pId);
         return {

@@ -185,7 +185,8 @@ export function createCinematicMotionClip({
   motionType = 'push_in',
   isHookScene = false,
   isLastScene = false,
-  cinemagraphFX = null
+  cinemagraphFX = null,
+  isAiGenerated = false
 }) {
   const dir = path.dirname(outputPath);
   if (!fs.existsSync(dir)) {
@@ -220,8 +221,12 @@ export function createCinematicMotionClip({
     });
   }
 
-  // Cadeia otimizada: corta 58px de rodapé (remove marca d'água Pollinations), escala com Lanczos para 1080x1920 nativo e aplica unsharp
-  const basePrep = `crop=iw:ih-58:0:0,scale=1080:1920:flags=lanczos:force_original_aspect_ratio=increase,crop=1080:1920,unsharp=5:5:0.9:5:5:0.0`;
+  // Só corta rodapé (58px) para remover marca d'água se o arquivo for de IA pública gratuita (Pollinations)
+  const needsWatermarkCrop = isAiGenerated || /pollinations|scene_img/i.test(assetPath);
+  const watermarkCrop = needsWatermarkCrop ? 'crop=iw:ih-58:0:0,' : '';
+
+  // Cadeia otimizada: escala Lanczos para 1080x1920 nativo e recupera micro-detalhes via unsharp mask
+  const basePrep = `${watermarkCrop}scale=1080:1920:flags=lanczos:force_original_aspect_ratio=increase,crop=1080:1920,unsharp=5:5:1.0:5:5:0.0`;
   let motionFilter = '';
 
   switch (motionType) {
@@ -252,9 +257,12 @@ export function createCinematicMotionClip({
     durationSeconds: dSec
   });
 
+  // Emulação de Película 35mm: piso de ruído cinematográfico que iguala a textura das fotos com vídeos reais B-roll
+  const filmGrain = ',noise=alls=6:allf=t+u';
+
   const fullFilter = fxFilters.length > 0
-    ? `${motionFilter},${fxFilters.join(',')}${transitionFade}`
-    : `${motionFilter}${transitionFade}`;
+    ? `${motionFilter},${fxFilters.join(',')}${filmGrain}${transitionFade}`
+    : `${motionFilter}${filmGrain}${transitionFade}`;
 
   return new Promise((resolve, reject) => {
     ffmpeg()
@@ -482,6 +490,7 @@ export async function harvestVisualScenes({
     const isLast = (i === scenes.length - 1);
 
     let assetForClip = null;
+    let isAiGenerated = false;
 
     // Garantia estrita de não-repetição de prompts com prioridade para o AI Storyboarder
     let scenePrompt = scene.aiPrompt || scene.prompt;
@@ -581,54 +590,56 @@ export async function harvestVisualScenes({
       }
     }
 
-    // 2. Priorização Inteligente de Stock (Pexels / Pixabay) para Ação Concreta e 1080x1920 Nativo
-    const isConcreteSubject = /man|woman|person|people|hands|desk|office|phone|working|walking|running|gym|student|worker|city|crowd|money|finance/i.test(contextualQueries[0] || '');
-    const shouldPrioritizeStock = effectivePexelsKey && (scene.suggestedType === 'stock_video' || isConcreteSubject || visualMode === 'video');
+    // 2. Coleta de Mídia de Estoque (B-Roll de Vídeo ou Fotografia Editorial 1080x1920)
+    const isArtisticStyle = /anime|manga|ghibli|moebius|cartoon|pixel\s*art|comic\s*book|watercolor|gouache|illustration/i.test(`${effectiveDirective} ${effectiveAesthetic}`);
 
-    if (shouldPrioritizeStock) {
-      console.log(`  -> [Stock Priority] Priorizando acervo de estoque 1080x1920 para sujeito concreto: "${contextualQueries[0]}"`);
+    // 2.1 B-Roll de vídeo real (para modo 'video' ou gancho no modo 'hybrid')
+    if ((visualMode === 'video' || (visualMode === 'hybrid' && isHook)) && effectivePexelsKey) {
+      console.log(`  -> [Stock Video] Buscando B-Roll de vídeo real 1080x1920: "${contextualQueries[0]}"`);
+      const stockResult = await fetchAndPrepareStockBroll({
+        query: contextualQueries[0],
+        candidateQueries: contextualQueries,
+        outputPath: clipPath,
+        durationSeconds: scene.duration,
+        isHookScene: isHook,
+        isLastScene: isLast,
+        pexelsApiKey: effectivePexelsKey,
+        usedVideoIds: usedStockVideoIds
+      });
 
-      // 2.1 Tenta B-Roll de vídeo real primeiro
-      if (visualMode === 'video' || visualMode === 'hybrid') {
-        const stockResult = await fetchAndPrepareStockBroll({
-          query: contextualQueries[0],
-          candidateQueries: contextualQueries,
-          outputPath: clipPath,
-          durationSeconds: scene.duration,
-          isHookScene: isHook,
-          isLastScene: isLast,
-          pexelsApiKey: effectivePexelsKey,
-          usedVideoIds: usedStockVideoIds
-        });
-
-        if (stockResult.success && fs.existsSync(clipPath)) {
-          const gate = await validateAssetQuality({ filePath: clipPath, strict: false });
-          if (gate.passed) {
-            console.log(`  -> B-Roll real aprovado pelo Quality Gate via ${stockResult.provider}!`);
-            videoClips.push(clipPath);
-            continue;
-          } else {
-            console.warn(`  -> B-Roll rejeitado pelo Quality Gate (${gate.code}): ${gate.reason}. Acionando foto stock...`);
-          }
+      if (stockResult.success && fs.existsSync(clipPath)) {
+        const gate = await validateAssetQuality({ filePath: clipPath, strict: false });
+        if (gate.passed) {
+          console.log(`  -> B-Roll real aprovado pelo Quality Gate via ${stockResult.provider}!`);
+          videoClips.push(clipPath);
+          continue;
+        } else {
+          console.warn(`  -> B-Roll rejeitado pelo Quality Gate (${gate.code}): ${gate.reason}. Acionando foto editorial...`);
         }
       }
+    }
 
-      // 2.2 Tenta Foto Stock de alta resolução se o vídeo não estiver disponível
-      if (!assetForClip) {
-        const photoResult = await fetchAndPrepareStockPhoto({
-          query: contextualQueries[0],
-          candidateQueries: contextualQueries,
-          outputPath: sceneImgPath,
-          pexelsApiKey: effectivePexelsKey,
-          usedPhotoIds: usedStockPhotoIds
-        });
+    // 2.2 Priorização de Fotografia Editorial 1080x1920 (Pexels / Pixabay Photo)
+    // Para modo híbrido (cenas 1..N) ou modo imagem com estética fotográfica/realista
+    const shouldTryStockPhoto = !assetForClip && !isArtisticStyle && effectivePexelsKey;
+    if (shouldTryStockPhoto) {
+      console.log(`  -> [Stock Photo First] Priorizando fotografia editorial 1080x1920 para: "${contextualQueries[0]}"`);
+      const photoResult = await fetchAndPrepareStockPhoto({
+        query: contextualQueries[0],
+        candidateQueries: contextualQueries,
+        outputPath: sceneImgPath,
+        pexelsApiKey: effectivePexelsKey,
+        usedPhotoIds: usedStockPhotoIds
+      });
 
-        if (photoResult.success && fs.existsSync(photoResult.outputPath)) {
-          const gate = await validateAssetQuality({ filePath: photoResult.outputPath, strict: false });
-          if (gate.passed) {
-            assetForClip = photoResult.outputPath;
-            console.log(`  -> Foto contextual 1080x1920 aprovada pelo Quality Gate via ${photoResult.provider}`);
-          }
+      if (photoResult.success && fs.existsSync(photoResult.outputPath)) {
+        const gate = await validateAssetQuality({ filePath: photoResult.outputPath, strict: false });
+        if (gate.passed) {
+          assetForClip = photoResult.outputPath;
+          isAiGenerated = false;
+          console.log(`  -> Foto editorial 1080x1920 aprovada pelo Quality Gate via ${photoResult.provider} (termo: "${photoResult.matchedQuery}")`);
+        } else {
+          console.warn(`  -> Foto rejeitada pelo Quality Gate (${gate.code}): ${gate.reason}. Acionando motor IA...`);
         }
       }
     }
@@ -654,6 +665,7 @@ export async function harvestVisualScenes({
         const gate = await validateAssetQuality({ filePath: generated.outputPath, strict: false });
         if (gate.passed) {
           assetForClip = generated.outputPath;
+          isAiGenerated = true;
           console.log(`  -> Imagem IA pronta e validada via ${generated.provider} (${generated.sizeKb} KB)`);
         } else {
           console.warn(`  -> Imagem IA rejeitada pelo Quality Gate (${gate.code}): ${gate.reason}`);
@@ -676,6 +688,7 @@ export async function harvestVisualScenes({
         const gate = await validateAssetQuality({ filePath: photoResult.outputPath, strict: false });
         if (gate.passed) {
           assetForClip = photoResult.outputPath;
+          isAiGenerated = false;
           console.log(`  -> Foto contextual integrada via ${photoResult.provider} (termo: "${photoResult.matchedQuery}")`);
         }
       }
@@ -723,7 +736,8 @@ export async function harvestVisualScenes({
         motionType: motionType,
         isHookScene: isHook,
         isLastScene: isLast,
-        cinemagraphFX: cinemagraphFX
+        cinemagraphFX: cinemagraphFX,
+        isAiGenerated: isAiGenerated
       });
     } else {
       console.log(`  -> Gerando cena procedural Chiaroscuro de contingência...`);
