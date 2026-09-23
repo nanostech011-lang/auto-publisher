@@ -14,6 +14,7 @@ import { synthesizeVoiceWithTimestamps } from './voice_synthesizer.js';
 import { generateAssSubtitles, generateSrtSubtitles } from './subtitle_generator.js';
 import { alignScenesWithWordBoundaries } from './scene_aligner.js';
 import { planBeatsAndSubTakes } from './beat_planner.js';
+import { generateDynamicStoryboard } from './ai_storyboarder.js';
 import { harvestVisualScenes, createProceduralThumbnail } from './visuals_harvester.js';
 import { composeFinalVideo } from './video_compositor.js';
 import { ingestGeneratedPost } from './publisher_ingestor.js';
@@ -363,9 +364,18 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
     console.log(`  -> Take ${idx + 1}: ${s.startTime.toFixed(2)}s - ${s.endTime.toFixed(2)}s (${s.duration.toFixed(2)}s) ${cutInfo}`);
   });
 
+  console.log('\n>>> [4.2] Storyboarder Cinematográfico: Orquestrando diretrizes visuais e shot-list...');
+  const storyboardScenes = await generateDynamicStoryboard({
+    takes: alignedScenes,
+    channelProfile,
+    visualDirective: options.visualDirective,
+    geminiKey: effectiveGeminiKey,
+    topic: scriptData.title || options.topic
+  });
+
   console.log('\n>>> Gerando cenas visuais 9:16 e thumbnail de alto contraste...');
   const videoClips = await harvestVisualScenes({
-    scenes: alignedScenes,
+    scenes: storyboardScenes,
     scratchDir: scratchDir,
     channelId: options.channel,
     apiKey: effectiveGeminiKey,
@@ -467,16 +477,21 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
   try {
     fs.writeFileSync(path.join(outputDir, 'script.json'), JSON.stringify(scriptData, null, 2), 'utf8');
     fs.writeFileSync(path.join(outputDir, 'scenes.json'), JSON.stringify(alignedScenes, null, 2), 'utf8');
+    fs.writeFileSync(path.join(outputDir, 'storyboard.json'), JSON.stringify(storyboardScenes, null, 2), 'utf8');
 
-    const promptsManifest = alignedScenes.map((s, idx) => ({
+    const promptsManifest = storyboardScenes.map((s, idx) => ({
       takeIndex: idx + 1,
       startTime: s.startTime,
       endTime: s.endTime,
       duration: s.duration,
-      prompt: s.prompt || s.phrase || '',
+      visualIntent: s.visualIntent || '',
+      framing: s.framing || 'medium_shot',
+      stockQueries: s.stockQueries || [],
+      prompt: s.aiPrompt || s.prompt || s.phrase || '',
       visualType: s.visualType || 'image',
       source: s.source || 'ai_generated',
-      motionType: s.motionType || 'zoom_in'
+      motionType: s.motionType || 'zoom_in',
+      cinemagraphFX: s.cinemagraphFX || 'none'
     }));
     fs.writeFileSync(path.join(outputDir, 'prompts.json'), JSON.stringify(promptsManifest, null, 2), 'utf8');
 

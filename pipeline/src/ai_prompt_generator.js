@@ -290,11 +290,11 @@ export function deriveVisualSubjectFromPhrase(phrase, visualDirective = null, st
 
   // 4. Padrão REALISTIC_PHOTO (Documentário 35mm, Kodak Portra 400)
   const photoScenes = [
-    // 0: Olhar focado
+    // 0: Olhar focado e íris com reflexo dourado
     'extreme macro photograph of intense focused human eye iris with vivid amber catchlight, natural skin pores, piercing gaze, 35mm film',
     // 1: Fogueira / lareira com brasas e fumaça
     'macro photograph of glowing embers and dancing flames in a rustic stone hearth, delicate orange sparks floating upward into the dark room, 35mm film',
-    // 2: Cérebro / sinapses em laboratório
+    // 2: Cérebro / sinapses em laboratório (visão macro de filamentos)
     'photograph of illuminated anatomical human brain model in dark laboratory, subtle glowing amber and cyan synapses, documentary style, 35mm film',
     // 3: Bússola e mapa à luz de velas
     'antique brass navigational compass resting on an authentic worn nautical chart, warm glowing candle flame casting deep shadows, dust motes',
@@ -302,19 +302,93 @@ export function deriveVisualSubjectFromPhrase(phrase, visualDirective = null, st
     'two striking human silhouettes in tense psychological standoff across a shadowy room, atmospheric volumetric haze and smoke',
     // 5: Noite estrelada profunda
     'solitary figure gazing at a brilliant clear night sky filled with twinkling stars and Milky Way galaxy over a dark mountain ridge',
-    // 6: Mãos em ação decidida
-    'macro photograph of deliberate mature hands holding antique brass keys and ancient parchment, authentic skin texture and wrinkles',
+    // 6: Mãos amarrando tênis de corrida na madrugada
+    'macro photograph of determined hands tightening laces of running shoes on cold pavement at dawn, 35mm film',
     // 7: Horizonte ao nascer do sol
-    'cinematic documentary photograph of a solitary traveler standing on a rugged mountain peak overlooking sea of clouds at golden sunrise'
+    'cinematic documentary photograph of a solitary traveler standing on a rugged mountain peak overlooking sea of clouds at golden sunrise',
+    // 8: Celular com feed no escuro (doomscrolling)
+    'tired young person lying in dark room with face illuminated by glowing blue smartphone screen light, authentic skin texture, deep shadows',
+    // 9: Notificações luminosas na mesa
+    'extreme macro shot of sleek smartphone on dark rustic desk, glowing with vibrant notification banners and incoming alerts',
+    // 10: Xícara de café preto com fumaça
+    'macro close-up of steaming rich black coffee pouring into a dark ceramic mug, delicate steam rising in morning rim light',
+    // 11: Ampulheta com areia escura
+    'macro shot of vintage brass hourglass with dark fine sand pouring steadily through narrow glass neck, warm rim lighting',
+    // 12: Despertador 5 da manhã
+    'vintage twin-bell alarm clock ringing on wooden nightstand at dawn, resolute hand reaching out to silence it',
+    // 13: Tabuleiro de xadrez com peça em movimento
+    'focused hand carefully advancing a carved wooden chess knight across a dramatic checkered board in high-contrast chiaroscuro',
+    // 14: Leitura de livro pesado na luminária
+    'deliberate hands turning worn parchment pages of an open hardbound book under the warm beam of a library banker lamp',
+    // 15: Caneta-tinteiro escrevendo em diário
+    'macro close-up of a vintage fountain pen nib gliding across textured cream paper, fresh wet black ink catching light',
+    // 16: Água gelada no rosto
+    'close-up of focused human face with cold water droplets glistening on skin in sharp side rim lighting, piercing determined gaze',
+    // 17: Reflexo misterioso no espelho
+    'intense portrait of a resolute individual looking directly into a misty mirror, half-shadows defining facial contours',
+    // 18: Rocha inabalável contra ondas do mar
+    'dramatic shot of foaming dark ocean waves violently crashing against an immovable black basalt cliff rock, ocean spray',
+    // 19: Vela solitária tremulando no vento
+    'macro photograph of a solitary wax candle flame dancing against a slight draft in pitch darkness, warm amber glow on wooden table',
+    // 20: Árvore centenária firme na tempestade
+    'wide cinematic shot of an ancient solitary oak tree standing firm against a violent tempest, heavy wind and dark rain clouds',
+    // 21: Mãos contando maço de dinheiro
+    'deliberate hands methodically counting crisp banknotes over a dark polished wooden table, textured paper details',
+    // 22: Cartão de crédito e carteira de couro
+    'macro shot of hands sliding a dark metal credit card into a handcrafted brown leather wallet, tangible leather stitching',
+    // 23: Arranha-céus ao anoitecer (centro financeiro)
+    'soaring glass skyscrapers of a modern financial center at blue hour, glowing office windows reflecting sunset clouds',
+    // 24: Barras de ouro empilhadas reluzindo
+    'macro photograph of stacked polished 999 pure gold bullion bars with sharp warm specular highlights on obsidian stone',
+    // 25: Atleta batendo magnésio nas mãos (nuvem de pó)
+    'athletic hands clapping white chalk in a dark industrial gym, dramatic cloud of dust particles suspended in side spotlight',
+    // 26: Saco de pancadas de boxe
+    'boxer striking heavy leather punching bag in a shadowed warehouse gym, chalk and sweat particles flying in side spotlight',
+    // 27: Fósforo riscado gerando faíscas
+    'extreme macro of a wooden match head igniting against striker, explosive burst of amber sparks and clean golden flame in pitch black',
+    // 28: Calendário com data circulada em vermelho
+    'macro detail of fountain pen drawing a bold red circle around a specific date on a vintage textured paper calendar',
+    // 29: Mesa de trabalho com café e anotações
+    'solitary desk at night with an open blank notebook, unmoving fountain pen, cold coffee cup, dramatic side lamp shadows',
+    // 30: Labirinto antigo de pedra
+    'high-angle atmospheric view of an ancient weathered stone labyrinth at twilight, misty paths leading toward central sanctuary'
   ];
+
+  if (/\b(celular|smartphone|feed|rolar|tela|notifica[cç])/i.test(p)) {
+    return /\bnotifica[cç]/i.test(p) ? photoScenes[9] : photoScenes[8];
+  }
+  if (/\b(caf[eé]|x[ií]cara|despertar)\b/i.test(p)) return photoScenes[10];
+  if (/\b(tempo|ampulheta|segundos?|minutos?|urg[eê]ncia)\b/i.test(p)) return photoScenes[11];
+  if (/\b(acordar|cedo|alarme|despertador|5\s*horas)\b/i.test(p)) return photoScenes[12];
+  if (/\b(xadrez|estrat[eé]gia|jogada|planejamento)\b/i.test(p)) return photoScenes[13];
+  if (/\b(livro|ler|leitura|p[aá]gina|estudo|estudar)\b/i.test(p)) return photoScenes[14];
+  if (/\b(escrever|caderno|di[aá]rio|anotar|caneta|papel)\b/i.test(p)) return photoScenes[15];
+  if (/\b([aá]gua\s+fria|choque|banho\s+frio|reset|lavar)\b/i.test(p)) return photoScenes[16];
+  if (/\b(espelho|reflexo|voc[eê]\s+mesmo)\b/i.test(p)) return photoScenes[17];
+  if (/\b(rocha|mar|onda|ondas|inabal[aá]vel)\b/i.test(p)) return photoScenes[18];
+  if (/\b(vela|chama\s+no\s+escuro)\b/i.test(p)) return photoScenes[19];
+  if (/\b(tempestade|vento|resistir|suportar)\b/i.test(p)) return photoScenes[20];
+  if (/\b(dinheiro|notas?|c[eé]dulas?|grana|lucro)\b/i.test(p)) return photoScenes[21];
+  if (/\b(carteira|cart[aã]o|gastar|d[ií]vida)\b/i.test(p)) return photoScenes[22];
+  if (/\b(cidade|arranha-c[eé]u|pr[eé]dios?|corporativo)\b/i.test(p)) return photoScenes[23];
+  if (/\b(ouro|barras?\s+de\s+ouro|riqueza|patrim[oô]nio)\b/i.test(p)) return photoScenes[24];
+  if (/\b(treino|academia|barra|ferro|muscula[cç][aã]o)\b/i.test(p)) return photoScenes[25];
+  if (/\b(boxe|soco|luta|bater|impacto)\b/i.test(p)) return photoScenes[26];
+  if (/\b(f[oó]sforo|fa[ií]sca|igni[cç][aã]o)\b/i.test(p)) return photoScenes[27];
+  if (/\b(prazo|meta|calend[aá]rio|data)\b/i.test(p)) return photoScenes[28];
+  if (/\b(procrastina|adiar|pregui[cç]a|mesa)\b/i.test(p)) return photoScenes[29];
+  if (/\b(labirinto|caminho\s+dif[ií]cil|perdido)\b/i.test(p)) return photoScenes[30];
 
   if (/\b(olho|olhos|olhar|contato\s+visual)\b/i.test(p)) return photoScenes[0];
   if (/\b(fogo|fogueira|brasa|brasas|chama|chamas)\b/i.test(p)) return photoScenes[1];
-  if (/\b(c[eé]rebro|mente|mentes|am[ií]gdala|sinapse|sinapses)\b/i.test(p)) return photoScenes[2];
+  if (/\b(c[eé]rebro|mente|mentes|am[ií]gdala|sinapse|sinapses|neuroci[eê]ncia)\b/i.test(p)) {
+    const mindVariations = [photoScenes[2], photoScenes[14], photoScenes[13], photoScenes[0], photoScenes[16]];
+    return mindVariations[idx % mindVariations.length];
+  }
   if (/\b(volante|b[uú]ssola|mapa)\b/i.test(p)) return photoScenes[3];
   if (/\b(sil[eê]ncio|duas\s+mentes|confronto|impasse)\b/i.test(p)) return photoScenes[4];
   if (/\b(estrela|estrelas|noite|lua|c[eé]u)\b/i.test(p)) return photoScenes[5];
-  if (/\b(m[aã]o|m[aã]os|hack|pr[aá]tica|agir)\b/i.test(p)) return photoScenes[6];
+  if (/\b(m[aã]o|m[aã]os|hack|pr[aá]tica|agir|t[eê]nis)\b/i.test(p)) return photoScenes[6];
   if (/\b(siga|vit[oó]ria|topo|alvorecer|amanhecer)\b/i.test(p)) return photoScenes[7];
 
   return photoScenes[idx % photoScenes.length];

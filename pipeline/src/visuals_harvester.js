@@ -483,8 +483,8 @@ export async function harvestVisualScenes({
 
     let assetForClip = null;
 
-    // Garantia estrita de não-repetição de prompts
-    let scenePrompt = scene.prompt;
+    // Garantia estrita de não-repetição de prompts com prioridade para o AI Storyboarder
+    let scenePrompt = scene.aiPrompt || scene.prompt;
     if (scenePrompt && usedPrompts.has(scenePrompt)) {
       scenePrompt = `${scenePrompt}, unique composition variation angle #${i + 1}, distinct perspective`;
     }
@@ -515,6 +515,9 @@ export async function harvestVisualScenes({
     lastCinemagraphFX = cinemagraphFX;
 
     console.log(`Cena ${i + 1}/${scenes.length} (${scene.duration}s) [Motion: ${motionType} | Cinemagraph: ${cinemagraphFX}]:`);
+    if (scene.visualIntent) {
+      console.log(`  -> Intenção Visual: "${scene.visualIntent}"`);
+    }
     if (scenePrompt) {
       console.log(`  -> Prompt Base: "${scenePrompt.slice(0, 85)}..."`);
     }

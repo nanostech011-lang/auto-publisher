@@ -103,6 +103,8 @@ export function planBeatsAndSubTakes({
 
       for (let s = 0; s < subTakeCount; s++) {
         const nextMotion = MOTION_VARIATIONS[(motionCursor++) % MOTION_VARIATIONS.length];
+        const subFraming = s === 0 ? 'medium_shot' : (s === 1 ? 'close_up' : 'extreme_close_up');
+        const subAngle = s === 0 ? 'straight_on' : (s === 1 ? 'side_profile' : 'dynamic_angle');
         plannedScenes.push({
           ...scene,
           id: `${scene.id || i + 1}_take_${s + 1}`,
@@ -113,6 +115,8 @@ export function planBeatsAndSubTakes({
           phrase: phraseParts[s] || scene.phrase || '',
           duration: Number(subDuration.toFixed(2)),
           motionType: nextMotion,
+          framing: subFraming,
+          angleVariation: subAngle,
           visualZoom: s === 0 ? 1.0 : (s === 1 ? 1.15 : 1.08),
           cropVariation: s % 2 === 0 ? 'center' : 'slight_pan'
         });

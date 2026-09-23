@@ -129,6 +129,15 @@ export function buildSmartContextualQueries({ scene = {}, phrase = '', visualDir
   const text = (phrase || scene.phrase || '').toLowerCase();
   const directive = (visualDirective || scene.visualDirective || '').trim();
 
+  // 0. Prioridade Absoluta: Queries concretas geradas pelo AI Storyboarder para este take
+  if (Array.isArray(scene.stockQueries) && scene.stockQueries.length > 0) {
+    for (const sq of scene.stockQueries) {
+      if (typeof sq === 'string' && sq.trim().length > 2) {
+        queries.push(sq.trim());
+      }
+    }
+  }
+
   // 1. Prioridade máxima: Diretriz visual customizada informada pelo usuário (ex: Guerreiros Persas, Anime, Cyberpunk)
   if (directive) {
     const cleanDir = directive.toLowerCase();
