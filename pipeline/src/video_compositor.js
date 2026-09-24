@@ -161,14 +161,14 @@ export async function composeFinalVideo({
         `[2:a]aformat=channel_layouts=stereo:sample_rates=48000,volume=${bgMusicVol},afade=t=out:st=${fadeOutStart}:d=${fadeOutSec}[bg_raw]`,
         // P4.4: Ducking automático via sidechain (voz abaixa a música em tempo real)
         `[bg_raw][voice_key]sidechaincompress=threshold=0.04:ratio=4:attack=20:release=250[bg_ducked]`,
-        // P4.3: Mixagem sem atenuação desnecessária com ducking
-        `[voice_play][bg_ducked]amix=inputs=2:duration=first:dropout_transition=2[mixed_raw]`,
-        // Masterização EBU R128 no mix final completo
-        `[mixed_raw]loudnorm=I=${targetLufs}:TP=-1.5:LRA=9:linear=true,aformat=channel_layouts=stereo:sample_rates=48000[a_out]`
+        // P4.3: Mixagem com cauda natural de música até o corte de vídeo
+        `[voice_play][bg_ducked]amix=inputs=2:duration=longest:dropout_transition=2[mixed_raw]`,
+        // Masterização EBU R128 no mix final completo e pad de áudio para sincronia milimétrica A/V
+        `[mixed_raw]loudnorm=I=${targetLufs}:TP=-1.5:LRA=9:linear=true,apad=whole_dur=${totalDurationSeconds},aformat=channel_layouts=stereo:sample_rates=48000[a_out]`
       );
     } else {
       complexFilters.push(
-        `[1:a]highpass=f=80,acompressor=threshold=0.08:ratio=3:attack=15:release=150,loudnorm=I=${targetLufs}:TP=-1.5:LRA=9:linear=true,aformat=channel_layouts=stereo:sample_rates=48000[a_out]`
+        `[1:a]highpass=f=80,acompressor=threshold=0.08:ratio=3:attack=15:release=150,loudnorm=I=${targetLufs}:TP=-1.5:LRA=9:linear=true,apad=whole_dur=${totalDurationSeconds},aformat=channel_layouts=stereo:sample_rates=48000[a_out]`
       );
     }
 

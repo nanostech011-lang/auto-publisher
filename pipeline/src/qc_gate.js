@@ -209,15 +209,15 @@ export async function runQualityControlGate({
     if (den) fps = num / den;
   }
 
-  // QC-1: Duração (mínimo 60.0s para monetização TikTok Rewards / Shorts)
-  const targetDuration = channelConfig.format?.target_duration_seconds || 65;
-  const minDuration = 59.5;
-  const qc1Passed = durationSec >= minDuration;
+  // QC-1: Duração (mínimo 15s para Shorts/Reels; 59.5s para canais com meta de monetização TikTok Rewards)
+  const isRewardsTarget = (channelConfig.format?.target_duration_seconds || 65) >= 59.5 && (!scriptData?.wordCount || scriptData?.wordCount >= 130);
+  const minDuration = isRewardsTarget ? 59.5 : 15.0;
+  const qc1Passed = durationSec >= minDuration && durationSec <= 185.0;
   checks['QC-1_Duration'] = {
     name: 'Duração para Monetização',
     passed: qc1Passed,
     measured: Number(durationSec.toFixed(2)),
-    threshold: `>= ${minDuration}s`,
+    threshold: isRewardsTarget ? `>= ${minDuration}s (TikTok Rewards)` : `>= 15.0s (Shorts/Reels)`,
     message: qc1Passed ? `Duração OK: ${durationSec.toFixed(2)}s` : `Duração insuficiente: ${durationSec.toFixed(2)}s < ${minDuration}s`
   };
   if (!qc1Passed) overallPassed = false;

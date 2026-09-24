@@ -340,10 +340,10 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
   // 4. Coleta / Geração dos Cortes Visuais (9:16) e Thumbnail
   console.log('\n>>> [4/6] Calibrando sincronização fonética e densidade de cortes (Beat Planner)...');
   const rawAudioDuration = Number(voiceResult.durationSeconds) || 0;
-  // Duração alvo estritamente sincronizada com a locução (+ 0.35s de respiro final natural)
+  // Duração alvo estritamente sincronizada com a locução (+ 0.15s de respiro final natural)
   // Elimina a cauda ociosa onde o vídeo continuava tocando após a mensagem ter terminado
   const targetDurationSeconds = rawAudioDuration > 0
-    ? Number((rawAudioDuration + 0.35).toFixed(2))
+    ? Number((rawAudioDuration + 0.15).toFixed(2))
     : (channelProfile?.format?.target_duration_seconds || 60.0);
 
   // 4.1 Subdivide beats longos para cumprir a densidade cinematográfica (2 a 4 segundos por take)
