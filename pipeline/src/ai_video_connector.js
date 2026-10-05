@@ -247,7 +247,7 @@ export async function generateCinematicTake({
     }
 
     if (veoResult.error) {
-      console.log(`  [AI Video] Google Veo indisponível: ${veoResult.error}`);
+      console.log(`  [AI Video] Google Veo indisponível (${veoResult.error}). Alternando para motor visual Pexels/Motion Engine...`);
     }
 
   }

@@ -385,6 +385,20 @@ public class DashboardApiController {
         return ResponseEntity.ok(flowResult);
     }
 
+    @GetMapping("/pipeline/flow-clips-status")
+    public ResponseEntity<?> getFlowClipsStatus(
+            @RequestHeader(value = "X-API-KEY", required = false) String providedHeaderKey,
+            @RequestParam(value = "api_key", required = false) String providedQueryKey
+    ) {
+        if (isUnauthorized(providedHeaderKey, providedQueryKey)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Unauthorized: Invalid or missing X-API-KEY"));
+        }
+
+        Map<String, Object> status = aiPipelineService.getFlowClipsStatus();
+        return ResponseEntity.ok(status);
+    }
+
     @PostMapping("/pipeline/run")
     public ResponseEntity<?> runPipeline(
             @RequestBody PipelineRunRequest request,

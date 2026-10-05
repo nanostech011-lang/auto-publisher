@@ -62,63 +62,66 @@ function selectHookFormula(channelNiche = '') {
 /**
  * Constrói o prompt de instrução para o Gemini Flash gerar o roteiro viral.
  */
-function buildGeminiScriptPrompt(topic, channelProfile, hookFormula) {
+function buildGeminiScriptPrompt(topic, channelProfile, hookFormula, visualDirective = null) {
   const channel = channelProfile || {};
   const niche = channel.niche || 'Desenvolvimento Pessoal e Psicologia';
-  const tone = channel.script_profile?.tone || 'Analítico, misterioso, confiante e direto';
-  const targetWords = channel.script_profile?.target_words_max || 160;
+  const tone = channel.script_profile?.tone || 'Conversacional, magnético, empático e direto';
+  const targetWords = channel.script_profile?.target_words_max || 165;
   const aesthetic = channel.visual_profile?.aesthetic || 'Dark Minimalist Chiaroscuro';
-  const channelName = channel.name || '@canal';
+  const channelName = channel.name || channel.channelName || '@canal';
   const cta = channel.publishing_profile?.affiliate_cta?.description_template || '';
 
-  return `Você é um especialista em copywriting viral para vídeos faceless de redes sociais.
+  return `Você é um Diretor Criativo e Roteirista Sênior especialista em vídeos virais falados para redes sociais (YouTube Shorts, TikTok e Instagram Reels).
 
-Crie um roteiro COMPLETO de locução para um vídeo Short/Reels/TikTok sobre o tema: "${topic}"
+Crie um roteiro COMPLETO de locução oral para um vídeo vertical sobre o tema: "${topic}"
 
 CANAL: ${channelName}
 NICHO: ${niche}
-TOM: ${tone}
-ESTÉTICA VISUAL: ${aesthetic}
-META DE PALAVRAS: ${targetWords} palavras (para ~65 segundos de locução a 140 WPM)
+TOM DE VOZ: ${tone} (fala humana autêntica, envolvente e magnética)
+ESTÉTICA VISUAL BASE: ${aesthetic}
+${visualDirective ? `DIRETRIZ VISUAL ESPECÍFICA SOLICITADA NO PAINEL: "${visualDirective}". Todas as cenas e prompts DEVEM incorporar estritamente essa estética visual!` : ''}
 
-FÓRMULA DE GANCHO OBRIGATÓRIA: ${hookFormula.id.toUpperCase()}
+META DE DURAÇÃO & PALAVRAS (PROGRAMA DE RECOMPENSAS DO TIKTOK ≥ 60s):
+- Meta de palavras: entre 145 e 165 palavras faladas (para exatamente 62 a 66 segundos de fala a ~135 WPM).
+- DURAÇÃO MANDATÓRIA: o vídeo DEVE ter no mínimo 60 segundos de fala contínua para monetização.
+
+FÓRMULA DE GANCHO: ${hookFormula.id.toUpperCase()}
 Descrição: ${hookFormula.description}
-Exemplo de referência: "${hookFormula.example}"
+Referência de impacto: "${hookFormula.example}"
 
-ESTRUTURA OBRIGATÓRIA DO ROTEIRO:
-1. GANCHO (0-3s | ~15 palavras): Pattern Interrupt com a fórmula "${hookFormula.id}". Deve parar o scroll imediatamente.
-2. DESENVOLVIMENTO (3-45s | ~100 palavras): Revela o mecanismo/segredo com linguagem acessível. Use dados científicos, exemplos concretos ou storytelling. Construa tensão crescente.
-3. HACK PRÁTICO (45-58s | ~25 palavras): Uma ação específica e imediata que o espectador pode aplicar HOJE. Simples, direta.
-4. CTA (58-65s | ~20 palavras): Chamada para seguir + comentar + link no perfil. Use urgência e ancoragem social.
+ESTRUTURA DE RETENÇÃO EM 4 BLOCOS:
+1. GANCHO (0-3s | ~12 a 16 palavras): Frase falada de alto impacto que para o scroll nos primeiros 3 segundos usando a fórmula "${hookFormula.id}".
+2. DESENVOLVIMENTO & FOCO CENTRAL (3-45s | ~90 a 105 palavras): Explica a lógica ou mecanismo de forma clara, fascinante e com narrativa fluida. Cada frase deve manter o espectador curioso pela próxima (open loops).
+3. HACK PRÁTICO (45-58s | ~25 a 35 palavras): Uma ação específica, direta e aplicável imediatamente na rotina do espectador.
+4. CTA & ENCERRAMENTO (58-65s | ~15 a 20 palavras): Chamada carismática para seguir ${channelName}, curtir, comentar e conferir o link fixado.
 
-REGRAS DE OURO:
-- Escreva APENAS o texto falado (narração). Sem títulos, sem marcadores, sem metadados.
-- Use linguagem coloquial mas inteligente — como se fosse um amigo especialista.
-- Cada frase deve criar curiosidade pela próxima (open loop).
-- Mencione ${channelName} apenas uma vez, no CTA final.
-- NÃO use clichês: "incrível", "épico", "simplesmente", "literalmente".
-- O texto deve soar natural em locução de voz neural.
-- Total: entre 140 e ${targetWords} palavras.
+DIRETRIZES DE LINGUAGEM E NATURALIDADE DA FALA (MANDATÓRIO):
+- Linguagem em Português do Brasil (PT-BR) falado autêntico, fluido e natural — exatamente como um criador experiente e carismático conversando cara a cara com o público.
+- Use pontuação expressiva com vírgulas e pontos bem posicionados para garantir respiração e ritmo cadenciado na síntese de voz neural.
+- NÃO use linguagem artificial, jargões pomposos ou traduções mecânicas.
+- NÃO inclua no texto da narração rubricas, marcadores como "(Gancho:)", "[Cena 1]" ou títulos de blocos. A narração deve conter APENAS as palavras que o narrador fala em voz alta.
+- Mencione ${channelName} no encerramento de forma natural e convidativa.
+- Total de palavras: rigorosamente entre 145 e ${targetWords} palavras.
 
 TAMBÉM FORNEÇA, após o roteiro, em formato JSON separado por "---JSON---":
 {
-  "title": "Título impactante com no máximo 80 caracteres + #Shorts",
+  "title": "Título magnético com no máximo 80 caracteres + #Shorts",
   "hook_phrase": "A frase exata do gancho (primeiras 2-3 palavras)",
   "scenes": [
     {
       "id": 1,
       "duration": 5,
       "phrase": "Trecho exato da narração desta cena",
-      "prompt": "Visual cinematográfico em inglês para geração de imagem AI, 9:16, ${aesthetic.toLowerCase()}",
+      "prompt": "Visual cinematográfico em inglês para geração de imagem AI, 9:16, ${visualDirective ? visualDirective + ', ' : ''}${aesthetic.toLowerCase()}, 8k resolution, cinematic lighting",
       "keywords": ["keyword1", "keyword2", "keyword3"]
     }
   ],
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"]
 }
 
-As "scenes" devem ter 5 a 7 entradas, cobrindo do início ao fim do roteiro.
-As durações devem somar ~65 segundos.
-Os "prompts" das scenes devem ser em inglês cinematográfico e incluir estilo visual ${aesthetic}.`;
+As "scenes" devem ter 5 a 7 tomadas sequenciais, cobrindo do início ao fim da narração.
+As durações das cenas devem somar ~64 a 66 segundos.
+Os prompts das cenas DEVEM ser em inglês cinematográfico, em proporção 9:16 vertical, respeitando a estética ${visualDirective ? `"${visualDirective}"` : `"${aesthetic}"`}.`;
 }
 
 /**
@@ -292,7 +295,7 @@ export async function generateViralScriptWithGemini({
   const hookFormula = selectHookFormula(channelProfile?.niche || '');
   console.log(`[Gemini Script] Fórmula de gancho selecionada: ${hookFormula.id.toUpperCase()}`);
 
-  const prompt = buildGeminiScriptPrompt(topic, channelProfile, hookFormula);
+  const prompt = buildGeminiScriptPrompt(topic, channelProfile, hookFormula, visualDirective);
   const rawResponse = await callGeminiFlash(prompt, effectiveKey);
 
   if (!rawResponse) {

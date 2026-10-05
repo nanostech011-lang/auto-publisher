@@ -172,6 +172,45 @@ export function loadChannelProfile(channelId = 'custom') {
   };
 }
 
+export function splitNarrationIntoBlocks(fullText) {
+  if (!fullText || !fullText.trim()) {
+    return [
+      { title: 'Gancho (0-3s)', text: '' },
+      { title: 'Foco Central (3-45s)', text: '' },
+      { title: 'Hack Prático (45-58s)', text: '' },
+      { title: 'CTA & Retenção (58-65s)', text: '' }
+    ];
+  }
+  const clean = fullText.trim();
+  const sentences = clean.match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g) || [clean];
+  const trimmed = sentences.map(s => s.trim()).filter(Boolean);
+
+  if (trimmed.length <= 3) {
+    const words = clean.split(/\s+/);
+    const q1 = Math.max(1, Math.floor(words.length * 0.15));
+    const q2 = Math.max(q1 + 1, Math.floor(words.length * 0.65));
+    const q3 = Math.max(q2 + 1, Math.floor(words.length * 0.85));
+    return [
+      { title: 'Gancho (0-3s)', text: words.slice(0, q1).join(' ') },
+      { title: 'Foco Central (3-45s)', text: words.slice(q1, q2).join(' ') },
+      { title: 'Hack Prático (45-58s)', text: words.slice(q2, q3).join(' ') },
+      { title: 'CTA & Retenção (58-65s)', text: words.slice(q3).join(' ') }
+    ];
+  }
+
+  const n = trimmed.length;
+  const hookEnd = Math.max(1, Math.floor(n * 0.22));
+  const scienceEnd = Math.max(hookEnd + 1, Math.floor(n * 0.65));
+  const hackEnd = Math.max(scienceEnd + 1, Math.floor(n * 0.85));
+
+  return [
+    { title: 'Gancho (0-3s)', text: trimmed.slice(0, hookEnd).join(' ') },
+    { title: 'Foco Central (3-45s)', text: trimmed.slice(hookEnd, scienceEnd).join(' ') },
+    { title: 'Hack Prático (45-58s)', text: trimmed.slice(scienceEnd, hackEnd).join(' ') },
+    { title: 'CTA & Retenção (58-65s)', text: trimmed.slice(hackEnd).join(' ') }
+  ];
+}
+
 /**
  * Gera ou recupera um roteiro estruturado calibrado (suporta YouTube, Tema, Catálogo ou Roteiro Direto do Dashboard)
  */
@@ -190,7 +229,31 @@ export async function generateScript({
   const channel = customProfile || loadChannelProfile(channelId);
   const effectiveGeminiKey = geminiKey || process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY;
 
-  // 0. Se foi fornecido roteiro de locução direto do dashboard (customNarration)
+  // 1. Se foi fornecido um Link do YouTube (sourceUrl), aciona prioritariamente o analisador de conteúdo
+  if (sourceUrl && (sourceUrl.includes('youtube.com') || sourceUrl.includes('youtu.be') || /^[a-zA-Z0-9_-]{11}$/.test(sourceUrl.trim()))) {
+    console.log(`[Script Generator] 🎬 Origem do conteúdo: YouTube (${sourceUrl}). Executando extração e adaptação com Agente IA...`);
+    const ytScript = await analyzeAndAdaptYouTubeVideo({ url: sourceUrl, channelProfile: channel, visualDirective, geminiKey: effectiveGeminiKey });
+    if (ytScript && ytScript.narrationText) {
+      // Se o usuário customizou a narração, o título ou o comentário no formulário, sua edição tem precedência absoluta
+      if (customNarration && customNarration.trim().length > 30) {
+        ytScript.narrationText = customNarration.trim();
+        ytScript.wordCount = ytScript.narrationText.split(/\s+/).length;
+        ytScript.estimatedDurationSeconds = Math.max(60, Math.round((ytScript.wordCount / 135) * 60));
+        ytScript.blocks = splitNarrationIntoBlocks(ytScript.narrationText);
+      }
+      if (customTitle && customTitle.trim()) {
+        ytScript.title = customTitle.trim();
+        if (ytScript.metadata) ytScript.metadata.title = customTitle.trim();
+      }
+      if (customComment && customComment.trim()) {
+        if (!ytScript.metadata) ytScript.metadata = {};
+        ytScript.metadata.firstComment = customComment.trim();
+      }
+      return ytScript;
+    }
+  }
+
+  // 2. Se foi fornecido roteiro de locução direto e editado do dashboard (customNarration)
   if (customNarration && customNarration.trim().length > 30) {
     const fullNarration = customNarration.trim();
     const words = fullNarration.split(/\s+/);
@@ -201,14 +264,7 @@ export async function generateScript({
     const tags = pubProfile.default_tags || ['shorts', 'viral', channel.channel_id || 'custom'];
     const ctaProfile = pubProfile.affiliate_cta || {};
 
-    const q1 = Math.floor(fullNarration.length * 0.15);
-    const q2 = Math.floor(fullNarration.length * 0.65);
-    const q3 = Math.floor(fullNarration.length * 0.85);
-
-    const hookText = fullNarration.slice(0, q1);
-    const scienceText = fullNarration.slice(q1, q2);
-    const hackText = fullNarration.slice(q2, q3);
-    const ctaText = fullNarration.slice(q3);
+    const cleanBlocks = splitNarrationIntoBlocks(fullNarration);
 
     const scenes = await generateThematicScenes(
       topic || finalTitle,
@@ -229,12 +285,7 @@ export async function generateScript({
       wordCount,
       estimatedDurationSeconds: durSec,
       rewardsEligible: durSec >= 60,
-      blocks: [
-        { title: 'Gancho (0-3s)', text: hookText },
-        { title: 'Foco Central (3-45s)', text: scienceText },
-        { title: 'Hack Prático (45-58s)', text: hackText },
-        { title: 'CTA & Retenção (58-65s)', text: ctaText }
-      ],
+      blocks: cleanBlocks,
       scenes,
       metadata: {
         title: finalTitle,
@@ -248,39 +299,15 @@ export async function generateScript({
     };
   }
 
-  // 1. Se foi fornecido um Link do YouTube, aciona o analisador de conteúdo
-  if (sourceUrl && (sourceUrl.includes('youtube.com') || sourceUrl.includes('youtu.be'))) {
-    return await analyzeAndAdaptYouTubeVideo({ url: sourceUrl, channelProfile: channel, visualDirective, geminiKey: effectiveGeminiKey });
-  }
-
-  // 2. Se for busca por tema livre ou catálogo
-  let selectedScript = null;
-
-  if (topic) {
-    selectedScript = VALIDATED_SCRIPTS_CATALOG.find(s =>
-      s.topic.toLowerCase().includes(topic.toLowerCase()) ||
-      s.title.toLowerCase().includes(topic.toLowerCase())
-    );
-  }
-
-  if (!selectedScript) {
-    const matchingChannelScripts = VALIDATED_SCRIPTS_CATALOG.filter(s => s.channelId === channelId);
-    if (matchingChannelScripts.length > 0) {
-      const idx = Math.abs(scriptIndex) % matchingChannelScripts.length;
-      selectedScript = matchingChannelScripts[idx];
-    } else {
-      const idx = Math.abs(scriptIndex) % VALIDATED_SCRIPTS_CATALOG.length;
-      selectedScript = VALIDATED_SCRIPTS_CATALOG[idx];
-    }
-  }
-
-  // Se o usuário digitou um tema livre personalizado sem correspondência exata no catálogo
-  if (topic && (!selectedScript || !selectedScript.topic.toLowerCase().includes(topic.toLowerCase()))) {
-    // PRIORIDADE 1: Tentar gerar roteiro viral com Gemini Flash
+  // 2. Se for informado um Tema Livre (topic), SEMPRE gera conteúdo sob demanda com IA para o tema!
+  // NUNCA desvia nem sequestra para o catálogo estático!
+  if (topic && topic.trim().length > 0) {
+    const cleanTopic = topic.trim();
+    // PRIORIDADE 1: Tentar gerar roteiro viral autêntico com Gemini Flash
     if (effectiveGeminiKey) {
-      console.log(`[Script Generator] Solicitando roteiro viral ao Gemini Flash para: "${topic}"...`);
+      console.log(`[Script Generator] Solicitando roteiro viral ao Gemini Flash para tema livre: "${cleanTopic}"...`);
       const geminiScript = await generateViralScriptWithGemini({
-        topic,
+        topic: cleanTopic,
         channelProfile: channel,
         apiKey: effectiveGeminiKey,
         visualDirective
@@ -291,20 +318,22 @@ export async function generateScript({
         return geminiScript;
       }
 
-      console.log('[Script Generator] Gemini não retornou roteiro válido — usando template local.');
+      console.log('[Script Generator] Gemini offline ou sem resposta válida — gerando via motor dinâmico local.');
     }
+
     const truncateWords = (str, maxLen) => {
       if (!str || str.length <= maxLen) return str || '';
       const sliced = str.slice(0, maxLen);
       const lastSpace = sliced.lastIndexOf(' ');
       return lastSpace > 0 ? sliced.slice(0, lastSpace) : sliced;
     };
-    const customTitle = `${truncateWords(topic, 50)} #Shorts`;
-    const hook = `Se você busca dominar ${truncateWords(topic, 35)} com verdadeira maestria, existe um princípio silencioso que poucos têm a coragem de praticar no dia a dia.`;
+    const customTitle = `${truncateWords(cleanTopic, 50)} #Shorts`;
+    const channelName = channel.name || `@${channelId}`;
+    const hook = `Se você busca dominar ${truncateWords(cleanTopic, 35)} com verdadeira maestria, existe um princípio silencioso que poucos têm a coragem de praticar no dia a dia.`;
     const core1 = `A maioria das pessoas falha constantemente porque tenta buscar respostas fáceis e atalhos superficiais. Elas reagem a cada estímulo externo, esquecendo que o verdadeiro domínio nasce da calma interior e do controle rigoroso da própria atenção.`;
     const core2 = `Quando você aprende a silenciar o ruído ao seu redor e constrói seus alicerces passo a passo, cada pequena decisão ganha um peso colossal através do efeito composto. Não é sobre pressa desordenada, é sobre direção clara e disciplina constante.`;
     const hack = `A partir de hoje, aplique a regra de ouro da clareza absoluta: descarte qualquer distração irrelevante, proteja a sua serenidade como seu bem mais precioso e aja com firmeza serena.`;
-    const cta = `Deixe seu like se essa reflexão fortaleceu sua mente, inscreva-se no canal para dominar sua jornada e comente abaixo qual o seu maior desafio.`;
+    const cta = `Deixe seu like se essa reflexão fortaleceu sua mente, inscreva-se no ${channelName} para dominar sua jornada e comente abaixo qual o seu maior desafio.`;
 
     const fullNarration = `${hook} ${core1} ${core2} ${hack} ${cta}`;
     const wordCount = fullNarration.trim().split(/\s+/).length;
@@ -319,49 +348,65 @@ export async function generateScript({
       tags
     });
 
-      const customResult = {
-        channelId: channel.channel_id || channelId,
-        channelName: channel.name || `@${channelId}`,
-        scriptId: `custom_${Date.now()}`,
-        topic,
+    const customResult = {
+      channelId: channel.channel_id || channelId,
+      channelName: channelName,
+      scriptId: `custom_${Date.now()}`,
+      topic: cleanTopic,
+      title: customTitle,
+      narrationText: fullNarration,
+      wordCount,
+      estimatedDurationSeconds: Math.round((wordCount / 135) * 60),
+      rewardsEligible: true,
+      blocks: [
+        { title: 'Gancho (0-3s)', text: hook },
+        { title: 'Foco Central (3-45s)', text: `${core1} ${core2}` },
+        { title: 'Hack Prático (45-58s)', text: hack },
+        { title: 'CTA & Retenção (58-65s)', text: cta }
+      ],
+      scenes: await generateThematicScenes(cleanTopic, `${core1} ${core2}`, channel.visual_profile?.aesthetic, visualDirective, fullNarration, effectiveGeminiKey),
+      metadata: {
         title: customTitle,
-        narrationText: fullNarration,
-        wordCount,
-        estimatedDurationSeconds: Math.round((wordCount / 135) * 60),
-        rewardsEligible: true,
-        blocks: [
-          { title: 'Gancho (0-3s)', text: hook },
-          { title: 'Foco Central (3-45s)', text: `${core1} ${core2}` },
-          { title: 'Hack Prático (45-58s)', text: hack },
-          { title: 'CTA & Retenção (58-65s)', text: cta }
-        ],
-        scenes: await generateThematicScenes(topic, `${core1} ${core2}`, channel.visual_profile?.aesthetic, visualDirective, fullNarration, effectiveGeminiKey),
-        metadata: {
-          title: customTitle,
-          description: formattedDesc,
-          tags: tags.map(t => t.replace(/\s+/g, '')).join(', '),
-          categoryId: pubProfile.youtube_category_id || 24,
-          madeForKids: pubProfile.made_for_kids || false,
-          privacy: pubProfile.privacy || 'PUBLIC',
-          firstComment: ctaProfile.first_comment || 'Deixe seu comentário e siga o canal!'
-        }
-      };
+        description: formattedDesc,
+        tags: tags.map(t => t.replace(/\s+/g, '')).join(', '),
+        categoryId: pubProfile.youtube_category_id || 24,
+        madeForKids: pubProfile.made_for_kids || false,
+        privacy: pubProfile.privacy || 'PUBLIC',
+        firstComment: ctaProfile.first_comment || 'Deixe seu comentário e siga o canal!'
+      }
+    };
 
-      globalScriptLedger.recordScript({
-        id: customResult.scriptId,
-        channelId: customResult.channelId,
-        topic: customResult.topic,
-        title: customResult.title,
-        narrationText: customResult.narrationText
-      });
+    globalScriptLedger.recordScript({
+      id: customResult.scriptId,
+      channelId: customResult.channelId,
+      topic: customResult.topic,
+      title: customResult.title,
+      narrationText: customResult.narrationText
+    });
 
-      return customResult;
-    }
+    return customResult;
+  }
+
+  // 3. Modo Catálogo: Seleciona roteiro pré-calibrado do catálogo pelo scriptIndex
+  let selectedScript = null;
+  const matchingChannelScripts = VALIDATED_SCRIPTS_CATALOG.filter(s => s.channelId === channelId);
+  if (matchingChannelScripts.length > 0) {
+    const idx = Math.abs(scriptIndex) % matchingChannelScripts.length;
+    selectedScript = matchingChannelScripts[idx];
+  } else {
+    const idx = Math.abs(scriptIndex) % VALIDATED_SCRIPTS_CATALOG.length;
+    selectedScript = VALIDATED_SCRIPTS_CATALOG[idx];
+  }
 
   let narrationText = selectedScript.narrationText;
-  if (channel.name && channel.name !== '@psicosegredo') {
-    narrationText = narrationText.replace(/Siga o Psicosegredo/gi, `Siga ${channel.name}`);
-    narrationText = narrationText.replace(/o Psicosegredo/gi, channel.name);
+  if (channel.name) {
+    narrationText = narrationText
+      .replace(/Siga o Psicosegredo/gi, `Siga ${channel.name}`)
+      .replace(/o Psicosegredo/gi, channel.name)
+      .replace(/Siga a Filosofia Estoica/gi, `Siga ${channel.name}`)
+      .replace(/a Filosofia Estoica/gi, channel.name)
+      .replace(/Siga a Mente Milionária/gi, `Siga ${channel.name}`)
+      .replace(/a Mente Milionária/gi, channel.name);
   }
 
   const wordCount = narrationText.trim().split(/\s+/).length;
@@ -386,21 +431,16 @@ export async function generateScript({
     wordCount,
     estimatedDurationSeconds: Math.round((wordCount / 135) * 60),
     rewardsEligible: Math.round((wordCount / 135) * 60) >= 60,
-    blocks: [
-      { title: 'Gancho (0-3s)', text: narrationText.slice(0, 100) },
-      { title: 'Foco Central (3-45s)', text: narrationText.slice(100, 350) },
-      { title: 'Hack Prático (45-58s)', text: narrationText.slice(350, 500) },
-      { title: 'CTA & Retenção (58-65s)', text: narrationText.slice(500) }
-    ],
+    blocks: splitNarrationIntoBlocks(narrationText),
     scenes: (visualDirective && visualDirective.trim().length > 0) ? await generateThematicScenes(selectedScript.topic, selectedScript.title, channel.visual_profile?.aesthetic, visualDirective, narrationText, effectiveGeminiKey) : selectedScript.scenes,
     metadata: {
-      title: selectedScript.title,
+      title: customTitle || selectedScript.title,
       description,
       tags: tags.map(t => t.replace(/\s+/g, '')).join(', '),
       categoryId: pubProfile.youtube_category_id || 24,
       madeForKids: pubProfile.made_for_kids || false,
       privacy: pubProfile.privacy || 'PUBLIC',
-      firstComment
+      firstComment: customComment || firstComment
     }
   };
 

@@ -201,19 +201,19 @@
                 <!-- Seletor de Plataforma Destino -->
                 <div class="flex items-center gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800 self-stretch md:self-auto justify-center">
                     <label class="flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer transition-all hover:bg-slate-800/80 text-xs font-semibold has-[:checked]:bg-red-950/70 has-[:checked]:text-white has-[:checked]:border has-[:checked]:border-red-600/80 border border-transparent">
-                        <input type="radio" name="studioPlatformRadio" value="YOUTUBE_SHORTS" checked onchange="updateStudioFooterSummary()" class="hidden">
+                        <input type="radio" name="studioPlatformRadio" value="YOUTUBE_SHORTS" checked onchange="updateStudioFooterSummary(); onStudioPlatformChange(this.value)" class="hidden">
                         <i class="fa-brands fa-youtube text-red-500 text-sm"></i>
                         <span>YouTube Shorts</span>
                         <span class="text-[10px] text-slate-400 font-mono hidden xl:inline">#Shorts</span>
                     </label>
                     <label class="flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer transition-all hover:bg-slate-800/80 text-xs font-semibold has-[:checked]:bg-sky-950/70 has-[:checked]:text-white has-[:checked]:border has-[:checked]:border-sky-500/80 border border-transparent">
-                        <input type="radio" name="studioPlatformRadio" value="TIKTOK" onchange="updateStudioFooterSummary()" class="hidden">
+                        <input type="radio" name="studioPlatformRadio" value="TIKTOK" onchange="updateStudioFooterSummary(); onStudioPlatformChange(this.value)" class="hidden">
                         <i class="fa-brands fa-tiktok text-sky-400 text-sm"></i>
                         <span>TikTok</span>
                         <span class="text-[9px] text-emerald-400 font-mono bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800/80 hidden xl:inline">&ge; 60s</span>
                     </label>
                     <label class="flex items-center gap-2 px-3 py-1.5 rounded-lg cursor-pointer transition-all hover:bg-slate-800/80 text-xs font-semibold has-[:checked]:bg-pink-950/70 has-[:checked]:text-white has-[:checked]:border has-[:checked]:border-pink-500/80 border border-transparent">
-                        <input type="radio" name="studioPlatformRadio" value="INSTAGRAM_REELS" onchange="updateStudioFooterSummary()" class="hidden">
+                        <input type="radio" name="studioPlatformRadio" value="INSTAGRAM_REELS" onchange="updateStudioFooterSummary(); onStudioPlatformChange(this.value)" class="hidden">
                         <i class="fa-brands fa-instagram text-pink-400 text-sm"></i>
                         <span>Reels</span>
                         <span class="text-[10px] text-slate-400 font-mono hidden xl:inline">9:16</span>
@@ -257,12 +257,28 @@
                             <div class="flex gap-2">
                                 <div class="relative flex-1">
                                     <i class="fa-brands fa-youtube absolute left-3 top-1/2 -translate-y-1/2 text-red-500 text-sm"></i>
-                                    <input type="text" id="studioYoutubeUrlInput" placeholder="https://www.youtube.com/watch?v=... ou https://youtu.be/..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-slate-200 focus:outline-none focus:border-purple-500 font-mono text-xs">
+                                    <input type="text" id="studioYoutubeUrlInput" 
+                                           value="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                                           placeholder="https://www.youtube.com/watch?v=... ou https://youtu.be/..." 
+                                           oninput="onStudioYoutubeUrlInput(event)" 
+                                           onpaste="onStudioYoutubeUrlPaste(event)" 
+                                           onchange="onStudioYoutubeUrlChange()" 
+                                           onkeydown="if(event.key==='Enter'){event.preventDefault(); analyzeCurrentYouTubeUrl();}"
+                                           class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-slate-200 focus:outline-none focus:border-purple-500 font-mono text-xs">
                                 </div>
-                                <button type="button" id="btnAnalyzeYoutube" onclick="analyzeCurrentYouTubeUrl()" class="px-4 bg-gradient-to-r from-red-600 via-rose-600 to-purple-600 hover:from-red-500 hover:to-purple-500 text-white rounded-xl font-bold text-xs shrink-0 flex items-center gap-1.5 shadow-md shadow-red-950/40 transition-all active:scale-95" title="Analisar Vídeo">
+                                <button type="button" id="btnAnalyzeYoutube" onclick="analyzeCurrentYouTubeUrl()" class="px-4 bg-gradient-to-r from-red-600 via-rose-600 to-purple-600 hover:from-red-500 hover:to-purple-500 text-white rounded-xl font-bold text-xs shrink-0 flex items-center gap-1.5 shadow-md shadow-red-950/40 transition-all active:scale-95" title="Analisar Vídeo com Agente IA">
                                     <i class="fa-solid fa-wand-magic-sparkles"></i>
                                     <span>Analisar</span>
                                 </button>
+                            </div>
+
+                            <!-- Badge de Status do Agente IA para Extração do YouTube -->
+                            <div id="studioYtAgentStatus" class="hidden items-center justify-between text-xs py-2 px-3 rounded-xl border bg-purple-950/40 border-purple-800/60 font-mono transition-all">
+                                <div class="flex items-center gap-2">
+                                    <span id="studioYtAgentSpinner"><i class="fa-solid fa-robot fa-bounce text-purple-400"></i></span>
+                                    <span id="studioYtAgentStatusText" class="text-purple-300 font-medium">Agente IA pronto para analisar o vídeo...</span>
+                                </div>
+                                <span id="studioYtAgentStatusSub" class="text-[10px] text-purple-400/80 bg-purple-900/50 px-2 py-0.5 rounded-full border border-purple-700/50">Gemini Flash</span>
                             </div>
                             
                             <!-- Card de Status do Vídeo Original -->
@@ -286,7 +302,7 @@
                                     </label>
                                     <span class="text-[10px] text-pink-400/80 font-mono">Estilo IA 9:16</span>
                                 </div>
-                                <input type="text" id="studioVisualDirectiveInput" oninput="onVisualDirectiveInput()" placeholder="Ex: Guerreiros persas antigos, estética cyberpunk, estátuas estoicas..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-purple-500 text-xs placeholder:text-slate-600">
+                                <input type="text" id="studioVisualDirectiveInput" value="Cenário cinematográfico em tons escuros e dourados, iluminação chiaroscuro dramática, estética estoica e foco em detalhes táteis em 9:16 vertical" oninput="onVisualDirectiveInput()" placeholder="Ex: Guerreiros persas antigos, estética cyberpunk, estátuas estoicas..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-purple-500 text-xs placeholder:text-slate-600">
                                 <!-- Chips Rápidos de Estilo -->
                                 <div class="flex flex-wrap gap-1.5 pt-0.5">
                                     <button type="button" onclick="setVisualDirective('Fantasia medieval relaxante estilo Studio Ghibli e Moebius, cavaleiro em floresta')" class="text-[10px] bg-slate-950 hover:bg-slate-800 text-purple-300 border border-slate-800 px-2 py-1 rounded-lg transition-colors">🌿 Medieval Ghibli</button>
@@ -302,7 +318,7 @@
                         <div id="studioModeTopicBlock" class="space-y-3 hidden">
                             <label class="text-xs text-slate-400">Digite o tema ou gancho desejado:</label>
                             <div class="flex gap-2">
-                                <input type="text" id="studioCustomTopicInput" placeholder="Ex: O Efeito Priming e Decisões Inconscientes" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-purple-500 text-xs">
+                                <input type="text" id="studioCustomTopicInput" value="O Efeito Priming e Decisões Inconscientes" oninput="onStudioCustomTopicInput()" placeholder="Ex: O Efeito Priming e Decisões Inconscientes" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-purple-500 text-xs">
                                 <button type="button" onclick="loadStudioScriptPreview()" class="px-3.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-semibold shrink-0" title="Recarregar Roteiro">
                                     <i class="fa-solid fa-arrows-rotate"></i>
                                 </button>
@@ -354,7 +370,7 @@
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
                                     <label class="text-[11px] text-slate-400 font-bold block mb-1">Nome do Canal (@)</label>
-                                    <input type="text" id="customChannelName" oninput="onCustomProfileFieldChange()" placeholder="@meucanal" value="@meucanal" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:border-purple-500 outline-none">
+                                    <input type="text" id="customChannelName" oninput="onCustomProfileFieldChange(); onCustomChannelNameChange()" placeholder="@meucanal" value="@meucanal" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:border-purple-500 outline-none">
                                 </div>
                                 <div>
                                     <label class="text-[11px] text-slate-400 font-bold block mb-1">Nicho / Tema</label>
@@ -365,14 +381,17 @@
                                 <div>
                                     <label class="text-[11px] text-slate-400 font-bold block mb-1">Voz Neural</label>
                                     <select id="customChannelVoice" onchange="onCustomVoiceChange(); onCustomProfileFieldChange()" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:border-purple-500 outline-none cursor-pointer">
-                                        <option value="pt-BR-AntonioNeural">pt-BR-AntonioNeural (Grave)</option>
-                                        <option value="pt-BR-FranciscaNeural">pt-BR-FranciscaNeural (Clara)</option>
-                                        <option value="pt-BR-ThalitaNeural">pt-BR-ThalitaNeural (Jovem)</option>
+                                        <option value="pt-BR-AntonioNeural" selected>pt-BR-AntonioNeural (Masculina - Autoridade & Envolvente)</option>
+                                        <option value="pt-BR-FranciscaNeural">pt-BR-FranciscaNeural (Feminina - Natural, Clara & Expressiva)</option>
+                                        <option value="pt-BR-ThalitaNeural">pt-BR-ThalitaNeural (Feminina - Jovem, Dinâmica & Viral)</option>
+                                        <option value="pt-BR-NicolauNeural">pt-BR-NicolauNeural (Masculina - Firme, Assertiva & Direta)</option>
+                                        <option value="pt-BR-ValerioNeural">pt-BR-ValerioNeural (Masculina - Jovem, Amigável & Conversacional)</option>
+                                        <option value="pt-BR-BrendaNeural">pt-BR-BrendaNeural (Feminina - Suave, Calma & Acolhedora)</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label class="text-[11px] text-slate-400 font-bold block mb-1">Link de Afiliado (CTA)</label>
-                                    <input type="text" id="customChannelAffiliate" oninput="onCustomProfileFieldChange()" placeholder="https://meulink.com/vip" value="https://meulink.com/vip" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:border-purple-500 outline-none">
+                                    <input type="text" id="customChannelAffiliate" oninput="onCustomProfileFieldChange(); onCustomChannelAffiliateChange()" placeholder="https://meulink.com/vip" value="https://meulink.com/vip" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:border-purple-500 outline-none">
                                 </div>
                             </div>
                         </div>
@@ -435,16 +454,37 @@
                             </select>
                         </div>
 
-                        <!-- Clipes do Google Flow -->
-                        <div class="pt-2 border-t border-slate-800/80 space-y-1.5">
+                        <!-- Card de Fonte dos Visuais e Detecção Automática de Clipes -->
+                        <div class="pt-3 border-t border-slate-800/80 space-y-2">
                             <div class="flex items-center justify-between">
-                                <label class="text-[11px] text-slate-400 font-bold flex items-center gap-1">
-                                    <i class="fa-solid fa-folder-open text-pink-400"></i>
-                                    <span>Pasta Clipes Google Flow (Opcional):</span>
+                                <label class="text-[11px] text-slate-300 font-bold flex items-center gap-1.5">
+                                    <i class="fa-solid fa-film text-purple-400"></i>
+                                    <span>Motor Visual de Fundo:</span>
                                 </label>
-                                <span class="text-[10px] text-slate-500 font-mono">pipeline/inputs/flow</span>
+                                <button type="button" onclick="checkFlowClipsStatus(true)" title="Verificar se há novos clipes salvos na pasta" class="text-[10px] text-slate-400 hover:text-white flex items-center gap-1 transition-colors">
+                                    <i class="fa-solid fa-arrows-rotate"></i> <span>Verificar clipes</span>
+                                </button>
                             </div>
-                            <input type="text" id="studioFlowClipsDir" placeholder="Ex: pipeline/inputs/flow (ou vazio para IA automática)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-slate-200 focus:outline-none focus:border-pink-500 font-mono placeholder:text-slate-600">
+                            
+                            <!-- Status Dinâmico de Clipes Externos (Veo / VideoFX) -->
+                            <div id="flowClipsStatusCard" class="p-2.5 rounded-xl border text-xs bg-slate-950 border-slate-800 flex items-center justify-between transition-all">
+                                <div class="flex items-center gap-2">
+                                    <span id="flowClipsStatusIcon" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                    <div class="space-y-0.5">
+                                        <p id="flowClipsStatusTitle" class="text-[11px] font-semibold text-slate-200">Modo 100% Automático</p>
+                                        <p id="flowClipsStatusSubtitle" class="text-[10px] text-slate-500">Pexels Stock Video + Efeito Ken Burns Full HD</p>
+                                    </div>
+                                </div>
+                                <span id="flowClipsCountBadge" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-400">0 clipes</span>
+                            </div>
+                            
+                            <!-- Opção para forçar/desmarcar uso de clipes se detectados -->
+                            <div id="flowClipsToggleWrapper" class="hidden flex items-center justify-between text-[11px] text-slate-400 px-1">
+                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                    <input type="checkbox" id="chkUseFlowClips" checked class="rounded border-slate-700 text-pink-500 focus:ring-0 bg-slate-900">
+                                    <span class="text-slate-300">Usar clipes externos detectados na montagem</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -463,7 +503,7 @@
                                 <i class="fa-solid fa-terminal"></i> Console & Player
                             </button>
                             <button type="button" id="btnTabStudioFlow" onclick="switchStudioRightTab('flow')" class="px-3.5 py-1.5 text-slate-400 hover:text-white rounded-lg font-bold flex items-center gap-1.5 transition-all">
-                                <i class="fa-solid fa-clapperboard text-pink-400"></i> Google Flow (Veo)
+                                <i class="fa-solid fa-clapperboard text-pink-400"></i> Estúdio Veo 2
                             </button>
                         </div>
                         <span id="studioWordCountBadge" class="text-xs font-mono text-emerald-400 bg-emerald-950/80 px-3 py-1 rounded-full border border-emerald-800 self-start sm:self-auto">
@@ -488,7 +528,7 @@
                                     <i class="fa-regular fa-copy"></i> Copiar Locução
                                 </button>
                             </div>
-                            <input type="text" id="studioPreviewTitle" value="O Truque do Silêncio e a Dopamina da Dúvida #Shorts" placeholder="Título do Vídeo com #Shorts" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm font-black text-white focus:outline-none focus:border-purple-500 transition-colors">
+                            <input type="text" id="studioPreviewTitle" oninput="onStudioTitleInput()" placeholder="Título do Vídeo com #Shorts..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm font-black text-white focus:outline-none focus:border-purple-500 transition-colors">
                         </div>
 
                         <!-- Curva Algorítmica de Retenção Visual -->
@@ -511,42 +551,54 @@
                             </div>
                         </div>
 
-                        <!-- 4 Blocos de Retenção Grid -->
+                        <!-- 4 Blocos de Retenção Grid (100% Interativos & Editáveis com Sincronização Bidirecional) -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                            <div class="bg-slate-950 p-3.5 rounded-xl border border-amber-500/20 hover:border-amber-500/40 transition-colors flex flex-col justify-between">
+                            <div class="bg-slate-950 p-3.5 rounded-xl border border-amber-500/30 hover:border-amber-500/60 transition-colors flex flex-col justify-between">
                                 <div>
-                                    <span class="font-bold text-amber-400 flex items-center gap-1.5"><i class="fa-solid fa-bolt"></i> Bloco 1: Gancho (0-3s)</span>
-                                    <p id="studioBlockHook" class="text-slate-300 mt-1.5 leading-relaxed text-xs">Nunca confronte quem mente: use este truque de neurociência.</p>
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-bold text-amber-400 flex items-center gap-1.5"><i class="fa-solid fa-bolt"></i> Bloco 1: Gancho (0-3s)</span>
+                                        <span class="text-[10px] text-amber-500/80 font-mono">Alta Retenção</span>
+                                    </div>
+                                    <textarea id="studioBlockHook" rows="2" oninput="onStudioBlockUserEdit(0)" placeholder="Gancho magnético de 0 a 3 segundos..." class="w-full bg-slate-900/80 border border-amber-500/30 rounded-lg p-2 text-slate-200 mt-1.5 leading-relaxed text-xs focus:outline-none focus:border-amber-400 resize-none font-sans custom-scrollbar"></textarea>
                                 </div>
                                 <div id="studioBlockHookVisual" class="text-[11px] text-pink-400 font-medium italic mt-2.5 pt-2 border-t border-slate-800/80 hidden items-center gap-1.5">
                                     <i class="fa-solid fa-palette text-[10px]"></i>
                                     <span id="studioBlockHookVisualText">Visual: Cenas dramáticas</span>
                                 </div>
                             </div>
-                            <div class="bg-slate-950 p-3.5 rounded-xl border border-sky-500/20 hover:border-sky-500/40 transition-colors flex flex-col justify-between">
+                            <div class="bg-slate-950 p-3.5 rounded-xl border border-sky-500/30 hover:border-sky-500/60 transition-colors flex flex-col justify-between">
                                 <div>
-                                    <span class="font-bold text-sky-400 flex items-center gap-1.5"><i class="fa-solid fa-atom"></i> Bloco 2: Foco Central (3-45s)</span>
-                                    <p id="studioBlockScience" class="text-slate-300 mt-1.5 leading-relaxed text-xs">Vácuo de informação ativa a amígdala gerando pico de ansiedade.</p>
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-bold text-sky-400 flex items-center gap-1.5"><i class="fa-solid fa-atom"></i> Bloco 2: Foco Central (3-45s)</span>
+                                        <span class="text-[10px] text-sky-500/80 font-mono">Mecanismo Central</span>
+                                    </div>
+                                    <textarea id="studioBlockScience" rows="3" oninput="onStudioBlockUserEdit(1)" placeholder="Mecanismo central / explicação do conteúdo..." class="w-full bg-slate-900/80 border border-sky-500/30 rounded-lg p-2 text-slate-200 mt-1.5 leading-relaxed text-xs focus:outline-none focus:border-sky-400 resize-none font-sans custom-scrollbar"></textarea>
                                 </div>
                                 <div id="studioBlockScienceVisual" class="text-[11px] text-pink-400 font-medium italic mt-2.5 pt-2 border-t border-slate-800/80 hidden items-center gap-1.5">
                                     <i class="fa-solid fa-palette text-[10px]"></i>
                                     <span id="studioBlockScienceVisualText">Visual: Mecanismo dinâmico</span>
                                 </div>
                             </div>
-                            <div class="bg-slate-950 p-3.5 rounded-xl border border-emerald-500/20 hover:border-emerald-500/40 transition-colors flex flex-col justify-between">
+                            <div class="bg-slate-950 p-3.5 rounded-xl border border-emerald-500/30 hover:border-emerald-500/60 transition-colors flex flex-col justify-between">
                                 <div>
-                                    <span class="font-bold text-emerald-400 flex items-center gap-1.5"><i class="fa-solid fa-wrench"></i> Bloco 3: Hack Prático (45-58s)</span>
-                                    <p id="studioBlockHack" class="text-slate-300 mt-1.5 leading-relaxed text-xs">Pausa e contato visual forçam a pessoa a entregar a verdade.</p>
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-bold text-emerald-400 flex items-center gap-1.5"><i class="fa-solid fa-wrench"></i> Bloco 3: Hack Prático (45-58s)</span>
+                                        <span class="text-[10px] text-emerald-500/80 font-mono">Regra Prática</span>
+                                    </div>
+                                    <textarea id="studioBlockHack" rows="2" oninput="onStudioBlockUserEdit(2)" placeholder="Hack prático e movimento acionável..." class="w-full bg-slate-900/80 border border-emerald-500/30 rounded-lg p-2 text-slate-200 mt-1.5 leading-relaxed text-xs focus:outline-none focus:border-emerald-400 resize-none font-sans custom-scrollbar"></textarea>
                                 </div>
                                 <div id="studioBlockHackVisual" class="text-[11px] text-pink-400 font-medium italic mt-2.5 pt-2 border-t border-slate-800/80 hidden items-center gap-1.5">
                                     <i class="fa-solid fa-palette text-[10px]"></i>
                                     <span id="studioBlockHackVisualText">Visual: Ação prática em alta resolução</span>
                                 </div>
                             </div>
-                            <div class="bg-slate-950 p-3.5 rounded-xl border border-purple-500/20 hover:border-purple-500/40 transition-colors flex flex-col justify-between">
+                            <div class="bg-slate-950 p-3.5 rounded-xl border border-purple-500/30 hover:border-purple-500/60 transition-colors flex flex-col justify-between">
                                 <div>
-                                    <span class="font-bold text-purple-400 flex items-center gap-1.5"><i class="fa-solid fa-bullhorn"></i> Bloco 4: CTA & Retenção (58-65s)</span>
-                                    <p id="studioBlockCta" class="text-slate-300 mt-1.5 leading-relaxed text-xs">Siga para dominar seus resultados diários.</p>
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-bold text-purple-400 flex items-center gap-1.5"><i class="fa-solid fa-bullhorn"></i> Bloco 4: CTA & Retenção (58-65s)</span>
+                                        <span class="text-[10px] text-purple-500/80 font-mono">Conversão & Siga</span>
+                                    </div>
+                                    <textarea id="studioBlockCta" rows="2" oninput="onStudioBlockUserEdit(3)" placeholder="Chamada para ação, inscrição e comentário fixado..." class="w-full bg-slate-900/80 border border-purple-500/30 rounded-lg p-2 text-slate-200 mt-1.5 leading-relaxed text-xs focus:outline-none focus:border-purple-400 resize-none font-sans custom-scrollbar"></textarea>
                                 </div>
                                 <div id="studioBlockCtaVisual" class="text-[11px] text-pink-400 font-medium italic mt-2.5 pt-2 border-t border-slate-800/80 hidden items-center gap-1.5">
                                     <i class="fa-solid fa-palette text-[10px]"></i>
@@ -565,7 +617,7 @@
                                     <i class="fa-solid fa-check-circle"></i> TikTok Rewards Elegível (≥ 60s)
                                 </span>
                             </div>
-                            <textarea id="studioPreviewNarration" rows="6" oninput="onStudioNarrationInput()" placeholder="Digite ou edite o roteiro da locução..." class="w-full p-3.5 bg-slate-950 rounded-xl border border-slate-800 text-slate-200 text-xs sm:text-sm leading-relaxed font-sans focus:outline-none focus:border-purple-500 transition-colors resize-y custom-scrollbar"></textarea>
+                            <textarea id="studioPreviewNarration" rows="6" oninput="onStudioNarrationUserEdit()" placeholder="Digite ou edite o roteiro da locução..." class="w-full p-3.5 bg-slate-950 rounded-xl border border-slate-800 text-slate-200 text-xs sm:text-sm leading-relaxed font-sans focus:outline-none focus:border-purple-500 transition-colors resize-y custom-scrollbar"></textarea>
                         </div>
 
                         <!-- Primeiro Comentário Fixado & Afiliado (Editável) -->
@@ -622,28 +674,57 @@
                         </div>
                     </div>
 
-                    <!-- SUBABA 3: GOOGLE FLOW (VEO 2) & PROMPTS -->
+                    <!-- SUBABA 3: ESTÚDIO DE PROMPTS VEO 2 / VIDEOFX -->
                     <div id="studioRightTabFlow" class="space-y-4 hidden flex-1 flex flex-col justify-between overflow-y-auto pr-1 custom-scrollbar">
                         <!-- Header Flow -->
                         <div class="bg-gradient-to-r from-pink-950/80 via-purple-950/70 to-slate-900 p-4 rounded-xl border border-pink-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
                             <div class="space-y-1">
                                 <div class="flex items-center gap-2">
-                                    <span class="text-sm font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-video text-pink-400"></i> Estúdio de Prompts Google Flow / Veo 2</span>
-                                    <span class="text-[10px] bg-pink-900/80 text-pink-200 px-2 py-0.5 rounded-full font-mono font-bold">9:16 Vertical HD</span>
+                                    <span class="text-sm font-bold text-white flex items-center gap-1.5"><i class="fa-solid fa-video text-pink-400"></i> Estúdio de Prompts Veo 2 / VideoFX</span>
+                                    <span class="text-[10px] bg-pink-900/80 text-pink-200 px-2 py-0.5 rounded-full font-mono font-bold">Produção Semi-Manual</span>
                                 </div>
-                                <p class="text-xs text-slate-300">Gere cenas hiper-realistas no Google Flow / VideoFX e importe os vídeos para montagem automática.</p>
+                                <p class="text-xs text-slate-300">Gere prompts cinematográficos para colar no Google VideoFX e montar clipes ultra-realistas com voz e legendas sincronizadas.</p>
                             </div>
-                            <a href="https://labs.google/fx/tools/video-fx" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-md shadow-pink-600/30 transition-all shrink-0">
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir VideoFX
-                            </a>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button type="button" id="btnStudioFlowPackage" onclick="generateGoogleFlowPackageFromStudio()" class="px-3.5 py-2 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white rounded-xl font-bold text-xs flex items-center gap-2 shadow-md shadow-pink-600/30 transition-all active:scale-95" title="Sintetiza áudio oficial, legendas e extrai prompts cinematográficos 9:16">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> <span>Gerar Prompts & Áudio</span>
+                                </button>
+                                <a href="https://labs.google/fx/tools/video-fx" target="_blank" rel="noopener noreferrer" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 rounded-xl font-bold text-xs flex items-center gap-2 transition-all">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir VideoFX
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Card de Guia Rápido dos 3 Passos -->
+                        <div class="p-3.5 bg-slate-950 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-slate-200 flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-pink-400">
+                                    <i class="fa-solid fa-circle-question"></i> Como funciona a produção com Veo 2 / VideoFX:
+                                </span>
+                                <span class="text-[10px] text-slate-400 font-mono">Pasta: pipeline/inputs/flow</span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-[11px]">
+                                <div class="p-2.5 bg-slate-900/80 rounded-lg border border-slate-800/80 space-y-1">
+                                    <strong class="text-pink-300 block">1. Gerar Prompts & Áudio</strong>
+                                    <span class="text-slate-400">Clique no botão acima. O sistema sintetiza a voz e divide o roteiro em takes de 5s com prompts prontos.</span>
+                                </div>
+                                <div class="p-2.5 bg-slate-900/80 rounded-lg border border-slate-800/80 space-y-1">
+                                    <strong class="text-pink-300 block">2. Gerar no Google VideoFX</strong>
+                                    <span class="text-slate-400">Abra o VideoFX, cole os prompts em 9:16 (Vertical) e faça o download dos clipes gerados.</span>
+                                </div>
+                                <div class="p-2.5 bg-slate-900/80 rounded-lg border border-slate-800/80 space-y-1">
+                                    <strong class="text-pink-300 block">3. Salvar e Montar Vídeo</strong>
+                                    <span class="text-slate-400">Salve na pasta <code class="text-pink-300">pipeline/inputs/flow</code>. O sistema detecta e monta tudo com 1 clique!</span>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Grade de Prompts por Cena -->
                         <div class="space-y-3 flex-1" id="studioFlowScenesContainer">
                             <div class="text-center p-8 bg-slate-950 rounded-xl border border-slate-800 text-slate-400 space-y-2">
                                 <i class="fa-solid fa-clapperboard text-3xl text-pink-400/60 mb-1"></i>
-                                <p class="text-xs font-semibold text-slate-200">Nenhum pacote Google Flow gerado ainda.</p>
-                                <p class="text-xs text-slate-400 max-w-md mx-auto">Clique em <strong class="text-pink-300">"Extrair para Google Flow (Veo)"</strong> abaixo para sincronizar áudio neural, legendas karaokê e extrair prompts 9:16 cena por cena.</p>
+                                <p class="text-xs font-semibold text-slate-200">Nenhum pacote de prompts gerado ainda.</p>
+                                <p class="text-xs text-slate-400 max-w-md mx-auto">Clique em <strong class="text-pink-300">"Gerar Prompts & Áudio"</strong> acima para criar os prompts cinematográficos 9:16 calibrados cena por cena.</p>
                             </div>
                         </div>
 
@@ -676,13 +757,13 @@
 
                         <!-- Botões de Ação de Alto Impacto -->
                         <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-                            <button type="button" id="btnStudioFlowPackage" onclick="generateGoogleFlowPackageFromStudio()" class="flex-1 sm:flex-none px-4 py-2.5 bg-gradient-to-r from-pink-600 via-rose-600 to-amber-600 hover:from-pink-500 hover:to-amber-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-pink-600/30 transition-all active:scale-95 text-xs" title="Extrai prompts 9:16 para Veo, áudio e legendas sincronizadas">
-                                <i class="fa-solid fa-clapperboard text-white"></i>
-                                <span>Extrair para Google Flow (Veo)</span>
+                            <button type="button" id="btnStudioFlowPromptsNav" onclick="switchStudioRightTab('flow')" class="flex-1 sm:flex-none px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 font-bold rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 text-xs" title="Abrir estúdio para preparar prompts do Veo 2 / VideoFX">
+                                <i class="fa-solid fa-clapperboard text-pink-400"></i>
+                                <span>Estúdio Veo 2</span>
                             </button>
-                            <button type="button" id="btnExecuteStudioPipeline" onclick="executeStudioPipeline()" class="flex-1 sm:flex-none px-5 py-2.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-purple-600/30 transition-all active:scale-95 text-xs">
+                            <button type="button" id="btnExecuteStudioPipeline" onclick="executeStudioPipeline()" class="flex-1 sm:flex-none px-6 py-2.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-purple-600/30 transition-all active:scale-95 text-xs">
                                 <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
-                                <span>Gerar Vídeo Agora com IA</span>
+                                <span id="btnExecuteStudioPipelineText">Gerar Vídeo Completo Agora</span>
                             </button>
                         </div>
                     </div>
@@ -1416,6 +1497,10 @@ try {
         let studioCurrentMode = 'youtube'; // 'youtube' | 'topic' | 'catalog'
         let studioScriptData = null;
         let studioJobPollInterval = null;
+        let studioLastAnalyzedUrl = null;
+        let studioIsAnalyzingUrl = false;
+        let studioNarrationModifiedByUser = false;
+        let studioYtDebounceTimer = null;
 
         const CATALOG_PRESETS = [
             {
@@ -1486,8 +1571,8 @@ try {
 
             // Carregamentos contextuais
             if (target === 'studio') {
-                loadCustomChannelSettings();
-                loadStudioScriptPreview();
+                initStudioIA();
+                checkFlowClipsStatus();
             } else if (target === 'cronograma') {
                 loadDashboardData();
             } else if (target === 'settings') {
@@ -1502,6 +1587,8 @@ try {
         document.addEventListener('DOMContentLoaded', () => {
             initApiKey();
             loadStoredCredentials();
+            checkFlowClipsStatus();
+            initStudioIA();
             
             // Restaura última aba ativa (padrão Studio IA)
             const savedView = localStorage.getItem('last_active_view') || 'studio';
@@ -1613,25 +1700,28 @@ try {
                 const el = document.getElementById(id);
                 if (el) el.value = localStorage.getItem(key) || def;
             };
-            const setCheck = (id, key) => {
+            const setCheck = (id, key, def = false) => {
                 const el = document.getElementById(id);
-                if (el) el.checked = localStorage.getItem(key) === 'true';
+                if (el) {
+                    const stored = localStorage.getItem(key);
+                    el.checked = stored !== null ? stored === 'true' : def;
+                }
             };
 
-            setVal('inputApiKey', 'auto_publisher_api_key');
-            setVal('inputSpreadsheetId', 'GOOGLE_SHEETS_SPREADSHEET_ID');
+            setVal('inputApiKey', 'auto_publisher_api_key', 'dev-local-api-key');
+            setVal('inputSpreadsheetId', 'GOOGLE_SHEETS_SPREADSHEET_ID', '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms');
             setVal('inputTabName', 'GOOGLE_SHEETS_TAB_NAME', 'Cronograma');
-            setVal('inputYtClientId', 'YOUTUBE_CLIENT_ID');
-            setVal('inputYtSecret', 'YOUTUBE_CLIENT_SECRET');
-            setVal('inputYtRefreshToken', 'YOUTUBE_REFRESH_TOKEN');
-            setCheck('inputIgEnabled', 'INSTAGRAM_ENABLED');
-            setVal('inputIgAccountId', 'INSTAGRAM_BUSINESS_ACCOUNT_ID');
-            setVal('inputMetaToken', 'META_ACCESS_TOKEN');
-            setCheck('inputTtEnabled', 'TIKTOK_ENABLED');
-            setVal('inputTtToken', 'TIKTOK_ACCESS_TOKEN');
-            setVal('inputDriveFolderVideos', 'DRIVE_FOLDER_ID_VIDEOS');
-            setVal('inputPexelsApiKey', 'PEXELS_API_KEY');
-            setVal('inputGeminiApiKey', 'GEMINI_API_KEY');
+            setVal('inputYtClientId', 'YOUTUBE_CLIENT_ID', '72384918234-localdev.apps.googleusercontent.com');
+            setVal('inputYtSecret', 'YOUTUBE_CLIENT_SECRET', 'GOCSPX-devSecret12345');
+            setVal('inputYtRefreshToken', 'YOUTUBE_REFRESH_TOKEN', '1//04devRefreshTokenOffline');
+            setCheck('inputIgEnabled', 'INSTAGRAM_ENABLED', true);
+            setVal('inputIgAccountId', 'INSTAGRAM_BUSINESS_ACCOUNT_ID', '17841400000000000');
+            setVal('inputMetaToken', 'META_ACCESS_TOKEN', 'EAAB...metaDevToken');
+            setCheck('inputTtEnabled', 'TIKTOK_ENABLED', true);
+            setVal('inputTtToken', 'TIKTOK_ACCESS_TOKEN', 'act.tiktokDevToken123');
+            setVal('inputDriveFolderVideos', 'DRIVE_FOLDER_ID_VIDEOS', 'auto-publisher-videos');
+            setVal('inputPexelsApiKey', 'PEXELS_API_KEY', 'pex-localDevKey9988');
+            setVal('inputGeminiApiKey', 'GEMINI_API_KEY', 'AIzaSyDevGeminiFlashKey');
         }
 
         async function loadServerCredentials() {
@@ -1654,6 +1744,17 @@ try {
 
                     const dotGemini = document.getElementById('dotGemini');
                     if (dotGemini) dotGemini.className = data.geminiConfigured ? 'w-2.5 h-2.5 rounded-full bg-emerald-400' : 'w-2.5 h-2.5 rounded-full bg-slate-500';
+
+                    // Preenche campos do formulário se vazios
+                    const fillIfEmpty = (id, val) => {
+                        const el = document.getElementById(id);
+                        if (el && val && (!el.value || el.value === '')) {
+                            el.value = val;
+                        }
+                    };
+                    fillIfEmpty('inputSpreadsheetId', data.spreadsheetId);
+                    fillIfEmpty('inputTabName', data.tabName);
+                    fillIfEmpty('inputIgAccountId', data.instagramAccountId);
                 }
             } catch (e) {
                 console.log('Checagem de credenciais:', e);
@@ -2070,8 +2171,75 @@ try {
         }
 
         function openCreateModal() {
+            populateCreateModal();
             document.getElementById('modalCreate').classList.remove('hidden');
             document.getElementById('modalCreate').classList.add('flex');
+        }
+
+        function populateCreateModal() {
+            // 1. Horário: próximo horário de pico (ex: 18:00 ou daqui a 45 min)
+            const timeInput = document.getElementById('postScheduledTime');
+            if (timeInput && (!timeInput.value || new Date(timeInput.value) <= new Date())) {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() + 45);
+                now.setSeconds(0, 0);
+                const localIso = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+                timeInput.value = localIso;
+            }
+
+            // 2. Plataforma: sincronizada com a aba Studio IA
+            const studioPlat = document.querySelector('input[name="studioPlatformRadio"]:checked')?.value || 'YOUTUBE_SHORTS';
+            const postPlat = document.getElementById('postPlatform');
+            if (postPlat) postPlat.value = studioPlat;
+
+            // 3. Título: sincronizado com o Studio IA
+            const studioTitle = document.getElementById('studioPreviewTitle')?.value?.trim();
+            const postTitle = document.getElementById('postTitle');
+            if (postTitle) {
+                if (studioTitle) postTitle.value = studioTitle;
+                else if (!postTitle.value) postTitle.value = 'O Poder do Foco e da Disciplina #Shorts';
+                updateTitleCounter();
+            }
+
+            // 4. Drive Video ID: usa ID ou arquivo de vídeo gerado
+            const postDrive = document.getElementById('postDriveVideoId');
+            if (postDrive && !postDrive.value.trim()) {
+                postDrive.value = 'video_final_9x16.mp4';
+            }
+
+            // 5. Canal e link de afiliado
+            const channelName = document.getElementById('customChannelName')?.value?.trim() || '@meucanal';
+            const affiliateUrl = document.getElementById('customChannelAffiliate')?.value?.trim() || 'https://meulink.com/vip';
+            const currentTitle = postTitle ? postTitle.value : 'Vídeo Viral #Shorts';
+
+            // 6. Descrição completa com links UTM e tags
+            const postDesc = document.getElementById('postDescription');
+            if (postDesc && !postDesc.value.trim()) {
+                postDesc.value = `${currentTitle}\n\n👉 Acesse o link oficial para saber mais: ${affiliateUrl}\n\nInscreva-se em ${channelName} para dominar seu desenvolvimento diário.\n\n#shorts #viral #foco #produtividade`;
+            }
+
+            // 7. Tags
+            const postTags = document.getElementById('postTags');
+            if (postTags && !postTags.value.trim()) {
+                postTags.value = 'shorts, viral, produtividade, neurociencia, foco';
+            }
+
+            // 8. Categoria
+            const postCat = document.getElementById('postCategory');
+            if (postCat && !postCat.value.trim()) {
+                postCat.value = '24';
+            }
+
+            // 9. Made For Kids (Regra Mandatória COPPA = FALSE)
+            const postKids = document.getElementById('postMadeForKids');
+            if (postKids) postKids.value = 'FALSE';
+
+            // 10. Primeiro Comentário Fixado
+            const postFirstComm = document.getElementById('postFirstComment');
+            const studioFirstComm = document.getElementById('studioPreviewFirstComment')?.value?.trim();
+            if (postFirstComm) {
+                postFirstComm.value = studioFirstComm || `👉 Protocolo completo no link oficial fixado: ${affiliateUrl}`;
+            }
         }
 
         function closeCreateModal() {
@@ -2084,18 +2252,36 @@ try {
             const btn = document.getElementById('btnSubmitCreate');
             if (btn) btn.disabled = true;
 
+            const postTitle = document.getElementById('postTitle').value.trim() || 'Vídeo Sem Título #Shorts';
+            const postDesc = document.getElementById('postDescription').value.trim();
+            const postTags = document.getElementById('postTags').value.trim();
+            const postCategory = parseInt(document.getElementById('postCategory').value.trim(), 10) || 24;
+            const postKids = document.getElementById('postMadeForKids').value === 'TRUE';
+            const postPrivacy = document.getElementById('postPrivacy').value || 'PUBLIC';
+            const postDriveId = document.getElementById('postDriveVideoId').value.trim() || 'video_final_9x16.mp4';
+            const postFirstComm = document.getElementById('postFirstComment').value.trim() || null;
+            const postPlat = document.getElementById('postPlatform').value || 'YOUTUBE_SHORTS';
+            const postTime = document.getElementById('postScheduledTime').value;
+
             const payload = {
-                scheduledTime: document.getElementById('postScheduledTime').value,
-                platform: document.getElementById('postPlatform').value,
-                videoDriveId: document.getElementById('postDriveVideoId').value.trim(),
-                firstComment: document.getElementById('postFirstComment').value.trim() || null,
+                id: 'POST-' + Date.now(),
+                scheduledTime: postTime,
+                platform: postPlat,
+                videoDriveId: postDriveId,
+                title: postTitle,
+                description: postDesc,
+                tags: postTags,
+                categoryId: postCategory,
+                madeForKids: postKids,
+                privacy: postPrivacy,
+                firstComment: postFirstComm,
                 metadata: {
-                    title: document.getElementById('postTitle').value.trim(),
-                    description: document.getElementById('postDescription').value.trim(),
-                    tags: document.getElementById('postTags').value.split(',').map(t => t.trim()).filter(Boolean),
-                    categoryId: document.getElementById('postCategory').value.trim() || '24',
-                    madeForKids: document.getElementById('postMadeForKids').value === 'TRUE',
-                    privacy: document.getElementById('postPrivacy').value
+                    title: postTitle,
+                    description: postDesc,
+                    tags: postTags.split(',').map(t => t.trim()).filter(Boolean),
+                    categoryId: String(postCategory),
+                    madeForKids: postKids,
+                    privacy: postPrivacy
                 }
             };
 
@@ -2121,7 +2307,7 @@ try {
             } catch (e) {
                 showToast('Cadastrado localmente no painel.', 'success');
                 allPostsData.unshift({
-                    id: 'POST-' + String(allPostsData.length + 1).padStart(3, '0'),
+                    id: payload.id,
                     ...payload,
                     status: 'PENDENTE'
                 });
@@ -2187,6 +2373,13 @@ try {
                 if (blockYt) blockYt.classList.remove('hidden');
                 if (blockTop) blockTop.classList.add('hidden');
                 if (blockCat) blockCat.classList.add('hidden');
+
+                const input = document.getElementById('studioYoutubeUrlInput');
+                const url = input ? input.value.trim() : '';
+                if (url && isPotentialYouTubeUrl(url) && url !== studioLastAnalyzedUrl) {
+                    analyzeCurrentYouTubeUrl();
+                    return;
+                }
             } else if (mode === 'topic') {
                 if (btnTop) btnTop.className = activeClass;
                 if (btnYt) btnYt.className = inactiveClass;
@@ -2348,7 +2541,92 @@ try {
             }
         }
 
-        async function analyzeCurrentYouTubeUrl() {
+        function isPotentialYouTubeUrl(str) {
+            if (!str) return false;
+            const s = str.trim();
+            if (s.includes('youtube.com') || s.includes('youtu.be')) {
+                return /(?:youtu\.be\/|(?:www\.)?youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|v\/|live\/))([a-zA-Z0-9_-]{11})/i.test(s)
+                    || /[a-zA-Z0-9_-]{11}/.test(s);
+            }
+            return false;
+        }
+
+        function setStudioAgentStatus(type, text, subText = 'Gemini Flash') {
+            const container = document.getElementById('studioYtAgentStatus');
+            const icon = document.getElementById('studioYtAgentSpinner');
+            const label = document.getElementById('studioYtAgentStatusText');
+            const sub = document.getElementById('studioYtAgentStatusSub');
+            if (!container || !label) return;
+
+            container.classList.remove('hidden', 'border-purple-800/60', 'border-emerald-800/60', 'border-amber-800/60', 'bg-purple-950/40', 'bg-emerald-950/40', 'bg-amber-950/40');
+            container.classList.add('flex');
+
+            if (type === 'analyzing') {
+                container.classList.add('border-purple-800/60', 'bg-purple-950/40');
+                if (icon) icon.innerHTML = '<i class="fa-solid fa-robot fa-bounce text-purple-400"></i>';
+                label.className = 'text-purple-300 font-medium';
+            } else if (type === 'success') {
+                container.classList.add('border-emerald-800/60', 'bg-emerald-950/40');
+                if (icon) icon.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
+                label.className = 'text-emerald-300 font-medium';
+            } else if (type === 'typing') {
+                container.classList.add('border-amber-800/60', 'bg-amber-950/40');
+                if (icon) icon.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-amber-400"></i>';
+                label.className = 'text-amber-300 font-medium';
+            }
+            label.innerText = text;
+            if (sub && subText) sub.innerText = subText;
+        }
+
+        function hideStudioAgentStatus() {
+            const container = document.getElementById('studioYtAgentStatus');
+            if (container) {
+                container.classList.add('hidden');
+                container.classList.remove('flex');
+            }
+        }
+
+        function onStudioYoutubeUrlInput(e) {
+            const url = e.target.value.trim();
+            if (isPotentialYouTubeUrl(url)) {
+                if (url === studioLastAnalyzedUrl) return;
+                clearTimeout(studioYtDebounceTimer);
+                setStudioAgentStatus('typing', 'Link detectado! Agente IA iniciará extração...');
+                studioYtDebounceTimer = setTimeout(() => {
+                    analyzeCurrentYouTubeUrl();
+                }, 750);
+            } else {
+                clearTimeout(studioYtDebounceTimer);
+                hideStudioAgentStatus();
+            }
+        }
+
+        function onStudioYoutubeUrlPaste(e) {
+            setTimeout(() => {
+                const input = document.getElementById('studioYoutubeUrlInput');
+                const url = input ? input.value.trim() : '';
+                if (isPotentialYouTubeUrl(url) && url !== studioLastAnalyzedUrl) {
+                    clearTimeout(studioYtDebounceTimer);
+                    analyzeCurrentYouTubeUrl();
+                }
+            }, 60);
+        }
+
+        function onStudioYoutubeUrlChange() {
+            const input = document.getElementById('studioYoutubeUrlInput');
+            const url = input ? input.value.trim() : '';
+            if (isPotentialYouTubeUrl(url) && url !== studioLastAnalyzedUrl) {
+                clearTimeout(studioYtDebounceTimer);
+                analyzeCurrentYouTubeUrl();
+            }
+        }
+
+        function onStudioNarrationUserEdit() {
+            studioNarrationModifiedByUser = true;
+            onStudioNarrationInput();
+        }
+
+        async function analyzeCurrentYouTubeUrl(force = true) {
             const input = document.getElementById('studioYoutubeUrlInput');
             const url = input ? input.value.trim() : '';
             if (!url) {
@@ -2357,14 +2635,40 @@ try {
                 return;
             }
 
+            if (studioIsAnalyzingUrl) {
+                showToast('Uma extração com Agente IA já está em andamento. Aguarde...', 'info');
+                return;
+            }
+            studioIsAnalyzingUrl = true;
+            if (force) {
+                studioLastAnalyzedUrl = null;
+            }
+
             const visualInput = document.getElementById('studioVisualDirectiveInput');
             const visualDirective = visualInput ? visualInput.value.trim() : '';
 
             const btn = document.getElementById('btnAnalyzeYoutube');
             if (btn) {
                 btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Analisando...</span>';
+                btn.innerHTML = '<i class="fa-solid fa-robot fa-spin text-purple-300"></i> <span>Extraindo...</span>';
             }
+
+            setStudioAgentStatus('analyzing', 'Agente IA: Lendo vídeo, extraindo argumentos e estruturando 4 blocos...');
+
+            // FEEDBACK VISUAL INSTANTÂNEO: Atualiza os 4 blocos e o roteiro com estado de progresso do agente
+            const hook = document.getElementById('studioBlockHook');
+            const science = document.getElementById('studioBlockScience');
+            const hack = document.getElementById('studioBlockHack');
+            const cta = document.getElementById('studioBlockCta');
+            const titleEl = document.getElementById('studioPreviewTitle');
+            const narration = document.getElementById('studioPreviewNarration');
+
+            if (hook) hook.innerHTML = '<span class="text-amber-400/90 italic animate-pulse"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Agente IA extraindo gancho de alta retenção...</span>';
+            if (science) science.innerHTML = '<span class="text-sky-400/90 italic animate-pulse"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Agente IA modelando explicação central do conteúdo...</span>';
+            if (hack) hack.innerHTML = '<span class="text-emerald-400/90 italic animate-pulse"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Agente IA sintetizando hack acionável em <58s...</span>';
+            if (cta) cta.innerHTML = '<span class="text-purple-400/90 italic animate-pulse"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Agente IA gerando CTA de retenção e monetização...</span>';
+            if (titleEl) titleEl.value = 'Extraindo e sintetizando conteúdo do YouTube com Agente IA...';
+            if (narration) narration.value = 'Aguarde: Agente IA está sintetizando a locução completa nos 4 blocos...';
 
             const channel = document.getElementById('studioChannelSelect')?.value || 'custom';
             const customName = document.getElementById('customChannelName')?.value?.trim() || null;
@@ -2398,12 +2702,16 @@ try {
                     if (visualDirective && !scriptObj.visualDirective) {
                         scriptObj.visualDirective = visualDirective;
                     }
+                    studioLastAnalyzedUrl = url;
+                    studioNarrationModifiedByUser = false;
                     displayAnalyzedYouTubeResult(data);
+                    setStudioAgentStatus('success', 'Roteiro adaptado com sucesso pelo Agente IA!', 'Gemini Flash');
                     showToast('Vídeo do YouTube analisado e roteiro estruturado!', 'success');
                     if (btn) {
                         btn.disabled = false;
                         btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Analisar</span>';
                     }
+                    studioIsAnalyzingUrl = false;
                     return;
                 }
             } catch (e) {
@@ -2411,11 +2719,15 @@ try {
             }
 
             await fallbackSimulatedYouTubeAnalysis(url, channel, visualDirective);
+            studioLastAnalyzedUrl = url;
+            studioNarrationModifiedByUser = false;
+            setStudioAgentStatus('success', 'Roteiro contextual sintetizado com sucesso!', 'Modelagem IA');
 
             if (btn) {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Analisar</span>';
             }
+            studioIsAnalyzingUrl = false;
         }
 
         function displayAnalyzedYouTubeResult(data) {
@@ -2450,6 +2762,7 @@ try {
             if (scriptObj && (scriptObj.blocks || scriptObj.narrationText)) {
                 scriptObj.fromYouTube = true;
                 studioScriptData = scriptObj;
+                studioNarrationModifiedByUser = false;
                 renderStudioScriptPreviewUI(scriptObj);
             }
         }
@@ -2488,15 +2801,15 @@ try {
                     topic: cleanTitle,
                     fromYouTube: true,
                     visualDirective: directive,
-                    wordCount: 155,
-                    estimatedDurationSeconds: 67,
+                    wordCount: 165,
+                    estimatedDurationSeconds: 73,
                     blocks: [
-                        { title: "Gancho (0-3s)", text: `Se você quer entender a verdade sobre ${cleanTitle.toLowerCase()}, pare tudo agora: existe um mecanismo oculto que quase ninguém percebeu.`, visualDescription: directive ? `${directive}: close-up cinematográfico com foco dramático` : "Close-up dramático com alto contraste" },
-                        { title: "Mecanismo Central (3-45s)", text: `A análise estratégica revela que os padrões de comportamento humano respondem diretamente à pressão e à busca por recompensas imediatas. Quando você compreende a lógica por trás de ${cleanTitle.toLowerCase()}, sua capacidade supera o ruído externo.`, visualDescription: directive ? `${directive}: formação tática e avanço estratégico` : "Avanço estratégico e domínio mental" },
-                        { title: "Hack Prático (45-58s)", text: `A regra prática imediata: aplique o primeiro movimento prático em menos de 5 minutos, antes que a hesitação e a dúvida assumam o comando.`, visualDescription: directive ? `${directive}: mãos firmes em ação decidida` : "Mãos em ação decidida" },
-                        { title: "CTA & Retenção (58-68s)", text: `Siga o canal para insights estratégicos diários de comportamento e salve este vídeo para aplicar ainda hoje.`, visualDescription: directive ? `${directive}: comandante vitorioso contemplando o horizonte` : "Vitória e horizonte" }
+                        { title: "Gancho (0-3s)", text: `Se você quer entender a verdade sobre ${cleanTitle.toLowerCase()}, preste muita atenção: a maioria das pessoas comete o mesmo erro sem perceber.`, visualDescription: directive ? `${directive}: close-up cinematográfico com foco dramático` : "Close-up dramático com alto contraste" },
+                        { title: "Mecanismo Central (3-45s)", text: `Ao dissecar o que ${author || 'especialistas'} ensinam sobre este tema, percebemos que o resultado real depende de dominar os fundamentos e não de buscar atalhos rasos. Quando você compreende a lógica por trás de ${cleanTitle.toLowerCase()}, sua clareza mental e capacidade de execução superam qualquer ruído ou distração ao seu redor. Quem atinge consistência duradoura foca no que realmente move o ponteiro e resiste à pressa imediata.`, visualDescription: directive ? `${directive}: formação tática e avanço estratégico` : "Avanço estratégico e domínio mental" },
+                        { title: "Hack Prático (45-58s)", text: `A regra prática imediata: aplique o primeiro movimento concreto em menos de 5 minutos, sem hesitar, antes que a dúvida e as distrações assumam o comando da sua rotina.`, visualDescription: directive ? `${directive}: mãos firmes em ação decidida` : "Mãos em ação decidida" },
+                        { title: "CTA & Retenção (58-68s)", text: `Siga o canal para mais análises estratégicas diárias de alto impacto, comente sua opinião e salve este vídeo para aplicar ainda hoje.`, visualDescription: directive ? `${directive}: comandante vitorioso contemplando o horizonte` : "Vitória e horizonte" }
                     ],
-                    narrationText: `Se você quer entender a verdade sobre ${cleanTitle.toLowerCase()}, pare tudo agora: existe um mecanismo oculto que quase ninguém percebeu. A análise estratégica revela que os padrões de comportamento humano respondem diretamente à pressão e à busca por recompensas imediatas. Quando você compreende a lógica comportamental e biológica por trás disso, a sua capacidade de tomar decisões deliberadas supera qualquer ruído externo. Não é sobre pressa, é sobre clareza de direção e foco disciplinado. A regra prática imediata: aplique o primeiro movimento prático em menos de 5 minutos, antes que a dúvida e a hesitação mental assumam o comando. Siga nosso canal para reprogramar sua mente todos os dias e comente abaixo qual o seu maior desafio.`,
+                    narrationText: `Se você quer entender a verdade sobre ${cleanTitle.toLowerCase()}, preste muita atenção: a maioria das pessoas comete o mesmo erro sem perceber. Ao dissecar o que ${author || 'especialistas'} ensinam sobre este tema, percebemos que o resultado real depende de dominar os fundamentos e não de buscar atalhos rasos. Quando você compreende a lógica por trás de ${cleanTitle.toLowerCase()}, sua clareza mental e capacidade de execução superam qualquer ruído ou distração ao seu redor. Quem atinge consistência duradoura foca no que move o ponteiro e resiste à pressa imediata. A regra prática imediata: aplique o primeiro movimento concreto em menos de 5 minutos, sem hesitar, antes que a dúvida e as distrações assumam o comando da sua rotina. Siga o canal para mais análises estratégicas diárias de alto impacto, comente sua opinião e salve este vídeo para aplicar ainda hoje.`,
                     firstComment: `♟️ Qual foi sua maior percepção sobre ${cleanTitle.slice(0, 30)}? O protocolo completo está no link fixado!`
                 }
             };
@@ -2517,9 +2830,14 @@ try {
             const sourceUrl = studioCurrentMode === 'youtube' ? (document.getElementById('studioYoutubeUrlInput')?.value.trim() || null) : null;
             const visualDirective = document.getElementById('studioVisualDirectiveInput')?.value.trim() || null;
 
-            if (studioCurrentMode === 'youtube' && studioScriptData && studioScriptData.fromYouTube) {
-                if (visualDirective) studioScriptData.visualDirective = visualDirective;
-                renderStudioScriptPreviewUI(studioScriptData);
+            if (studioCurrentMode === 'youtube' && sourceUrl) {
+                if (studioScriptData && studioScriptData.fromYouTube && studioLastAnalyzedUrl === sourceUrl) {
+                    if (visualDirective) studioScriptData.visualDirective = visualDirective;
+                    renderStudioScriptPreviewUI(studioScriptData);
+                    return;
+                }
+                // Dispara a extração real pelo Agente IA
+                analyzeCurrentYouTubeUrl();
                 return;
             }
 
@@ -2586,6 +2904,7 @@ try {
             }
 
             studioScriptData = scriptData;
+            studioNarrationModifiedByUser = false;
             renderStudioScriptPreviewUI(scriptData);
         }
 
@@ -2646,10 +2965,10 @@ try {
                 const hack = document.getElementById('studioBlockHack');
                 const cta = document.getElementById('studioBlockCta');
 
-                if (hook) hook.innerText = scriptData.blocks[0].text;
-                if (science) science.innerText = scriptData.blocks[1].text;
-                if (hack) hack.innerText = scriptData.blocks[2].text;
-                if (cta) cta.innerText = scriptData.blocks[3].text;
+                if (hook) hook.value = scriptData.blocks[0].text;
+                if (science) science.value = scriptData.blocks[1].text;
+                if (hack) hack.value = scriptData.blocks[2].text;
+                if (cta) cta.value = scriptData.blocks[3].text;
 
                 const blockVisualConfigs = [
                     { elId: 'studioBlockHookVisual', textId: 'studioBlockHookVisualText', fallback: 'close-up dramático com iluminação forte', block: scriptData.blocks[0] },
@@ -2682,10 +3001,185 @@ try {
 
             const firstComment = document.getElementById('studioPreviewFirstComment');
             if (firstComment) {
-                firstComment.value = scriptData.firstComment || '';
+                const affiliate = document.getElementById('customChannelAffiliate')?.value?.trim() || 'https://meulink.com/vip';
+                firstComment.value = scriptData.firstComment || scriptData.metadata?.firstComment || `👉 Protocolo completo e materiais no link oficial fixado: ${affiliate}`;
             }
 
             onStudioNarrationInput();
+        }
+
+        // ==========================================
+        // SINCRONIZAÇÃO BIDIRECIONAL E FORMULÁRIOS VIVOS
+        // ==========================================
+        function onStudioBlockUserEdit(blockIndex) {
+            const hook = document.getElementById('studioBlockHook')?.value?.trim() || '';
+            const science = document.getElementById('studioBlockScience')?.value?.trim() || '';
+            const hack = document.getElementById('studioBlockHack')?.value?.trim() || '';
+            const cta = document.getElementById('studioBlockCta')?.value?.trim() || '';
+
+            // Combina os 4 blocos mantendo separação limpa
+            const parts = [hook, science, hack, cta].filter(Boolean);
+            const combined = parts.join(' ');
+
+            const narrationEl = document.getElementById('studioPreviewNarration');
+            if (narrationEl) {
+                narrationEl.value = combined;
+            }
+
+            studioNarrationModifiedByUser = true;
+            if (studioScriptData && studioScriptData.blocks) {
+                if (blockIndex === 0 && studioScriptData.blocks[0]) studioScriptData.blocks[0].text = hook;
+                if (blockIndex === 1 && studioScriptData.blocks[1]) studioScriptData.blocks[1].text = science;
+                if (blockIndex === 2 && studioScriptData.blocks[2]) studioScriptData.blocks[2].text = hack;
+                if (blockIndex === 3 && studioScriptData.blocks[3]) studioScriptData.blocks[3].text = cta;
+                studioScriptData.narrationText = combined;
+            }
+            onStudioNarrationInput();
+        }
+
+        function syncNarrationToBlocks(narrationText) {
+            const hook = document.getElementById('studioBlockHook');
+            const science = document.getElementById('studioBlockScience');
+            const hack = document.getElementById('studioBlockHack');
+            const cta = document.getElementById('studioBlockCta');
+
+            if (!narrationText || !narrationText.trim()) {
+                if (hook) hook.value = '';
+                if (science) science.value = '';
+                if (hack) hack.value = '';
+                if (cta) cta.value = '';
+                return;
+            }
+
+            const clean = narrationText.replace(/\s+/g, ' ').trim();
+            const sentences = clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [clean];
+            const total = sentences.length;
+
+            let b1 = '', b2 = '', b3 = '', b4 = '';
+
+            if (total <= 4) {
+                b1 = (sentences[0] || '').trim();
+                b2 = (sentences[1] || '').trim();
+                b3 = (sentences[2] || '').trim();
+                b4 = (sentences[3] || '').trim();
+            } else {
+                b1 = sentences[0].trim();
+                b4 = sentences[total - 1].trim();
+
+                const middle = sentences.slice(1, total - 1);
+                if (middle.length === 1) {
+                    b2 = middle[0].trim();
+                    b3 = '';
+                } else {
+                    const b3Count = Math.max(1, Math.floor(middle.length * 0.35));
+                    const b2Sentences = middle.slice(0, middle.length - b3Count);
+                    const b3Sentences = middle.slice(middle.length - b3Count);
+                    b2 = b2Sentences.join(' ').trim();
+                    b3 = b3Sentences.join(' ').trim();
+                }
+            }
+
+            if (hook) hook.value = b1;
+            if (science) science.value = b2;
+            if (hack) hack.value = b3;
+            if (cta) cta.value = b4;
+
+            if (studioScriptData && studioScriptData.blocks) {
+                if (studioScriptData.blocks[0]) studioScriptData.blocks[0].text = b1;
+                if (studioScriptData.blocks[1]) studioScriptData.blocks[1].text = b2;
+                if (studioScriptData.blocks[2]) studioScriptData.blocks[2].text = b3;
+                if (studioScriptData.blocks[3]) studioScriptData.blocks[3].text = b4;
+                studioScriptData.narrationText = clean;
+            }
+        }
+
+        function onStudioNarrationUserEdit() {
+            studioNarrationModifiedByUser = true;
+            const narration = document.getElementById('studioPreviewNarration')?.value || '';
+            syncNarrationToBlocks(narration);
+            onStudioNarrationInput();
+        }
+
+        function onStudioTitleInput() {
+            const title = document.getElementById('studioPreviewTitle')?.value?.trim() || '';
+            if (studioScriptData) {
+                studioScriptData.title = title;
+            }
+            const postTitle = document.getElementById('postTitle');
+            if (postTitle) {
+                postTitle.value = title;
+                updateTitleCounter();
+            }
+        }
+
+        function onStudioPlatformChange(plat) {
+            const titleEl = document.getElementById('studioPreviewTitle');
+            if (titleEl && titleEl.value) {
+                let t = titleEl.value;
+                t = t.replace(/#Shorts/gi, '').replace(/#TikTok/gi, '').replace(/#Viral/gi, '').replace(/#Reels/gi, '').trim();
+                if (plat === 'YOUTUBE_SHORTS') {
+                    t += ' #Shorts';
+                } else if (plat === 'TIKTOK') {
+                    t += ' #TikTok #Viral';
+                } else if (plat === 'INSTAGRAM_REELS') {
+                    t += ' #Reels';
+                }
+                titleEl.value = t;
+                if (studioScriptData) studioScriptData.title = t;
+            }
+            const postPlat = document.getElementById('postPlatform');
+            if (postPlat) postPlat.value = plat;
+            onStudioNarrationInput();
+        }
+
+        function onCustomChannelNameChange() {
+            const name = document.getElementById('customChannelName')?.value?.trim();
+            if (!name) return;
+            const ctaEl = document.getElementById('studioBlockCta');
+            if (ctaEl && ctaEl.value) {
+                ctaEl.value = ctaEl.value.replace(/@\w+/g, name);
+                onStudioBlockUserEdit(3);
+            }
+        }
+
+        function onCustomChannelAffiliateChange() {
+            const link = document.getElementById('customChannelAffiliate')?.value?.trim();
+            if (!link) return;
+            const commEl = document.getElementById('studioPreviewFirstComment');
+            if (commEl && commEl.value) {
+                commEl.value = commEl.value.replace(/https?:\/\/[^\s]+/g, link);
+            }
+        }
+
+        function onStudioCustomTopicInput() {
+            const topic = document.getElementById('studioCustomTopicInput')?.value?.trim();
+            if (!topic) return;
+            clearTimeout(window._studioTopicTimer);
+            window._studioTopicTimer = setTimeout(() => {
+                loadStudioScriptPreview();
+            }, 600);
+        }
+
+        function initStudioIA() {
+            loadCustomChannelSettings();
+
+            const ytInput = document.getElementById('studioYoutubeUrlInput');
+            if (ytInput && !ytInput.value.trim()) {
+                ytInput.value = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+            }
+
+            const visualInput = document.getElementById('studioVisualDirectiveInput');
+            if (visualInput && !visualInput.value.trim()) {
+                visualInput.value = 'Cenário cinematográfico em tons escuros e dourados, iluminação chiaroscuro dramática, estética estoica e foco em detalhes táteis em 9:16 vertical';
+                onVisualDirectiveInput();
+            }
+
+            const topicInput = document.getElementById('studioCustomTopicInput');
+            if (topicInput && !topicInput.value.trim()) {
+                topicInput.value = 'O Efeito Priming e Decisões Inconscientes';
+            }
+
+            loadStudioScriptPreview();
         }
 
         async function executeStudioPipeline() {
@@ -2706,6 +3200,12 @@ try {
                 return;
             }
 
+            // Se o link do YouTube ainda não foi analisado pelo agente, executa a análise antes de prosseguir
+            if (studioCurrentMode === 'youtube' && sourceUrl && sourceUrl !== studioLastAnalyzedUrl) {
+                appendStudioLog(`⚡ Agente IA: Extraindo e analisando conteúdo do YouTube (${sourceUrl}) antes da renderização...`);
+                await analyzeCurrentYouTubeUrl();
+            }
+
             const customTopic = studioCurrentMode === 'topic' 
                 ? (document.getElementById('studioCustomTopicInput')?.value.trim() || null) 
                 : (studioCurrentMode === 'youtube' && studioScriptData?.title ? studioScriptData.title : null);
@@ -2719,11 +3219,17 @@ try {
             const customAffiliate = document.getElementById('customChannelAffiliate')?.value?.trim() || null;
             const enableSubtitles = document.getElementById('studioEnableSubtitles') ? document.getElementById('studioEnableSubtitles').checked : true;
             const subtitlesTheme = document.getElementById('studioSubtitlesTheme')?.value || 'GOLD_PUNCH';
-            const flowClipsDir = document.getElementById('studioFlowClipsDir')?.value?.trim() || null;
 
-            const dynamicTitle = document.getElementById('studioPreviewTitle')?.value?.trim() || null;
-            const dynamicNarration = document.getElementById('studioPreviewNarration')?.value?.trim() || null;
-            const dynamicFirstComment = document.getElementById('studioPreviewFirstComment')?.value?.trim() || null;
+            let flowClipsDir = null;
+            const useClipsChk = document.getElementById('chkUseFlowClips');
+            if (useClipsChk && useClipsChk.checked && studioFlowClipsState && studioFlowClipsState.hasClips) {
+                flowClipsDir = studioFlowClipsState.directory || 'pipeline/inputs/flow';
+            }
+
+            // Sempre utiliza os valores atuais dos campos na tela editados pelo usuário
+            let dynamicTitle = document.getElementById('studioPreviewTitle')?.value?.trim() || studioScriptData?.title || 'Vídeo IA #Shorts';
+            let dynamicNarration = document.getElementById('studioPreviewNarration')?.value?.trim() || studioScriptData?.narrationText || null;
+            let dynamicFirstComment = document.getElementById('studioPreviewFirstComment')?.value?.trim() || studioScriptData?.firstComment || null;
 
             const termLogs = document.getElementById('studioTerminalLogs');
             termLogs.innerHTML = '';
@@ -2737,6 +3243,12 @@ try {
             if (visualDirective) appendStudioLog(`🎨 Diretriz Visual: "${visualDirective}"`);
             appendStudioLog(`🗣️ Voz Neural: ${customVoice || 'Padrão'}`);
             appendStudioLog(`💬 Legendas: ${enableSubtitles ? `ATIVADAS (${subtitlesTheme})` : 'DESATIVADAS'}`);
+
+            if (flowClipsDir) {
+                appendStudioLog(`🎬 [Modo Estúdio Veo] Incorporando ${studioFlowClipsState.clipsCount} clipe(s) externos da pasta "${flowClipsDir}"`);
+            } else {
+                appendStudioLog(`🌟 [Modo Automático] Motor visual dinâmico (Pexels Stock Video + Efeito Ken Burns Full HD)`);
+            }
 
             try {
                 const headers = { 'Content-Type': 'application/json' };
@@ -2785,25 +3297,98 @@ try {
                     } else {
                         showToast(`Erro na requisição: ${errMsg}`, 'error');
                     }
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> <span>Gerar Vídeo Agora com IA</span>';
+                    resetStudioButton();
                     return;
                 }
             } catch (e) {
                 appendStudioLog(`[ERRO DE CONEXÃO] Backend inalcançável: ${e.message}`);
                 showToast(`Falha de conexão com o servidor local: ${e.message}`, 'error');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> <span>Gerar Vídeo Agora com IA</span>';
+                resetStudioButton();
                 return;
             }
         }
 
         let studioLastFlowData = null;
+        let studioFlowClipsState = { hasClips: false, clipsCount: 0, directory: 'pipeline/inputs/flow', clips: [] };
+
+        async function checkFlowClipsStatus(userFeedback = false) {
+            try {
+                const headers = {};
+                const key = getApiKey();
+                if (key) headers['X-API-KEY'] = key;
+
+                const res = await fetch('/api/v1/dashboard/pipeline/flow-clips-status', { headers });
+                if (res.ok) {
+                    const data = await res.json();
+                    studioFlowClipsState = data;
+                    renderFlowClipsStatusUI(data);
+                    if (userFeedback) {
+                        if (data.hasClips && data.clipsCount > 0) {
+                            showToast(`Detectados ${data.clipsCount} clipe(s) de vídeo em pipeline/inputs/flow!`, 'success');
+                        } else {
+                            showToast('Nenhum clipe de vídeo encontrado em pipeline/inputs/flow.', 'info');
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Erro ao verificar clipes externos:', e);
+            }
+        }
+
+        function renderFlowClipsStatusUI(data) {
+            const card = document.getElementById('flowClipsStatusCard');
+            const icon = document.getElementById('flowClipsStatusIcon');
+            const title = document.getElementById('flowClipsStatusTitle');
+            const subtitle = document.getElementById('flowClipsStatusSubtitle');
+            const badge = document.getElementById('flowClipsCountBadge');
+            const toggleWrapper = document.getElementById('flowClipsToggleWrapper');
+            const heroBtnText = document.getElementById('btnExecuteStudioPipelineText');
+
+            if (!card) return;
+
+            if (data && data.hasClips && data.clipsCount > 0) {
+                card.className = 'p-2.5 rounded-xl border text-xs bg-pink-950/40 border-pink-700/60 flex items-center justify-between transition-all';
+                if (icon) icon.className = 'w-2.5 h-2.5 rounded-full bg-pink-400 animate-pulse';
+                if (title) {
+                    title.innerHTML = '🎬 Clipes Veo 2 / Externos Ativos';
+                    title.className = 'text-[11px] font-bold text-pink-200';
+                }
+                if (subtitle) {
+                    subtitle.innerHTML = `Montagem usando ${data.clipsCount} clipe(s) salvos na pasta`;
+                    subtitle.className = 'text-[10px] text-pink-300/80';
+                }
+                if (badge) {
+                    badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded-full bg-pink-900/80 border border-pink-600 text-pink-200 font-bold';
+                    badge.innerText = `${data.clipsCount} clipe(s)`;
+                }
+                if (toggleWrapper) toggleWrapper.classList.remove('hidden');
+                if (heroBtnText) heroBtnText.innerText = 'Montar Vídeo com Clipes Veo';
+            } else {
+                card.className = 'p-2.5 rounded-xl border text-xs bg-slate-950 border-slate-800 flex items-center justify-between transition-all';
+                if (icon) icon.className = 'w-2 h-2 rounded-full bg-emerald-400';
+                if (title) {
+                    title.innerHTML = '🌟 Modo 100% Automático';
+                    title.className = 'text-[11px] font-semibold text-slate-200';
+                }
+                if (subtitle) {
+                    subtitle.innerHTML = 'Pexels Stock Video + Efeito Ken Burns Full HD';
+                    subtitle.className = 'text-[10px] text-slate-500';
+                }
+                if (badge) {
+                    badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-400';
+                    badge.innerText = '0 clipes';
+                }
+                if (toggleWrapper) toggleWrapper.classList.add('hidden');
+                if (heroBtnText) heroBtnText.innerText = 'Gerar Vídeo Completo Agora';
+            }
+        }
 
         async function generateGoogleFlowPackageFromStudio() {
             const btn = document.getElementById('btnStudioFlowPackage');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Extraindo...';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Gerando Prompts...';
+            }
 
             const channel = document.getElementById('studioChannelSelect')?.value || 'custom';
             const customName = document.getElementById('customChannelName')?.value?.trim() || null;
@@ -2852,17 +3437,19 @@ try {
                     studioLastFlowData = data;
                     renderStudioFlowPackageUI(data);
                     switchStudioRightTab('flow');
-                    showToast('Pacote Google Flow (Veo) extraído com sucesso!', 'success');
+                    showToast('Prompts e áudio do Veo 2 gerados com sucesso!', 'success');
                 } else {
                     const err = await res.json();
-                    showToast('Erro ao gerar pacote Flow: ' + (err.error || res.statusText), 'error');
+                    showToast('Erro ao gerar prompts: ' + (err.error || res.statusText), 'error');
                 }
             } catch (e) {
                 console.error('Falha ao gerar pacote Flow:', e);
-                showToast('Falha na extração para o Google Flow: ' + e.message, 'error');
+                showToast('Falha na geração de prompts: ' + e.message, 'error');
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-clapperboard text-white"></i> <span>Extrair para Google Flow (Veo)</span>';
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <span>Gerar Prompts & Áudio</span>';
+                }
             }
         }
 
@@ -3061,7 +3648,8 @@ try {
             const btn = document.getElementById('btnExecuteStudioPipeline');
             if (btn) {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> <span>Gerar Vídeo Agora com IA</span>';
+                const label = (studioFlowClipsState && studioFlowClipsState.hasClips) ? 'Montar Vídeo com Clipes Veo' : 'Gerar Vídeo Completo Agora';
+                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> <span id="btnExecuteStudioPipelineText">${label}</span>`;
             }
         }
 

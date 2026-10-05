@@ -152,6 +152,9 @@ export async function composeFinalVideo({
     }
 
     let audioMap = '-map [a_out]';
+    const targetSamples = totalDurationSeconds > 0 ? Math.ceil(totalDurationSeconds * 48000) : null;
+    const padFilter = targetSamples ? `apad=whole_len=${targetSamples}` : 'apad';
+
     if (hasBgMusic) {
       const fadeOutStart = Math.max(1, (totalDurationSeconds || 60) - fadeOutSec);
       complexFilters.push(
@@ -164,11 +167,11 @@ export async function composeFinalVideo({
         // P4.3: Mixagem com cauda natural de música até o corte de vídeo
         `[voice_play][bg_ducked]amix=inputs=2:duration=longest:dropout_transition=2[mixed_raw]`,
         // Masterização EBU R128 no mix final completo e pad de áudio para sincronia milimétrica A/V
-        `[mixed_raw]loudnorm=I=${targetLufs}:TP=-1.5:LRA=9:linear=true,apad=whole_dur=${totalDurationSeconds},aformat=channel_layouts=stereo:sample_rates=48000[a_out]`
+        `[mixed_raw]loudnorm=I=${targetLufs}:TP=-1.5:LRA=9:linear=true,aformat=channel_layouts=stereo:sample_rates=48000,${padFilter}[a_out]`
       );
     } else {
       complexFilters.push(
-        `[1:a]highpass=f=80,acompressor=threshold=0.08:ratio=3:attack=15:release=150,loudnorm=I=${targetLufs}:TP=-1.5:LRA=9:linear=true,apad=whole_dur=${totalDurationSeconds},aformat=channel_layouts=stereo:sample_rates=48000[a_out]`
+        `[1:a]highpass=f=80,acompressor=threshold=0.08:ratio=3:attack=15:release=150,loudnorm=I=${targetLufs}:TP=-1.5:LRA=9:linear=true,aformat=channel_layouts=stereo:sample_rates=48000,${padFilter}[a_out]`
       );
     }
 

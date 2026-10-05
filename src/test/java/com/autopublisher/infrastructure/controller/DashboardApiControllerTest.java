@@ -261,4 +261,22 @@ class DashboardApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.channelName").value("@meunovocanal"));
     }
+
+    @Test
+    @DisplayName("Deve retornar status da pasta de clipes do Google Flow com sucesso")
+    void shouldReturnFlowClipsStatusSuccessfully() throws Exception {
+        when(aiPipelineService.getFlowClipsStatus()).thenReturn(java.util.Map.of(
+                "directory", "pipeline/inputs/flow",
+                "hasClips", true,
+                "clipsCount", 2,
+                "clips", java.util.List.of("scene_1.mp4", "scene_2.mp4")
+        ));
+
+        mockMvc.perform(get("/api/v1/dashboard/pipeline/flow-clips-status")
+                        .header("X-API-KEY", API_KEY))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hasClips").value(true))
+                .andExpect(jsonPath("$.clipsCount").value(2))
+                .andExpect(jsonPath("$.clips[0]").value("scene_1.mp4"));
+    }
 }

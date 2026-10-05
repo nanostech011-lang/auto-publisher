@@ -194,7 +194,8 @@ async function renderWithFallback({
           outputVideoPath: finalVideoPath,
           totalDurationSeconds: targetDurationSeconds,
           bgMusicPath,
-          enableSubtitles: false
+          enableSubtitles: false,
+          audioProfile
         });
 
         const stat = fs.statSync(renderResult.videoPath);
@@ -285,8 +286,9 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
   console.log('\n>>> [2/6] Sintetizando locucao neural com Edge-TTS e timestamps...');
   const voiceProfile = channelProfile.voice_profile || {};
   const voiceId = options.voiceId || voiceProfile.voice_id || 'pt-BR-AntonioNeural';
-  const voiceRate = voiceProfile.rate || '+5%';
-  const voicePitch = voiceProfile.pitch || '+0Hz'; // Pitch correto do canal
+  // Taxa e tom estritamente calibrados para fala humana 100% natural, sem distorção robótica
+  const voiceRate = options.voiceRate || (options.voiceId ? '+0%' : (voiceProfile.rate || '+0%'));
+  const voicePitch = options.voicePitch || (options.voiceId ? '+0Hz' : (voiceProfile.pitch || '+0Hz'));
   const audioPath = path.join(scratchDir, 'narration.mp3');
 
   const voiceResult = await synthesizeVoiceWithTimestamps({
@@ -309,23 +311,21 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
   const subtitlesPath = path.join(scratchDir, 'subtitles.ass');
   const srtPath = path.join(scratchDir, 'subtitles.srt');
 
-  // Seleciona tema de legenda: do dashboard, perfil do canal ou padrão por canal
+  // Seleciona tema de legenda: do dashboard, perfil do canal ou padrão
   const channelSubStyle = channelProfile.visual_profile?.subtitles_style;
-  const channelSubTheme = options.subtitlesTheme || channelSubStyle?.theme || (
-    options.channel === 'fatos.ocultos' ? 'CYAN_ELECTRIC'
-    : options.channel === 'motivacao' ? 'TIKTOK_VIRAL'
-    : 'GOLD_PUNCH'
-  );
+  const channelSubTheme = options.subtitlesTheme || channelSubStyle?.theme || 'GOLD_PUNCH';
+
+  console.log(`Tema de legenda aplicado: "${channelSubTheme}" (conforme seleção do painel/canal)`);
 
   generateAssSubtitles({
     wordBoundaries: voiceResult.wordBoundaries,
     outputAssPath: subtitlesPath,
     theme: channelSubTheme,
-    // Permite override de estilo via perfil do canal
+    // Se o usuário selecionou tema no painel, as cores do tema selecionado têm precedência absoluta
     fontName: channelSubStyle?.font_name || null,
     fontSize: channelSubStyle?.font_size || null,
-    primaryColor: channelSubStyle?.primary_color || null,
-    activeWordColor: channelSubStyle?.active_word_color || null,
+    primaryColor: options.subtitlesTheme ? null : (channelSubStyle?.primary_color || null),
+    activeWordColor: options.subtitlesTheme ? null : (channelSubStyle?.active_word_color || null),
     outlineColor: channelSubStyle?.outline_color || null,
     outlineWidth: channelSubStyle?.outline_width || null,
     marginV: channelSubStyle?.margin_v || null,

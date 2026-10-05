@@ -8,7 +8,7 @@ export async function ingestGeneratedPost({
   videoPath,
   thumbnailPath,
   scriptData,
-  apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:8080',
+  apiBaseUrl = process.env.API_BASE_URL || (process.env.PORT ? `http://localhost:${process.env.PORT}` : 'http://localhost:8080'),
   apiKey = process.env.API_KEY || process.env.AUTO_PUBLISHER_API_KEY || 'dev-local-api-key',
   scheduledTime = null,
   platform = 'YOUTUBE_SHORTS',

@@ -149,12 +149,11 @@ export function truncateWords(text, maxLength) {
  * Analisa semanticamente a transcrição e o título para sintetizar os 4 blocos de retenção
  */
 export function extractConceptualSummary(transcriptText, baseTitle, authorName, channelName = '@canal') {
+  const cleanTitle = truncateWords(baseTitle, 45);
   const combined = ((transcriptText || '') + ' ' + (baseTitle || '')).toLowerCase();
 
   const isKahneman = combined.includes('rápido e devagar') || combined.includes('canima') || combined.includes('kahneman');
   const isDecision = combined.includes('decis') || combined.includes('escolha') || combined.includes('erro');
-  const isDopamine = combined.includes('dopamina') || combined.includes('vício') || combined.includes('preguiç') || combined.includes('procrastina');
-  const isStoic = combined.includes('estoic') || combined.includes('marco aurélio') || combined.includes('sêneca') || combined.includes('epicteto');
 
   if (isKahneman || (isDecision && combined.includes('livro'))) {
     const hookText = `Se você acredita que está no controle de todas as suas decisões, pare tudo agora: a neurociência prova que o seu cérebro toma escolhas no piloto automático sem você perceber.`;
@@ -162,37 +161,38 @@ export function extractConceptualSummary(transcriptText, baseTitle, authorName, 
     const hackText = `A regra prática para assumir o volante: toda vez que sentir o impulso de gastar ou confrontar alguém, pare. Force uma pausa de dez segundos, respire fundo e ative o Sistema 2 com perguntas objetivas.`;
     const ctaText = `Siga ${channelName} para dominar sua química mental antes que o mundo use suas fraquezas contra você.`;
     const insight = 'o Sistema 1 impulsivo decide no piloto automático enquanto o Sistema 2 racional permanece preguiçoso';
-
     return { hookText, scienceText, hackText, ctaText, insight };
   }
 
-  if (isDopamine) {
-    const hookText = `Você não é preguiçoso e a sua falta de ânimo tem uma explicação biológica exata: o seu cérebro foi condicionado a buscar recompensas rápidas sem esforço real.`;
-    const scienceText = `A neurociência explica que a dopamina é o neurotransmissor da antecipação e da busca por ação. Quando você passa horas rolando telas e consumindo dopamina barata, seus receptores se fecham para economizar receptividade neural. Isso torna qualquer trabalho profundo ou estudo uma tortura química imediata, drenando sua capacidade de concentração e foco produtivo ao longo do dia.`;
-    const hackText = `A regra de ouro para destravar sua mente: a ação deliberada precisa vir antes da motivação. Force apenas os primeiros cinco minutos de movimento físico e sua química cerebral começará a trabalhar a seu favor.`;
-    const ctaText = `Siga ${channelName} para hackear sua rotina e assumir o controle biológico dos seus objetivos diários.`;
-    const insight = 'a dessensibilização dopaminérgica gera paralisia comportamental e só é revertida com a ação prévia';
+  if (transcriptText && transcriptText.length > 100) {
+    const sentences = transcriptText
+      .split(/(?<=[.!?])\s+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 25 && s.length < 280);
 
-    return { hookText, scienceText, hackText, ctaText, insight };
+    if (sentences.length >= 3) {
+      const p1 = sentences[0];
+      const hookText = `Se você quer entender a verdade por trás de ${cleanTitle.toLowerCase()}, preste muita atenção nisso: ${p1}`;
+
+      // Reúne sentenças suficientes para compor um Foco Central denso de ~100 palavras
+      const middleSentences = sentences.slice(1, Math.min(8, sentences.length)).join(' ');
+      const scienceText = truncateWords(middleSentences, 650) + '.';
+
+      const hackSentence = sentences[Math.min(sentences.length - 2, 8)] || `A regra de ouro ensinada é aplicar essa mudança prática nos primeiros minutos da sua rotina diária.`;
+      const hackText = `A lição prática para o seu dia a dia: ${hackSentence} Teste isso por uma semana e observe a transformação real.`;
+
+      const ctaText = `Gostou dessa análise profunda? Siga ${channelName} para evoluir sua mentalidade todos os dias e salve este vídeo para aplicar ainda hoje.`;
+      const insight = `ensinamentos e análise prática de ${cleanTitle}`;
+      return { hookText, scienceText, hackText, ctaText, insight };
+    }
   }
 
-  if (isStoic) {
-    const hookText = `Marco Aurélio escreveu que você tem poder exclusivo sobre a sua própria mente, e não sobre os acontecimentos externos que acontecem ao seu redor.`;
-    const scienceText = `Quando você se irrita com provocações, críticas ou injustiças alheias, você acabou de entregar o controle emocional da sua vida nas mãos de quem te desestabilizou. O cérebro primitivo reage à ofensa como uma ameaça de sobrevivência física, inundando seu corpo de cortisol e raiva. Mas a mente treinada entende que o silêncio estratégico e a calma imperturbável desarmam qualquer ataque verbal muito antes de uma resposta ser dita.`;
-    const hackText = `O exercício prático estoico: quando o impulso da fúria surgir, congele por três segundos. Pergunte a si mesmo se isso terá relevância daqui a cinco anos. Se não tiver, descarte imediatamente.`;
-    const ctaText = `Siga ${channelName} para construir uma armadura mental inabalável e dominar o seu próprio destino.`;
-    const insight = 'o controle das reações emocionais internas anula o poder das provocações externas';
-
-    return { hookText, scienceText, hackText, ctaText, insight };
-  }
-
-  // Generic fallback estruturado (~155 palavras / 65-70s)
-  const cleanTitle = truncateWords(baseTitle, 40);
-  const hookText = `Se você quer entender a verdade definitiva sobre ${cleanTitle.toLowerCase()}, pare tudo agora: existe um mecanismo psicológico crucial que quase ninguém percebeu.`;
-  const scienceText = `A análise estratégica desse conteúdo revela que o comportamento humano obedece a padrões previsíveis de sobrevivência e recompensa. Quando exposto à incerteza ou ao estresse, o cérebro recorre a atalhos cognitivos imediatos, buscando a resposta mais rápida em vez da mais lógica. Não se trata de fraqueza pessoal ou falta de força de vontade, mas de um processo biológico desenhado para poupar esforço mental em situações de pressão.`;
-  const hackText = `A regra prática para blindar suas escolhas: sempre que estiver diante de um dilema crítico, dê um passo para trás, questione suas primeiras impressões e decida com base em dados objetivos e não no impulso.`;
-  const ctaText = `Siga ${channelName} para receber insights estratégicos de neurociência e comportamento humano todos os dias.`;
-  const insight = `a mecânica cognitiva e os atalhos mentais por trás de ${cleanTitle}`;
+  // Fallback baseado nos conceitos centrais do título
+  const hookText = `O que ninguém te conta sobre ${cleanTitle.toLowerCase()} é muito mais surpreendente e profundo do que parece à primeira vista.`;
+  const scienceText = `Ao analisar o que ${authorName || 'especialistas'} compartilham sobre este assunto, percebemos que o resultado prático depende de compreender os padrões fundamentais. Quem tenta atalhos sem entender a mecânica por trás de ${cleanTitle.toLowerCase()} acaba enfrentando frustrações desnecessárias. O diferencial de quem atinge consistência e maestria é focar no que realmente move o ponteiro e resistir às distrações imediatas do ambiente cotidiano.`;
+  const hackText = `A melhor estratégia que você pode adotar hoje: foque no primeiro passo concreto, elimine qualquer desculpa secundária e execute com clareza antes de buscar perfeição.`;
+  const ctaText = `Siga ${channelName} para dominar novos conhecimentos práticos, comente sua opinião e transforme seus resultados diários.`;
+  const insight = `análise e síntese de ${cleanTitle}`;
 
   return { hookText, scienceText, hackText, ctaText, insight };
 }
@@ -214,87 +214,99 @@ export async function analyzeTranscriptWithGemini({
   const channelName = channelProfile.name || channelProfile.channelName || (channelProfile.channel_id ? `@${channelProfile.channel_id}` : '@canal');
   const niche = channelProfile.niche || 'Neurociência Prática e Comportamento Humano';
   const tone = channelProfile.script_profile?.tone || 'Analítico, misterioso, confiante e direto';
-  const cleanTranscript = (transcriptText || '').replace(/\s+/g, ' ').slice(0, 7500);
+  const cleanTranscript = (transcriptText || '').replace(/\s+/g, ' ').slice(0, 8000);
 
-  const modelName = 'gemini-flash-lite-latest';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${effectiveKey}`;
+  const candidateModels = ['gemini-flash-lite-latest', 'gemini-3.5-flash-lite', 'gemini-flash-latest', 'gemini-3.5-flash'];
 
-  const systemInstruction = `Você é um Diretor Criativo e Roteirista Sênior especialista em vídeos virais de alta retenção para YouTube Shorts, TikTok e Instagram Reels.
-Seu canal: "${channelName}" (Nicho: ${niche}, Tom: ${tone}).
+  const systemInstruction = `Você é um Diretor Criativo e Roteirista Sênior de elite para vídeos virais de alta retenção (YouTube Shorts, TikTok e Instagram Reels).
+Canal Destino: "${channelName}" (Nicho: ${niche}, Tom: ${tone}).
 ${visualDirective ? `DIRETRIZ DE ESTILO VISUAL OBRIGATÓRIA: "${visualDirective}". Todos os prompts visuais de IA DEVEM seguir rigorosamente essa estética!` : ''}
 
-Sua missão é extrair a essência do conteúdo e gerar um roteiro original em 4 blocos de retenção rigorosos:
-1. hook (Gancho 0-3s): Frase provocativa que quebra padrão (10 a 16 palavras).
-2. scientific_core (Foco Central 3-45s): Mecanismo neurobiológico ou lógica explicada de forma clara e envolvente (75 a 90 palavras).
-3. practical_hack (Hack Prático 45-58s): Ação imediata aplicável na rotina (28 a 35 palavras).
-4. cta (CTA 58-65s): Chamada para seguir ${channelName} (14 a 18 palavras).
+MISSÃO AGÊNTICA FUNDAMENTAL (EXTRAÇÃO 100% FIEL AO VÍDEO / SEM HARDCODE / SEM CLICHÊS):
+O roteiro DEVE ser 100% autêntico, inédito e extraído diretamente dos ensinamentos, dados, metáforas e argumentos reais da transcrição do vídeo "${baseTitle}" (Autor: "${authorName || 'Autor'}").
+É TERMINANTEMENTE PROIBIDO usar clichês genéricos ou inventar tópicos que o vídeo não aborda.
+- Se a transcrição estiver disponível, extraia e use os conceitos reais apresentados pelo autor, os diagnósticos práticos, as palavras-chave que ele repete e o exercício ou conselho que ele dá ao público.
+- NUNCA invente chavões como 'cérebro reptiliano' ou 'versão superior' a menos que o orador esteja ensinando exatamente isso na transcrição!
+- Desenvolva cada bloco de forma completa, com substância e detalhes ricos, sem resumos telegráficos.
 
-IMPORTANTE: O total de palavras da narração corrida (hook + scientific_core + practical_hack + cta) DEVE estar rigorosamente entre 160 e 180 palavras (hook: 12-16 palavras, scientific_core: 85-95 palavras, practical_hack: 35-42 palavras, cta: 16-20 palavras), garantindo duração de áudio entre 63s e 72s para elegibilidade inquestionável ao TikTok Creator Rewards Program (que exige estritamente >= 60 segundos).
+ESTRUTURA DOS 4 BLOCOS COM METAS RÍGIDAS DE PALAVRAS (TIKTOK REWARDS >= 60 SEGUNDOS):
+1. hook (Gancho 0-3s): 16 a 22 palavras provocativas abrindo com a dor ou pergunta central do vídeo.
+2. scientific_core (Foco Central 3-45s): 95 a 115 palavras dissecando com profundidade envolvente a explicação, mecanismo ou raciocínio central defendido no vídeo.
+3. practical_hack (Hack Prático 45-58s): 35 a 45 palavras com a aplicação prática exata ensinada no vídeo.
+4. cta (CTA 58-65s): 15 a 20 palavras convidando para seguir ${channelName} e comentar.
 
-CENAS VISUAIS - REGRA MANDATÓRIA DE ZERO REPETIÇÃO E LIVING CINEMAGRAPH:
-Gere uma lista de 7 a 10 cenas visuais sincronizadas sequencialmente com cada frase da narração:
+REGRA MANDATÓRIA DE CONTAGEM:
+A soma das palavras de (hook + scientific_core + practical_hack + cta) DEVE OBRIGATORIAMENTE ESTAR ENTRE 160 E 180 PALAVRAS para atingir entre 65s e 75s de áudio falado.
+NUNCA gere menos de 155 palavras no total. Scripts curtos serão sumariamente rejeitados.
+
+CENAS VISUAIS (9:16) - ZERO REPETIÇÃO:
+Gere de 7 a 9 cenas visuais sincronizadas sequencialmente com cada frase da narração:
 - phrase: trecho falado correspondente
-- suggested_type: "ai_image" (prioritário para estilos estilizados como Ghibli/Anime ou simbólicos) ou "stock_video" (para ações de pessoas comuns, escritório)
-- stock_search_query: termos de busca em inglês (2 a 4 palavras) para Pexels (ex: "thinking person dark", "hands holding book")
-- ai_prompt: prompt cinematográfico em inglês em formato vertical 9:16.
-  * REGRA MANDATÓRIA DE ZERO REPETIÇÃO: NENHUMA cena pode ter o mesmo sujeito, ângulo ou composição de outra cena. Cada uma das cenas DEVE retratar um sujeito ÚNICO e DIFERENTE (ex: cena 1 = close-up de olhos focados; cena 2 = fogueira aconchegante com brasas; cena 3 = riacho e ponte com luz solar; cena 4 = mapa em ruínas antigas; cena 5 = clareira mágica com vagalumes; cena 6 = manoplas segurando caneca fumegante; cena 7 = céu estrelado com constelações cintilantes; cena 8 = vista panorâmica ao pôr do sol).
-  * DETALHES DE MICRO-ANIMAÇÃO VIVA (CINEMAGRAPH): Inclua elementos sutis de movimento em cada cena (dancing campfire flames and rising sparks, floating bioluminescent fireflies, twinkling stars in clear night, golden sunbeam dust motes).
-  * Se houver DIRETRIZ VISUAL definida (${visualDirective || 'Padrão'}), obedeça-a 100% no estilo artístico (Ghibli 2D cel gouache, anime Ufotable, fotografia 35mm, etc).
-- cinemagraph_fx: escolha um micro-efeito procedural para a cena: "fire_embers" (para fogueiras, brasas, velas), "fireflies" (para noites, crepúsculo, florestas mágicas), "twinkling_stars" (para céu noturno estrelado), "sunbeams_dust" (para luz do sol filtrada em árvores/templos com poeira dourada), "anime_aura_sparks" (para faíscas de energia de batalha).
+- suggested_type: "ai_image" ou "stock_video"
+- stock_search_query: termos de busca em inglês (2 a 4 palavras) para Pexels
+- ai_prompt: prompt cinematográfico em inglês em formato vertical 9:16 respeitando a estética ${visualDirective || 'Cinematic Dark Minimalist'}.
+- cinemagraph_fx: "fire_embers" | "fireflies" | "twinkling_stars" | "sunbeams_dust" | "anime_aura_sparks"
 
 Retorne EXCLUSIVAMENTE um objeto JSON válido com os campos:
 title, insight, hook, scientific_core, practical_hack, cta, visual_scenes.`;
 
-  const userPrompt = `Gere o roteiro profissional e as tomadas visuais para este conteúdo:
-Título: "${baseTitle}"
-Autor original: "${authorName || 'Especialista'}"
+  const userPrompt = `Analise a transcrição e o conteúdo deste vídeo e sintetize o roteiro completo dos 4 blocos de retenção com total fidelidade ao que é ensinado:
+Título do Vídeo: "${baseTitle}"
+Autor Original: "${authorName || 'Criador do Conteúdo'}"
 ${visualDirective ? `Diretriz Visual Obrigatória: "${visualDirective}"` : ''}
-${cleanTranscript ? `Transcrição: """${cleanTranscript}"""` : 'Sem transcrição disponível. Desenvolva o roteiro a partir do tema central e título do vídeo.'}`;
+${cleanTranscript ? `TRANSCRIÇÃO REAL DO VÍDEO (EXTRAIA AS LIÇÕES, ARGUMENTOS E TERMOS REAIS DESTA TRANSCRIÇÃO):\n"""${cleanTranscript}"""` : 'Desenvolva o roteiro profundo explorando os conceitos-chave contidos no título e tema central deste vídeo.'}
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 35000);
+LEMBRE-SE: O roteiro corrido (hook + scientific_core + practical_hack + cta) DEVE TER ENTRE 160 E 180 PALAVRAS no total para garantir duração superior a 60 segundos.`;
 
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': effectiveKey
-      },
-      signal: controller.signal,
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-        systemInstruction: { parts: [{ text: systemInstruction }] },
-        generationConfig: {
-          temperature: 0.35,
-          maxOutputTokens: 4096,
-          responseMimeType: 'application/json'
-        }
-      })
-    });
-    clearTimeout(timeoutId);
+  for (const modelName of candidateModels) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${effectiveKey}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
 
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      console.warn(`[YouTube Analyzer] Gemini API retornou HTTP ${res.status}: ${errText.slice(0, 160)}`);
-      return null;
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': effectiveKey
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+          systemInstruction: { parts: [{ text: systemInstruction }] },
+          generationConfig: {
+            temperature: 0.45,
+            maxOutputTokens: 4096,
+            responseMimeType: 'application/json'
+          }
+        })
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        console.warn(`[YouTube Analyzer] Modelo ${modelName} retornou HTTP ${res.status}: ${errText.slice(0, 140)}`);
+        continue; // Tenta o próximo modelo
+      }
+
+      const data = await res.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) continue;
+
+      const parsed = JSON.parse(rawText);
+      if (!parsed.hook || !parsed.scientific_core || !parsed.practical_hack || !parsed.cta) {
+        continue;
+      }
+
+      console.log(`[YouTube Analyzer] ✅ Roteiro adaptado com sucesso via ${modelName}!`);
+      return parsed;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.warn(`[YouTube Analyzer] Falha ao consultar ${modelName}: ${err.message}`);
     }
-
-    const data = await res.json();
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!rawText) return null;
-
-    const parsed = JSON.parse(rawText);
-    if (!parsed.hook || !parsed.scientific_core || !parsed.practical_hack || !parsed.cta) {
-      return null;
-    }
-
-    return parsed;
-  } catch (err) {
-    clearTimeout(timeoutId);
-    console.warn(`[YouTube Analyzer] Exceção ao consultar Gemini API: ${err.message}`);
-    return null;
   }
+
+  return null;
 }
 
 /**
@@ -347,6 +359,18 @@ export async function analyzeAndAdaptYouTubeVideo({ url, channelProfile = {}, vi
     ctaText = aiScript.cta;
     insight = aiScript.insight || `análise estratégica de ${baseTitle}`;
     aiScenes = aiScript.visual_scenes;
+
+    // Garantia estrita de duração para elegibilidade ao TikTok Creator Rewards Program (>= 60s)
+    let currentWords = `${hookText} ${scienceText} ${hackText} ${ctaText}`.trim().split(/\s+/).length;
+    if (currentWords < 145 && transcriptData.available && transcriptData.text) {
+      const extraSentences = transcriptData.text
+        .split(/(?<=[.!?])\s+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 35 && s.length < 160 && !scienceText.toLowerCase().includes(s.slice(0, 15).toLowerCase()));
+      if (extraSentences.length > 0) {
+        scienceText = `${scienceText} Como o autor reforça na prática: ${extraSentences[0]}`.trim();
+      }
+    }
   } else {
     // Síntese conceitual heurística nos 4 blocos de retenção algorítmica
     const summary = extractConceptualSummary(
@@ -365,8 +389,8 @@ export async function analyzeAndAdaptYouTubeVideo({ url, channelProfile = {}, vi
   const narrationText = `${hookText} ${scienceText} ${hackText} ${ctaText}`;
   const words = narrationText.trim().split(/\s+/);
   const wordCount = words.length;
-  // Duração estimada calibrada (considerando velocidade ligeiramente acelerada em TTS)
-  const estimatedDurationSeconds = Math.max(62, Math.round((wordCount / 140) * 60));
+  // Duração estimada calibrada (135 palavras por minuto para locução natural em PT-BR)
+  const estimatedDurationSeconds = Math.max(62, Math.round((wordCount / 135) * 60));
 
   const visualDirectiveTag = visualDirective ? `\n\n🎨 Estilo Visual: ${visualDirective}` : '';
   const finalTitle = `${truncateWords(baseTitle, 55)} #Shorts`;
@@ -435,6 +459,7 @@ export async function analyzeAndAdaptYouTubeVideo({ url, channelProfile = {}, vi
       { title: 'Hack Prático (45-58s)', text: hackText, visualDescription: scenes[Math.min(3, scenes.length - 2)]?.visualDescription || scenes[3]?.prompt },
       { title: 'CTA & Retenção (58-65s)', text: ctaText, visualDescription: scenes[scenes.length - 1]?.visualDescription || scenes[4]?.prompt }
     ],
+    firstComment,
     metadata: {
       title: finalTitle,
       description,

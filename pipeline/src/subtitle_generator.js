@@ -139,6 +139,17 @@ export const SUBTITLE_THEMES = {
     marginV: 560,
     popScale: 132
   },
+  WHITE_CLEAN: {
+    fontName: 'Montserrat-Black',
+    fontSize: 76,
+    primaryColor: '&H00E0E0E0',     // Branco suave de fundo
+    activeWordColor: '&H00FFFFFF',  // Branco puro e brilhante para palavra ativa
+    outlineColor: '&H00000000',     // Borda preta nítida
+    outlineWidth: 5.5,
+    shadowWidth: 3.0,
+    marginV: 560,
+    popScale: 130
+  },
   TIKTOK_VIRAL: {
     fontName: 'Montserrat-Black',
     fontSize: 80,

@@ -36,6 +36,9 @@ public class AiPipelineService {
     private final Map<String, PipelineJobStatus> jobRepository = new ConcurrentHashMap<>();
     private final Map<String, List<String>> jobLogs = new ConcurrentHashMap<>();
 
+    @org.springframework.beans.factory.annotation.Value("${server.port:8080}")
+    private int serverPort = 8080;
+
     @org.springframework.beans.factory.annotation.Autowired
     public AiPipelineService(
             ObjectMapper objectMapper,
@@ -166,6 +169,8 @@ public class AiPipelineService {
             );
 
             ProcessBuilder pb = new ProcessBuilder(command);
+            pb.directory(new File("."));
+            pb.redirectErrorStream(true);
             injectEnvironment(pb);
             Process process = pb.start();
 
@@ -225,6 +230,8 @@ public class AiPipelineService {
 
     private void injectEnvironment(ProcessBuilder pb) {
         Map<String, String> env = pb.environment();
+        env.put("PORT", String.valueOf(serverPort));
+        env.put("API_BASE_URL", "http://localhost:" + serverPort);
         for (String key : List.of("GEMINI_API_KEY", "GEMINI_AI_API_KEY", "GOOGLE_AI_API_KEY", "PEXELS_API_KEY", "PIXABAY_API_KEY", "AUTOPUBLISHER_API_KEY")) {
             String sysProp = System.getProperty(key);
             if (sysProp != null && !sysProp.isBlank()) {
@@ -501,6 +508,21 @@ public class AiPipelineService {
 
             if (!request.isSubtitlesEnabled()) {
                 command.add("--no-subtitles");
+            }
+
+            if (request.getTitle() != null && !request.getTitle().isBlank()) {
+                command.add("--title");
+                command.add(request.getTitle().trim());
+            }
+
+            if (request.getNarrationText() != null && !request.getNarrationText().isBlank()) {
+                command.add("--narration-text");
+                command.add(request.getNarrationText().trim());
+            }
+
+            if (request.getFirstComment() != null && !request.getFirstComment().isBlank()) {
+                command.add("--first-comment");
+                command.add(request.getFirstComment().trim());
             }
 
             if (geminiApiKey != null && !geminiApiKey.isBlank()) {
@@ -804,5 +826,37 @@ public class AiPipelineService {
         }
 
         return Map.of("error", "Falha ao gerar pacote do Google Flow");
+    }
+
+    /**
+     * Verifica o status da pasta de clipes locais externos (Google Flow / Veo).
+     */
+    public Map<String, Object> getFlowClipsStatus() {
+        File flowDir = new File("pipeline/inputs/flow");
+        if (!flowDir.exists()) {
+            flowDir.mkdirs();
+        }
+
+        File[] files = flowDir.listFiles((dir, name) -> {
+            String lower = name.toLowerCase();
+            return lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".mov") || lower.endsWith(".mkv");
+        });
+
+        List<String> clipNames = new ArrayList<>();
+        if (files != null) {
+            for (File f : files) {
+                if (f.isFile() && f.length() > 0) {
+                    clipNames.add(f.getName());
+                }
+            }
+            clipNames.sort(String::compareToIgnoreCase);
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("directory", flowDir.getPath().replace('\\', '/'));
+        result.put("hasClips", !clipNames.isEmpty());
+        result.put("clipsCount", clipNames.size());
+        result.put("clips", clipNames);
+        return result;
     }
 }

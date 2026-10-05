@@ -466,7 +466,9 @@ export async function harvestVisualScenes({
   const videoClips = [];
   const channelAssetsDir = path.resolve(`pipeline/assets/scenes/${channelId}`);
   const defaultFlowDir = path.resolve('pipeline/inputs/flow');
-  const effectiveFlowDir = flowClipsDir || (fs.existsSync(defaultFlowDir) ? defaultFlowDir : null);
+  const hasClipsInDefault = fs.existsSync(defaultFlowDir) &&
+    fs.readdirSync(defaultFlowDir).some(f => /\.(mp4|mov|webm|mkv)$/i.test(f));
+  const effectiveFlowDir = flowClipsDir || (hasClipsInDefault ? defaultFlowDir : null);
   const fixedVideoSeed = Math.floor(Math.random() * 100000);
   const usedPrompts = new Set();
   const usedStockVideoIds = new Set();
@@ -475,7 +477,10 @@ export async function harvestVisualScenes({
 
   console.log(`Iniciando renderizacao de ${scenes.length} takes visuais dinâmicos (Modo: ${visualMode.toUpperCase()})...`);
   if (effectiveFlowDir) {
-    console.log(`[Google Flow] Diretório de clipes externos ativo: ${effectiveFlowDir}`);
+    const totalClips = fs.readdirSync(effectiveFlowDir).filter(f => /\.(mp4|mov|webm|mkv)$/i.test(f)).length;
+    console.log(`[Clipes Externos/Veo] Diretório com ${totalClips} clipe(s) ativo: ${effectiveFlowDir}`);
+  } else {
+    console.log(`[Visuais] Modo 100% Automático ativo (Estoque Pexels/Pixabay + Motion Engine FFmpeg).`);
   }
 
   for (let i = 0; i < scenes.length; i++) {
