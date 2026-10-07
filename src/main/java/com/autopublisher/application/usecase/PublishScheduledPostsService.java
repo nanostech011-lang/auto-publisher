@@ -109,7 +109,8 @@ public class PublishScheduledPostsService implements PublishScheduledPostsUseCas
                         post.thumbnailDriveId(),
                         post.metadata().withShortsOptimization(),
                         post.status(),
-                        post.attempts()
+                        post.attempts(),
+                        post.firstComment()
                 );
             }
 

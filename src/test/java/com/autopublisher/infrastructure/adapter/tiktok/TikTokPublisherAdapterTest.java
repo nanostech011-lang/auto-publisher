@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import com.autopublisher.application.port.out.MediaStoragePort;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -39,6 +40,9 @@ class TikTokPublisherAdapterTest {
 
     @Mock
     private HttpResponse<String> uploadResponse;
+
+    @Mock
+    private MediaStoragePort mediaStorage;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private TikTokPublisherAdapter adapter;
@@ -119,5 +123,38 @@ class TikTokPublisherAdapterTest {
 
         assertThat(result.success()).isFalse();
         assertThat(result.errorMessage()).contains("Erro da TikTok API ao inicializar upload");
+    }
+
+    @Test
+    @DisplayName("Deve inicializar TikTok com video_size dinamico obtido de MediaStoragePort")
+    void shouldPublishToTikTokWithDynamicVideoSize() throws Exception {
+        TikTokPublisherAdapter adapterWithStorage = new TikTokPublisherAdapter(
+                "tiktok-access-token-test",
+                httpClient,
+                objectMapper,
+                mediaStorage
+        );
+
+        VideoMetadata metadata = new VideoMetadata("Video Real 25MB", "Desc", List.of("viral"), 24, false, PrivacyStatus.PUBLIC);
+        PostSchedule post = new PostSchedule("TT-Dynamic", 2, LocalDateTime.now(), Platform.TIKTOK, "drive-25mb", null, metadata, PublishStatus.PENDENTE, 0);
+        InputStream videoStream = new ByteArrayInputStream(new byte[]{1, 2, 3});
+
+        when(mediaStorage.getFileSize("drive-25mb")).thenReturn(26214400L); // 25MB exatos
+        when(initResponse.statusCode()).thenReturn(200);
+        when(initResponse.body()).thenReturn("{\"data\":{\"publish_id\":\"v_pub_25mb\",\"upload_url\":\"https://upload.tiktok.com/v1/chunk\"}}");
+        when(uploadResponse.statusCode()).thenReturn(200);
+
+        when(httpClient.send(any(HttpRequest.class), any())).thenAnswer(invocation -> {
+            HttpRequest req = invocation.getArgument(0);
+            if (req.uri().toString().contains("upload.tiktok.com")) {
+                return uploadResponse;
+            }
+            return initResponse;
+        });
+
+        PublishResult result = adapterWithStorage.publish(post, videoStream, Optional.empty());
+
+        assertThat(result.success()).isTrue();
+        assertThat(result.platformVideoId()).isEqualTo("v_pub_25mb");
     }
 }

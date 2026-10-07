@@ -15,6 +15,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import com.autopublisher.application.port.out.TenantCachePort;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,11 +28,14 @@ class TenantServiceTest {
     @Mock
     private TenantRepositoryPort tenantRepository;
 
+    @Mock
+    private TenantCachePort tenantCachePort;
+
     private TenantService tenantService;
 
     @BeforeEach
     void setUp() {
-        tenantService = new TenantService(tenantRepository);
+        tenantService = new TenantService(tenantRepository, tenantCachePort);
     }
 
     @Test
@@ -76,7 +81,7 @@ class TenantServiceTest {
     }
 
     @Test
-    @DisplayName("Deve rotacionar chave de API de tenant existente")
+    @DisplayName("Deve rotacionar chave de API de tenant existente e invalidar cache")
     void shouldRotateApiKey() {
         TenantConfig existing = new TenantConfig("t-1", "T1", "old-key", null, null, null, null, null, null, null, null, true, Instant.now());
         when(tenantRepository.findById("t-1")).thenReturn(Optional.of(existing));
@@ -86,6 +91,7 @@ class TenantServiceTest {
         assertThat(updated.apiKey()).isNotEqualTo("old-key");
         assertThat(updated.apiKey()).startsWith("sec_live_");
         verify(tenantRepository).save(updated);
+        verify(tenantCachePort).evict("t-1");
     }
 
     @Test
@@ -102,7 +108,7 @@ class TenantServiceTest {
     }
 
     @Test
-    @DisplayName("Deve atualizar status e remover tenant")
+    @DisplayName("Deve atualizar status, invalidar cache e remover tenant")
     void shouldUpdateStatusAndDeleteTenant() {
         TenantConfig existing = new TenantConfig("t-1", "T1", "k", null, null, null, null, null, null, null, null, true, Instant.now());
         when(tenantRepository.findById("t-1")).thenReturn(Optional.of(existing));
@@ -110,8 +116,37 @@ class TenantServiceTest {
 
         TenantConfig deactivated = tenantService.updateTenantStatus("t-1", false);
         assertThat(deactivated.active()).isFalse();
+        verify(tenantCachePort).evict("t-1");
 
         boolean deleted = tenantService.deleteTenant("t-1");
         assertThat(deleted).isTrue();
+        verify(tenantCachePort, times(2)).evict("t-1");
+    }
+
+    @Test
+    @DisplayName("Deve buscar tenant por ID e por ApiKey com tratativa de nulo e em branco")
+    void shouldFindTenantByIdAndApiKey() {
+        TenantConfig t = new TenantConfig("t-1", "T1", "sec_123", null, null, null, null, null, null, null, null, true, Instant.now());
+        when(tenantRepository.findById("t-1")).thenReturn(Optional.of(t));
+        when(tenantRepository.findByApiKey("sec_123")).thenReturn(Optional.of(t));
+
+        assertThat(tenantService.getTenant("t-1")).contains(t);
+        assertThat(tenantService.findByApiKey("sec_123")).contains(t);
+        assertThat(tenantService.findByApiKey(null)).isEmpty();
+        assertThat(tenantService.findByApiKey("  ")).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Deve lancar excecao ao rotacionar chave ou atualizar status de tenant inexistente")
+    void shouldThrowWhenTenantNotFound() {
+        when(tenantRepository.findById("inexistente")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> tenantService.rotateApiKey("inexistente"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Tenant nao encontrado");
+
+        assertThatThrownBy(() -> tenantService.updateTenantStatus("inexistente", false))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Tenant nao encontrado");
     }
 }

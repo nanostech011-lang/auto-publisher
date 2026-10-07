@@ -73,4 +73,20 @@ class GoogleDriveAdapterTest {
 
         assertThat(size).isEqualTo(104857600L);
     }
+
+    @Test
+    @DisplayName("Nao deve abrir arquivo local fora de pipeline/output (prevencao de Path Traversal)")
+    void shouldNotStreamArbitraryLocalFilesOutsideOutputDirectory() throws IOException {
+        // pom.xml existe na raiz, mas nao esta dentro de pipeline/output
+        String traversalPath = "pom.xml";
+        InputStream expectedDriveStream = new ByteArrayInputStream(new byte[]{1, 2, 3});
+
+        when(driveService.files().get(traversalPath).executeMediaAsInputStream())
+                .thenReturn(expectedDriveStream);
+
+        InputStream result = adapter.downloadMediaStream(traversalPath);
+
+        // Deve buscar no Drive mockado e nao ler o pom.xml local
+        assertThat(result).isSameAs(expectedDriveStream);
+    }
 }

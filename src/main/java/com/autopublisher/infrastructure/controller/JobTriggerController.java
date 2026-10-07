@@ -2,6 +2,7 @@ package com.autopublisher.infrastructure.controller;
 
 import com.autopublisher.application.port.in.PublishBatchReport;
 import com.autopublisher.application.port.in.PublishScheduledPostsUseCase;
+import com.autopublisher.domain.model.TenantContextHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,9 +40,12 @@ public class JobTriggerController {
     public ResponseEntity<?> triggerPublishing(
             @RequestHeader(value = "X-API-KEY", required = false) String providedApiKey
     ) {
-        // Valida chave de seguranca (Fail-Secure: rejeita se nao configurada ou se nao corresponder)
-        if (expectedApiKey == null || expectedApiKey.trim().isEmpty() ||
-            providedApiKey == null || !expectedApiKey.trim().equals(providedApiKey.trim())) {
+        // Valida autorizacao (TenantContextHolder definido pelo ApiKeyAuthFilter ou chave esperada correspondente)
+        boolean hasValidContext = TenantContextHolder.get().isPresent();
+        boolean matchesExpectedKey = expectedApiKey != null && !expectedApiKey.trim().isEmpty() &&
+                providedApiKey != null && expectedApiKey.trim().equals(providedApiKey.trim());
+
+        if (!hasValidContext && !matchesExpectedKey) {
             log.warn("Tentativa de disparo nao autorizada recebida no endpoint /api/v1/publisher/run.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Unauthorized: Invalid or missing X-API-KEY"));

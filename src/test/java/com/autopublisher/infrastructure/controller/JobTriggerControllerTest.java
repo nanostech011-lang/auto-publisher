@@ -72,4 +72,21 @@ class JobTriggerControllerTest {
         org.assertj.core.api.Assertions.assertThat(response.getStatusCode())
                 .isEqualTo(org.springframework.http.HttpStatus.UNAUTHORIZED);
     }
+
+    @Test
+    @DisplayName("Deve autorizar e executar quando TenantContextHolder estiver autenticado mesmo sem expectedApiKey")
+    void shouldAuthorizeWhenTenantContextIsPresent() {
+        try {
+            com.autopublisher.domain.model.TenantContextHolder.set(com.autopublisher.domain.model.TenantContext.masterAdmin());
+            JobTriggerController controller = new JobTriggerController(publishUseCase, "chave-diferente");
+            when(publishUseCase.execute()).thenReturn(PublishBatchReport.empty());
+
+            var response = controller.triggerPublishing(null);
+            org.assertj.core.api.Assertions.assertThat(response.getStatusCode())
+                    .isEqualTo(org.springframework.http.HttpStatus.OK);
+            verify(publishUseCase).execute();
+        } finally {
+            com.autopublisher.domain.model.TenantContextHolder.clear();
+        }
+    }
 }

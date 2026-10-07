@@ -238,4 +238,40 @@ class PublishScheduledPostsServiceTest {
         assertThat(report.successCount()).isEqualTo(1);
         verify(mediaStorage).downloadMediaStream("thumb-drive");
     }
+
+    @Test
+    @DisplayName("Deve preservar primeiro comentario (firstComment) ao aplicar otimizacoes de Shorts")
+    void shouldPreserveFirstCommentInShortsOptimization() {
+        VideoMetadata metadata = new VideoMetadata("Titulo Shorts", "Desc", List.of(), 24, false, PrivacyStatus.PUBLIC);
+        PostSchedule post = new PostSchedule(
+                "P-Shorts-Comment",
+                2,
+                LocalDateTime.now().minusMinutes(5),
+                Platform.YOUTUBE_SHORTS,
+                "vid-drive-123",
+                null,
+                metadata,
+                PublishStatus.PENDENTE,
+                0,
+                "👉 Cupom de 20% no link fixado: https://afiliado.com/cupom"
+        );
+
+        InputStream fakeVid = new ByteArrayInputStream(new byte[]{1, 2, 3});
+
+        when(scheduleRepository.findPendingPostsDue(any(LocalDateTime.class))).thenReturn(List.of(post));
+        when(mediaStorage.downloadMediaStream("vid-drive-123")).thenReturn(fakeVid);
+        when(youtubePublisher.publish(any(PostSchedule.class), any(InputStream.class), any()))
+                .thenAnswer(invocation -> {
+                    PostSchedule receivedPost = invocation.getArgument(0);
+                    assertThat(receivedPost.getFirstComment()).isPresent();
+                    assertThat(receivedPost.getFirstComment().get())
+                            .isEqualTo("👉 Cupom de 20% no link fixado: https://afiliado.com/cupom");
+                    assertThat(receivedPost.metadata().title()).contains("#Shorts");
+                    return PublishResult.success("vid-shorts-1", "https://youtube.com/shorts/vid-shorts-1");
+                });
+
+        PublishBatchReport report = service.execute();
+
+        assertThat(report.successCount()).isEqualTo(1);
+    }
 }

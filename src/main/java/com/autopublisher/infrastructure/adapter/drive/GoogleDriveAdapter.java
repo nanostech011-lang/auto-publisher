@@ -97,20 +97,38 @@ public class GoogleDriveAdapter implements MediaStoragePort {
 
     private java.io.File findLocalFile(String fileId) {
         if (fileId == null || fileId.isBlank()) return null;
-        java.io.File f = new java.io.File(fileId);
-        if (f.exists() && f.isFile()) return f;
 
-        java.io.File outputDir = new java.io.File("pipeline/output");
-        if (outputDir.exists() && outputDir.isDirectory()) {
-            java.io.File[] runs = outputDir.listFiles();
+        try {
+            java.io.File outputBase = new java.io.File("pipeline/output").getCanonicalFile();
+            if (!outputBase.exists() || !outputBase.isDirectory()) {
+                return null;
+            }
+
+            // 1. Caminho direto se estiver estritamente contido em pipeline/output
+            java.io.File candidate = new java.io.File(fileId).getCanonicalFile();
+            if (candidate.exists() && candidate.isFile() && candidate.getPath().startsWith(outputBase.getPath())) {
+                return candidate;
+            }
+
+            // 2. Busca por nome de arquivo em subpastas de execuções geradas (desarmando directory traversal)
+            String sanitizedName = new java.io.File(fileId).getName();
+            if (sanitizedName.isBlank() || sanitizedName.contains("..")) {
+                return null;
+            }
+
+            java.io.File[] runs = outputBase.listFiles();
             if (runs != null) {
                 for (java.io.File r : runs) {
                     if (r.isDirectory()) {
-                        java.io.File target = new java.io.File(r, fileId);
-                        if (target.exists() && target.isFile()) return target;
+                        java.io.File target = new java.io.File(r, sanitizedName).getCanonicalFile();
+                        if (target.exists() && target.isFile() && target.getPath().startsWith(outputBase.getPath())) {
+                            return target;
+                        }
                     }
                 }
             }
+        } catch (IOException e) {
+            log.warn("Falha ao resolver caminho seguro de arquivo local: {}", e.getMessage());
         }
         return null;
     }

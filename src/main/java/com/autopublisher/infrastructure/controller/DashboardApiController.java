@@ -439,33 +439,36 @@ public class DashboardApiController {
     ) {
 
         try {
-            File file = new File(requestedPath);
-            if (!file.exists()) {
-                File outputDir = new File("pipeline/output");
-                if (outputDir.exists() && outputDir.isDirectory()) {
-                    File[] runs = outputDir.listFiles();
-                    if (runs != null) {
-                        for (File r : runs) {
-                            if (r.isDirectory()) {
-                                File candidate = new File(r, requestedPath);
-                                if (candidate.exists() && candidate.isFile()) {
-                                    file = candidate;
-                                    break;
-                                }
+            File outputDir = new File("pipeline/output").getCanonicalFile();
+            if (!outputDir.exists() || !outputDir.isDirectory()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            File file = new File(requestedPath).getCanonicalFile();
+            if (!file.exists() || !file.isFile() || !file.getPath().startsWith(outputDir.getPath())) {
+                String sanitizedName = new File(requestedPath).getName();
+                file = null;
+                File[] runs = outputDir.listFiles();
+                if (runs != null) {
+                    for (File r : runs) {
+                        if (r.isDirectory()) {
+                            File candidate = new File(r, sanitizedName).getCanonicalFile();
+                            if (candidate.exists() && candidate.isFile() && candidate.getPath().startsWith(outputDir.getPath())) {
+                                file = candidate;
+                                break;
                             }
                         }
                     }
                 }
             }
 
-            String canonical = file.getCanonicalPath();
-            File pipelineDir = new File("pipeline").getCanonicalFile();
-            if (!canonical.startsWith(pipelineDir.getCanonicalPath())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            if (file == null || !file.exists() || !file.isFile()) {
+                return ResponseEntity.notFound().build();
             }
 
-            if (!file.exists() || !file.isFile()) {
-                return ResponseEntity.notFound().build();
+            String canonical = file.getCanonicalPath();
+            if (!canonical.startsWith(outputDir.getCanonicalPath())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
 
             String contentType = "application/octet-stream";

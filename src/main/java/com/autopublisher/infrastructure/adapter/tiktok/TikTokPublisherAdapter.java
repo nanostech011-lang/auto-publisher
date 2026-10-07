@@ -1,5 +1,6 @@
 package com.autopublisher.infrastructure.adapter.tiktok;
 
+import com.autopublisher.application.port.out.MediaStoragePort;
 import com.autopublisher.application.port.out.SocialMediaPublisherPort;
 import com.autopublisher.application.port.out.TenantRepositoryPort;
 import com.autopublisher.domain.model.Platform;
@@ -38,6 +39,7 @@ public class TikTokPublisherAdapter implements SocialMediaPublisherPort {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private TenantRepositoryPort tenantRepository;
+    private MediaStoragePort mediaStorage;
 
     @Autowired
     public TikTokPublisherAdapter(
@@ -55,9 +57,23 @@ public class TikTokPublisherAdapter implements SocialMediaPublisherPort {
             String accessToken,
             HttpClient httpClient,
             ObjectMapper objectMapper) {
+        this(accessToken, httpClient, objectMapper, null);
+    }
+
+    TikTokPublisherAdapter(
+            String accessToken,
+            HttpClient httpClient,
+            ObjectMapper objectMapper,
+            MediaStoragePort mediaStorage) {
         this.accessToken = accessToken;
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;
+        this.mediaStorage = mediaStorage;
+    }
+
+    @Autowired(required = false)
+    public void setMediaStorage(MediaStoragePort mediaStorage) {
+        this.mediaStorage = mediaStorage;
     }
 
     @Autowired(required = false)
@@ -105,11 +121,24 @@ public class TikTokPublisherAdapter implements SocialMediaPublisherPort {
             postInfo.put("disable_comment", false);
             postInfo.put("video_cover_timestamp_ms", 1000);
 
+            long actualVideoSize = (mediaStorage != null && post.videoDriveId() != null)
+                    ? mediaStorage.getFileSize(post.videoDriveId())
+                    : -1L;
+
+            // TikTok requer chunk_size entre 5MB e 64MB; se tamanho for conhecido e <= 64MB, envia em 1 chunk
+            long chunkSize = (actualVideoSize > 0 && actualVideoSize <= 64L * 1024 * 1024)
+                    ? actualVideoSize
+                    : 10L * 1024 * 1024;
+            int totalChunks = (actualVideoSize > 0)
+                    ? (int) Math.ceil((double) actualVideoSize / chunkSize)
+                    : 1;
+            long declaredVideoSize = (actualVideoSize > 0) ? actualVideoSize : chunkSize;
+
             Map<String, Object> sourceInfo = new HashMap<>();
             sourceInfo.put("source", "FILE_UPLOAD");
-            sourceInfo.put("chunk_size", 10485760); // 10MB chunk padrao
-            sourceInfo.put("total_chunk_count", 1);
-            sourceInfo.put("video_size", 10485760);
+            sourceInfo.put("chunk_size", chunkSize);
+            sourceInfo.put("total_chunk_count", totalChunks);
+            sourceInfo.put("video_size", declaredVideoSize);
 
             Map<String, Object> payload = new HashMap<>();
             payload.put("post_info", postInfo);

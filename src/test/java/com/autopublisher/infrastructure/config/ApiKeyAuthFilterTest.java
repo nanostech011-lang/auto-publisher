@@ -114,4 +114,33 @@ class ApiKeyAuthFilterTest {
         assertThat(res.getContentAsString()).contains("Acesso nao autorizado");
         verifyNoInteractions(filterChain);
     }
+
+    @Test
+    @DisplayName("Deve autenticar com Default API Key configurada para Cloud Scheduler")
+    void shouldAuthenticateWithDefaultApiKey() throws ServletException, IOException {
+        ApiKeyAuthFilter filterWithDefault = new ApiKeyAuthFilter(tenantRepository, "master-key-123", "scheduler-key-456");
+
+        MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/v1/publisher/run");
+        req.addHeader("X-API-KEY", "scheduler-key-456");
+        MockHttpServletResponse res = new MockHttpServletResponse();
+
+        filterWithDefault.doFilter(req, res, filterChain);
+
+        assertThat(res.getStatus()).isEqualTo(200);
+        verify(filterChain).doFilter(req, res);
+    }
+
+    @Test
+    @DisplayName("Deve rejeitar dev-local-api-key quando chaves de producao reais estiverem configuradas")
+    void shouldRejectDevLocalKeyWhenRealKeysConfigured() throws ServletException, IOException {
+        ApiKeyAuthFilter prodFilter = new ApiKeyAuthFilter(tenantRepository, "prod-master-key", "prod-scheduler-key");
+
+        MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/v1/publisher/run");
+        req.addHeader("X-API-KEY", "dev-local-api-key");
+        MockHttpServletResponse res = new MockHttpServletResponse();
+
+        prodFilter.doFilter(req, res, filterChain);
+
+        assertThat(res.getStatus()).isEqualTo(401);
+    }
 }

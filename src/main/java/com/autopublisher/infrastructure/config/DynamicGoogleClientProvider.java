@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.autopublisher.application.port.out.TenantCachePort;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * com isolamento por Tenant e cache em memoria.
  */
 @Component
-public class DynamicGoogleClientProvider {
+public class DynamicGoogleClientProvider implements TenantCachePort {
 
     private static final Logger log = LoggerFactory.getLogger(DynamicGoogleClientProvider.class);
 
@@ -36,6 +37,16 @@ public class DynamicGoogleClientProvider {
     private final String applicationName;
 
     private final ConcurrentHashMap<String, TenantGoogleClients> tenantCache = new ConcurrentHashMap<>();
+
+    @Override
+    public void evict(String tenantId) {
+        if (tenantId != null && !tenantId.isBlank()) {
+            TenantGoogleClients removed = tenantCache.remove(tenantId.trim());
+            if (removed != null) {
+                log.info("[SaaS] Cache de clientes Google desalocado com sucesso para o tenant '{}'", tenantId);
+            }
+        }
+    }
 
     public DynamicGoogleClientProvider(
         Sheets defaultSheets,

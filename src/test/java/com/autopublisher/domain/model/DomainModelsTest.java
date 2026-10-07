@@ -94,4 +94,32 @@ class DomainModelsTest {
         assertThat(PrivacyStatus.fromString("unlisted")).isEqualTo(PrivacyStatus.UNLISTED);
         assertThat(PrivacyStatus.fromString("invalid")).isEqualTo(PrivacyStatus.PUBLIC);
     }
+
+    @Test
+    @DisplayName("AudioMode: fromString deve tratar maiúsculas/minúsculas e valores desconhecidos")
+    void shouldParseAudioModeCorrectly() {
+        assertThat(AudioMode.fromString("tts")).isEqualTo(AudioMode.TTS);
+        assertThat(AudioMode.fromString("source_audio")).isEqualTo(AudioMode.SOURCE_AUDIO);
+        assertThat(AudioMode.fromString("none")).isEqualTo(AudioMode.NONE);
+        assertThat(AudioMode.fromString(null)).isEqualTo(AudioMode.TTS);
+        assertThat(AudioMode.fromString("")).isEqualTo(AudioMode.TTS);
+        assertThat(AudioMode.fromString("desconhecido")).isEqualTo(AudioMode.TTS);
+    }
+
+    @Test
+    @DisplayName("Exceções de Domínio: Devem inicializar corretamente com mensagem e causa")
+    void shouldInitializeDomainExceptions() {
+        com.autopublisher.domain.exception.QuotaExceededException qe = new com.autopublisher.domain.exception.QuotaExceededException("quota");
+        assertThat(qe.getMessage()).isEqualTo("quota");
+
+        com.autopublisher.domain.exception.ScheduleValidationException se = new com.autopublisher.domain.exception.ScheduleValidationException("validation");
+        assertThat(se.getMessage()).isEqualTo("validation");
+
+        com.autopublisher.domain.exception.MediaStreamingException me = new com.autopublisher.domain.exception.MediaStreamingException("stream", new RuntimeException("cause"));
+        assertThat(me.getMessage()).isEqualTo("stream");
+        assertThat(me.getCause()).isNotNull();
+
+        com.autopublisher.domain.exception.AutoPublisherException ae = new com.autopublisher.domain.exception.AutoPublisherException("app", new RuntimeException("cause"));
+        assertThat(ae.getMessage()).isEqualTo("app");
+    }
 }

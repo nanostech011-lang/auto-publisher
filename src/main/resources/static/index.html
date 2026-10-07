@@ -2055,6 +2055,21 @@ try {
             updateQuickFilterButtons(status);
         }
 
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function escapeJs(str) {
+            if (str === null || str === undefined) return '';
+            return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+
         function renderTable(posts) {
             const tbody = document.getElementById('postsTableBody');
             if (!tbody) return;
@@ -2074,6 +2089,11 @@ try {
             tbody.innerHTML = posts.map(post => {
                 const title = (post.metadata && post.metadata.title) ? post.metadata.title : 'Sem título';
                 const time = post.scheduledTime ? post.scheduledTime.replace('T', ' ').substring(0, 16) : '--';
+                const safeId = escapeHtml(post.id);
+                const safeTitle = escapeHtml(title);
+                const safeTime = escapeHtml(time);
+                const safeDriveId = escapeHtml(post.videoDriveId || '--');
+                const safeStatus = escapeHtml(post.status);
                 
                 // Badge de Plataforma
                 let platBadge = '<span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-[10px] shadow-2xs">Desconhecido</span>';
@@ -2088,7 +2108,7 @@ try {
                 }
 
                 // Badge de Status
-                let statusBadge = `<span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 font-mono text-[10px] shadow-2xs">${post.status}</span>`;
+                let statusBadge = `<span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 font-mono text-[10px] shadow-2xs">${safeStatus}</span>`;
                 if (post.status === 'PUBLICADO') {
                     statusBadge = '<span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-[10px] font-bold flex items-center gap-1 w-fit shadow-2xs"><i class="fa-solid fa-check text-emerald-600"></i> PUBLICADO</span>';
                 } else if (post.status === 'PENDENTE') {
@@ -2102,23 +2122,24 @@ try {
                 }
 
                 // Primeiro Comentário
+                const safeComment = post.firstComment ? escapeHtml(post.firstComment) : '';
                 const comment = post.firstComment 
-                    ? `<div class="text-[11px] text-amber-800 font-mono truncate max-w-xs cursor-pointer hover:underline flex items-center gap-1" onclick="copyFirstComment('${encodeURIComponent(post.firstComment)}')"><i class="fa-solid fa-comment-dots text-amber-600"></i>${post.firstComment}</div>`
+                    ? `<div class="text-[11px] text-amber-800 font-mono truncate max-w-xs cursor-pointer hover:underline flex items-center gap-1" onclick="copyFirstComment('${encodeURIComponent(post.firstComment)}')"><i class="fa-solid fa-comment-dots text-amber-600"></i>${safeComment}</div>`
                     : '<span class="text-slate-400 font-mono text-[10px]">--</span>';
 
                 // Ações
                 const actions = `
                     <div class="flex items-center justify-end gap-1.5">
-                        <button type="button" onclick="openPostDetails('${post.id}')" class="btn-3d-white p-1.5 text-slate-700 text-xs shadow-2xs" title="Ver Detalhes">
+                        <button type="button" onclick="openPostDetails('${escapeJs(post.id)}')" class="btn-3d-white p-1.5 text-slate-700 text-xs shadow-2xs" title="Ver Detalhes">
                             <i class="fa-solid fa-eye"></i>
                         </button>
                         ${post.status === 'ERRO_TEMPORARIO' || post.status === 'COTA_ESGOTADA' ? `
-                            <button type="button" onclick="retryPost('${post.id}')" class="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-xs transition-colors shadow-2xs" title="Reprocessar">
+                            <button type="button" onclick="retryPost('${escapeJs(post.id)}')" class="p-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-xs transition-colors shadow-2xs" title="Reprocessar">
                                 <i class="fa-solid fa-rotate-right"></i>
                             </button>
                         ` : ''}
                         ${post.publishedUrl ? `
-                            <a href="${post.publishedUrl}" target="_blank" rel="noopener noreferrer" class="p-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-xs transition-colors shadow-2xs" title="Ver na Rede">
+                            <a href="${escapeHtml(post.publishedUrl)}" target="_blank" rel="noopener noreferrer" class="p-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-xs transition-colors shadow-2xs" title="Ver na Rede">
                                 <i class="fa-solid fa-arrow-up-right-from-square"></i>
                             </a>
                         ` : ''}
@@ -2128,13 +2149,13 @@ try {
                 return `
                     <tr class="hover:bg-purple-50/40 transition-colors border-b border-slate-100">
                         <td class="p-4 pl-6 font-mono text-xs">
-                            <span class="font-bold text-slate-900 block">${post.id}</span>
-                            <span class="text-slate-400 text-[11px]">${time}</span>
+                            <span class="font-bold text-slate-900 block">${safeId}</span>
+                            <span class="text-slate-400 text-[11px]">${safeTime}</span>
                         </td>
                         <td class="p-4">${platBadge}</td>
                         <td class="p-4 max-w-sm">
-                            <span class="font-semibold text-slate-800 block truncate" title="${title}">${title}</span>
-                            <span class="text-[11px] text-slate-400 truncate block font-mono">Drive: ${post.videoDriveId || '--'}</span>
+                            <span class="font-semibold text-slate-800 block truncate" title="${safeTitle}">${safeTitle}</span>
+                            <span class="text-[11px] text-slate-400 truncate block font-mono">Drive: ${safeDriveId}</span>
                         </td>
                         <td class="p-4">${comment}</td>
                         <td class="p-4">${statusBadge}</td>
@@ -2311,8 +2332,8 @@ try {
                 if (report.results && report.results.length > 0) {
                     list.innerHTML = report.results.map(r => `
                         <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs font-mono shadow-2xs">
-                            <span class="font-bold text-slate-900">${r.postId}</span>
-                            <span class="${r.status === 'PUBLICADO' ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}">${r.status}: ${r.message || ''}</span>
+                            <span class="font-bold text-slate-900">${escapeHtml(r.postId)}</span>
+                            <span class="${r.status === 'PUBLICADO' ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}">${escapeHtml(r.status)}: ${escapeHtml(r.message || '')}</span>
                         </div>
                     `).join('');
                 } else {
@@ -3770,7 +3791,7 @@ try {
                         if (job.logs && job.logs.length > 0) {
                             const term = document.getElementById('studioTerminalLogs');
                             if (term) {
-                                term.innerHTML = job.logs.map(l => `<div>${l}</div>`).join('');
+                                term.innerHTML = job.logs.map(l => `<div>${escapeHtml(l)}</div>`).join('');
                                 term.scrollTop = term.scrollHeight;
                             }
                         }
@@ -3884,7 +3905,7 @@ try {
             } else if (post.platform === 'INSTAGRAM_REELS') {
                 platContainer.innerHTML = '<span class="px-2 py-0.5 rounded-md bg-pink-50 text-pink-700 border border-pink-200/80 font-semibold text-[10px] shadow-2xs"><i class="fa-brands fa-instagram text-pink-600"></i> Reels</span>';
             } else {
-                platContainer.innerHTML = `<span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-[10px] shadow-2xs">${post.platform}</span>`;
+                platContainer.innerHTML = `<span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 font-semibold text-[10px] shadow-2xs">${escapeHtml(post.platform)}</span>`;
             }
 
             // Badge de Status
@@ -3896,7 +3917,7 @@ try {
             } else if (post.status === 'COTA_ESGOTADA') {
                 statusContainer.innerHTML = '<span class="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-mono text-[10px] font-bold shadow-2xs">COTA_ESGOTADA</span>';
             } else {
-                statusContainer.innerHTML = `<span class="px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200 font-mono text-[10px] font-bold shadow-2xs">${post.status}</span>`;
+                statusContainer.innerHTML = `<span class="px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200 font-mono text-[10px] font-bold shadow-2xs">${escapeHtml(post.status)}</span>`;
             }
 
             // Primeiro Comentário
@@ -3924,7 +3945,7 @@ try {
             const linkContainer = document.getElementById('detailExternalLinkContainer');
             const pubUrl = post.publishedUrl || (post.publishResult && post.publishResult.publishedUrl);
             if (pubUrl) {
-                linkContainer.innerHTML = `<a href="${pubUrl}" target="_blank" rel="noopener noreferrer" class="text-xs text-purple-700 hover:text-purple-900 font-bold flex items-center gap-1.5"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver na Rede Social</a>`;
+                linkContainer.innerHTML = `<a href="${escapeHtml(pubUrl)}" target="_blank" rel="noopener noreferrer" class="text-xs text-purple-700 hover:text-purple-900 font-bold flex items-center gap-1.5"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver na Rede Social</a>`;
             } else {
                 linkContainer.innerHTML = '';
             }

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { Readable } from 'stream';
 
 /**
  * Obtém access_token atualizado a partir do refresh_token OAuth 2.0
@@ -96,15 +97,18 @@ export async function uploadFileToDrive({
     throw new Error('Google Drive não forneceu header Location para upload resumable');
   }
 
-  // 2. Transmite os bytes do arquivo para a URL de upload
-  const fileBuffer = fs.readFileSync(filePath);
+  // 2. Transmite os bytes do arquivo para a URL de upload via stream continuo (Zero-Copy)
+  const fileStream = fs.createReadStream(filePath);
+  const webStream = Readable.toWeb(fileStream);
+
   const uploadRes = await fetch(uploadLocation, {
     method: 'PUT',
     headers: {
       'Content-Length': String(fileSize),
       'Content-Type': mimeType
     },
-    body: fileBuffer
+    body: webStream,
+    duplex: 'half'
   });
 
   if (!uploadRes.ok) {

@@ -34,8 +34,23 @@ public class AiPipelineService {
     private final String geminiApiKey;
     private final String pexelsApiKey;
     private final String pixabayApiKey;
-    private final Map<String, PipelineJobStatus> jobRepository = new ConcurrentHashMap<>();
-    private final Map<String, List<String>> jobLogs = new ConcurrentHashMap<>();
+    private static final int MAX_JOBS = 50;
+    private final Map<String, PipelineJobStatus> jobRepository = Collections.synchronizedMap(
+            new LinkedHashMap<>(MAX_JOBS + 1, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, PipelineJobStatus> eldest) {
+                    return size() > MAX_JOBS;
+                }
+            }
+    );
+    private final Map<String, List<String>> jobLogs = Collections.synchronizedMap(
+            new LinkedHashMap<>(MAX_JOBS + 1, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, List<String>> eldest) {
+                    return size() > MAX_JOBS;
+                }
+            }
+    );
 
     @org.springframework.beans.factory.annotation.Value("${server.port:8080}")
     private int serverPort = 8080;
@@ -183,7 +198,14 @@ public class AiPipelineService {
                 }
             }
 
-            int exitCode = process.waitFor();
+            boolean finished = process.waitFor(60, java.util.concurrent.TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                log.warn("Processo previewScript atingiu timeout de 60 segundos.");
+                throw new java.util.concurrent.TimeoutException("Script generation timed out");
+            }
+
+            int exitCode = process.exitValue();
             String fullOutput = out.toString();
             int startIdx = fullOutput.indexOf("JSON_START");
             int endIdx = fullOutput.indexOf("JSON_END");
@@ -318,7 +340,14 @@ public class AiPipelineService {
                 }
             }
 
-            int exitCode = process.waitFor();
+            boolean finished = process.waitFor(60, java.util.concurrent.TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                log.warn("Processo analyzeYouTubeVideo atingiu timeout de 60 segundos.");
+                throw new java.util.concurrent.TimeoutException("YouTube video analysis timed out");
+            }
+
+            int exitCode = process.exitValue();
             String fullOutput = out.toString();
             int startIdx = fullOutput.indexOf("JSON_START");
             int endIdx = fullOutput.indexOf("JSON_END");
@@ -411,13 +440,14 @@ public class AiPipelineService {
 
         log.info("Iniciando processo do pipeline para Job ID: {} (Canal: {}, Modo Visual: {})", jobId, channel, visualMode);
         logs.add("[" + LocalDateTime.now().toString().substring(11, 19) + "] [INFO] Iniciando pipeline de geracao automatizada (Modo Visual: " + visualMode + ")...");
+
+        File scratchDir = new File("pipeline/scratch");
+        if (!scratchDir.exists()) {
+            scratchDir.mkdirs();
+        }
+        File configFile = new File(scratchDir, "job_" + jobId + "_config.json");
+
         try {
-            // Cria pasta de scratch e arquivo de configuração dinâmica
-            File scratchDir = new File("pipeline/scratch");
-            if (!scratchDir.exists()) {
-                scratchDir.mkdirs();
-            }
-            File configFile = new File(scratchDir, "job_" + jobId + "_config.json");
             Map<String, Object> configMap = new LinkedHashMap<>();
             configMap.put("channel", channel);
             configMap.put("platform", platform);
@@ -441,8 +471,6 @@ public class AiPipelineService {
                 configMap.put("targetDurationSec", request.targetDurationSec());
             }
             configMap.put("subtitlesLayout", request.getSubtitlesLayoutOrDefault());
-            if (geminiApiKey != null && !geminiApiKey.isBlank()) configMap.put("geminiKey", geminiApiKey.trim());
-            if (pexelsApiKey != null && !pexelsApiKey.isBlank()) configMap.put("pexelsKey", pexelsApiKey.trim());
 
             try {
                 objectMapper.writeValue(configFile, configMap);
@@ -546,16 +574,7 @@ public class AiPipelineService {
             command.add("--subtitles-layout");
             command.add(request.getSubtitlesLayoutOrDefault());
 
-            if (geminiApiKey != null && !geminiApiKey.isBlank()) {
-                command.add("--gemini-key");
-                command.add(geminiApiKey.trim());
-            }
-
-            if (pexelsApiKey != null && !pexelsApiKey.isBlank()) {
-                command.add("--pexels-key");
-                command.add(pexelsApiKey.trim());
-            }
-
+            // Segredos (chaves) não são repassados por CLI para evitar vazamento via ps/tasklist
             ProcessBuilder pb = new ProcessBuilder(command);
             pb.directory(new File("."));
             pb.redirectErrorStream(true);
@@ -637,7 +656,33 @@ public class AiPipelineService {
                 }
             }
 
-            int exitCode = process.waitFor();
+            boolean finished = process.waitFor(15, java.util.concurrent.TimeUnit.MINUTES);
+            if (!finished) {
+                process.destroyForcibly();
+                log.error("Pipeline {} atingiu timeout de 15 minutos e foi finalizado.", jobId);
+                logs.add("[ERRO] Pipeline abortado por timeout apos 15 minutos.");
+                PipelineJobStatus current = jobRepository.get(jobId);
+                jobRepository.put(jobId, new PipelineJobStatus(
+                        jobId,
+                        "FAILED",
+                        0,
+                        "Timeout na Execução do Pipeline",
+                        channel,
+                        platform,
+                        topic,
+                        current != null ? current.startedAt() : LocalDateTime.now(),
+                        LocalDateTime.now(),
+                        logs,
+                        null,
+                        null,
+                        null,
+                        false,
+                        "Processo ultrapassou o limite de 15 minutos."
+                ));
+                return;
+            }
+
+            int exitCode = process.exitValue();
             if (exitCode == 0) {
                 log.info("Pipeline {} finalizado com sucesso.", jobId);
                 PipelineJobStatus current = jobRepository.get(jobId);
@@ -701,6 +746,14 @@ public class AiPipelineService {
                     false,
                     e.getMessage()
             ));
+        } finally {
+            try {
+                if (configFile.exists() && !configFile.delete()) {
+                    configFile.deleteOnExit();
+                }
+            } catch (Exception e) {
+                log.warn("Nao foi possivel excluir o arquivo temporario {}: {}", configFile.getName(), e.getMessage());
+            }
         }
     }
 
@@ -717,13 +770,14 @@ public class AiPipelineService {
         String topic = request.topic() != null ? request.topic().trim() : "";
         String visual = request.getVisualDirective() != null ? request.getVisualDirective().trim() : "";
 
+        long ts = System.currentTimeMillis();
+        File scratchDir = new File("pipeline/scratch");
+        if (!scratchDir.exists()) {
+            scratchDir.mkdirs();
+        }
+        File configFile = new File(scratchDir, "flow_" + ts + "_config.json");
+
         try {
-            long ts = System.currentTimeMillis();
-            File scratchDir = new File("pipeline/scratch");
-            if (!scratchDir.exists()) {
-                scratchDir.mkdirs();
-            }
-            File configFile = new File(scratchDir, "flow_" + ts + "_config.json");
             Map<String, Object> configMap = new LinkedHashMap<>();
             configMap.put("channel", channel);
             configMap.put("platform", (request.platform() != null && !request.platform().isBlank()) ? request.platform() : "YOUTUBE_SHORTS");
@@ -738,7 +792,6 @@ public class AiPipelineService {
             configMap.put("title", request.getTitle());
             configMap.put("narrationText", request.getNarrationText());
             configMap.put("firstComment", request.getFirstComment());
-            if (geminiApiKey != null && !geminiApiKey.isBlank()) configMap.put("geminiKey", geminiApiKey.trim());
 
             try {
                 objectMapper.writeValue(configFile, configMap);
@@ -805,7 +858,14 @@ public class AiPipelineService {
                 }
             }
 
-            int exitCode = process.waitFor();
+            boolean finished = process.waitFor(3, java.util.concurrent.TimeUnit.MINUTES);
+            if (!finished) {
+                process.destroyForcibly();
+                log.error("generateFlowPackage atingiu timeout de 3 minutos.");
+                return Map.of("error", "Timeout ao gerar pacote do Google Flow");
+            }
+
+            int exitCode = process.exitValue();
             log.info("generateFlowPackage finalizou com exitCode: {}", exitCode);
 
             File outputDir = new File("pipeline/output");
@@ -844,6 +904,14 @@ public class AiPipelineService {
             }
         } catch (Exception e) {
             log.error("Erro ao executar generateFlowPackage via Node: {}", e.getMessage(), e);
+        } finally {
+            try {
+                if (configFile.exists() && !configFile.delete()) {
+                    configFile.deleteOnExit();
+                }
+            } catch (Exception e) {
+                log.warn("Nao foi possivel excluir arquivo temporario flow {}: {}", configFile.getName(), e.getMessage());
+            }
         }
 
         return Map.of("error", "Falha ao gerar pacote do Google Flow");

@@ -3,10 +3,12 @@ package com.autopublisher.application.usecase;
 import com.autopublisher.application.port.in.CreateTenantCommand;
 import com.autopublisher.application.port.in.ManageTenantUseCase;
 import com.autopublisher.application.port.in.TenantSummaryDto;
+import com.autopublisher.application.port.out.TenantCachePort;
 import com.autopublisher.application.port.out.TenantRepositoryPort;
 import com.autopublisher.domain.model.TenantConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -24,9 +26,16 @@ public class TenantService implements ManageTenantUseCase {
     private static final Logger log = LoggerFactory.getLogger(TenantService.class);
 
     private final TenantRepositoryPort tenantRepository;
+    private final TenantCachePort tenantCachePort;
+
+    @Autowired
+    public TenantService(TenantRepositoryPort tenantRepository, @Autowired(required = false) TenantCachePort tenantCachePort) {
+        this.tenantRepository = tenantRepository;
+        this.tenantCachePort = tenantCachePort;
+    }
 
     public TenantService(TenantRepositoryPort tenantRepository) {
-        this.tenantRepository = tenantRepository;
+        this(tenantRepository, null);
     }
 
     @Override
@@ -93,6 +102,9 @@ public class TenantService implements ManageTenantUseCase {
         String newKey = generateSecureApiKey();
         TenantConfig updated = existing.withApiKey(newKey);
         tenantRepository.save(updated);
+        if (tenantCachePort != null) {
+            tenantCachePort.evict(tenantId);
+        }
         log.info("[SaaS] Chave de API rotacionada para o tenant: '{}'", tenantId);
         return updated;
     }
@@ -104,13 +116,20 @@ public class TenantService implements ManageTenantUseCase {
 
         TenantConfig updated = existing.withActive(active);
         tenantRepository.save(updated);
+        if (tenantCachePort != null) {
+            tenantCachePort.evict(tenantId);
+        }
         log.info("[SaaS] Status do tenant '{}' atualizado para active={}", tenantId, active);
         return updated;
     }
 
     @Override
     public boolean deleteTenant(String tenantId) {
-        return tenantRepository.deleteById(tenantId);
+        boolean deleted = tenantRepository.deleteById(tenantId);
+        if (deleted && tenantCachePort != null) {
+            tenantCachePort.evict(tenantId);
+        }
+        return deleted;
     }
 
     private String generateSecureApiKey() {

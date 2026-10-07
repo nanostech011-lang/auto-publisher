@@ -31,13 +31,21 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
 
     private final TenantRepositoryPort tenantRepository;
     private final String masterApiKey;
+    private final String defaultApiKey;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public ApiKeyAuthFilter(
         @org.springframework.beans.factory.annotation.Autowired(required = false) TenantRepositoryPort tenantRepository,
-        @Value("${autopublisher.security.master-api-key:}") String masterApiKey
+        @Value("${autopublisher.security.master-api-key:}") String masterApiKey,
+        @Value("${autopublisher.security.api-key:}") String defaultApiKey
     ) {
         this.tenantRepository = tenantRepository;
         this.masterApiKey = (masterApiKey != null && !masterApiKey.isBlank()) ? masterApiKey : null;
+        this.defaultApiKey = (defaultApiKey != null && !defaultApiKey.isBlank()) ? defaultApiKey : null;
+    }
+
+    public ApiKeyAuthFilter(TenantRepositoryPort tenantRepository, String masterApiKey) {
+        this(tenantRepository, masterApiKey, null);
     }
 
     @Override
@@ -72,8 +80,15 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
                 return;
             }
 
-            // 1.1 Verificacao de Dev Local Key (desenvolvimento local sem atrito)
-            if ("dev-local-api-key".equals(key)) {
+            // 1.1 Verificacao de Default API Key (Cloud Scheduler / Single Tenant principal)
+            if (defaultApiKey != null && defaultApiKey.equals(key)) {
+                TenantContextHolder.set(TenantContext.of("default", "Default Workspace"));
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            // 1.2 Verificacao de Dev Local Key (apenas se dev-local-api-key estiver configurada explicitamente)
+            if ("dev-local-api-key".equals(key) && ("dev-local-api-key".equals(defaultApiKey) || "dev-local-api-key".equals(masterApiKey))) {
                 TenantContextHolder.set(TenantContext.of("default", "Default Workspace (Local Dev)"));
                 filterChain.doFilter(request, response);
                 return;
