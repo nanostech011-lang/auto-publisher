@@ -15,7 +15,7 @@ try {
 import { generateScript, loadChannelProfile } from './script_generator.js';
 import { resolveChannelConfig } from './config_resolver.js';
 import { synthesizeVoiceWithTimestamps } from './voice_synthesizer.js';
-import { enhancePtBrProsody, clampRate } from './ptbr_prosody_enhancer.js';
+import { enhancePtBrProsody, clampRate, synthesizeSegmentedVoiceWithTimestamps } from './ptbr_prosody_enhancer.js';
 import { generateAssSubtitles, generateSrtSubtitles } from './subtitle_generator.js';
 import { alignScenesWithWordBoundaries } from './scene_aligner.js';
 import { planBeatsAndSubTakes } from './beat_planner.js';
@@ -372,13 +372,26 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
     const enhancedNarration = enhancePtBrProsody(scriptData.narrationText);
     scriptData.spokenText = enhancedNarration;
 
-    voiceResult = await synthesizeVoiceWithTimestamps({
-      text: enhancedNarration,
-      voice: voiceId,
-      rate: voiceRate,
-      pitch: voicePitch,
-      outputAudioPath: audioPath
-    });
+    try {
+      voiceResult = await synthesizeVoiceWithTimestamps({
+        text: enhancedNarration,
+        voice: voiceId,
+        rate: voiceRate,
+        pitch: voicePitch,
+        outputAudioPath: audioPath
+      });
+    } catch (ttsErr) {
+      console.warn(`[Pipeline] ⚠️ Síntese contínua falhou (${ttsErr.message}). Acionando fallback resiliente para síntese segmentada por blocos...`);
+      voiceResult = await synthesizeSegmentedVoiceWithTimestamps({
+        text: enhancedNarration,
+        voice: voiceId,
+        baseRate: voiceRate,
+        pitch: voicePitch,
+        outputAudioPath: audioPath,
+        scratchDir,
+        blocks: scriptData.blocks
+      });
+    }
 
     console.log(`Audio sintetizado com sucesso!`);
     console.log(`Duracao exata: ${voiceResult.durationSeconds}s (${voiceResult.wordBoundaries.length} palavras mapeadas)`);
