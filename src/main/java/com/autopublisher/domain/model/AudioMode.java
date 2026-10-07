@@ -1,5 +1,8 @@
 package com.autopublisher.domain.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 /**
  * Define o modo de áudio a ser gerado ou aproveitado no pipeline de vídeo.
  */
@@ -8,6 +11,7 @@ public enum AudioMode {
     SOURCE_AUDIO,
     NONE;
 
+    @JsonCreator
     public static AudioMode fromString(String value) {
         if (value == null || value.isBlank()) {
             return TTS;
@@ -18,5 +22,10 @@ public enum AudioMode {
             }
         }
         return TTS;
+    }
+
+    @JsonValue
+    public String toValue() {
+        return name().toLowerCase();
     }
 }

@@ -236,6 +236,47 @@ class DashboardApiControllerTest {
     }
 
     @Test
+    @DisplayName("Deve aceitar requisição de execução de pipeline com payload completo do dashboard e audioMode minúsculo")
+    void shouldAcceptPipelineRunWithDashboardPayloadAndAudioModeLowerCase() throws Exception {
+        com.autopublisher.application.port.in.PipelineJobStatus mockStatus = new com.autopublisher.application.port.in.PipelineJobStatus(
+                "job_dyn_456", "RUNNING", 5, "Iniciando", "custom", "TIKTOK",
+                "Psicologia", java.time.LocalDateTime.now(), null,
+                java.util.List.of("Log 1"), null, null, null, null, null
+        );
+        when(aiPipelineService.startPipelineJob(any())).thenReturn(mockStatus);
+
+        mockMvc.perform(post("/api/v1/dashboard/pipeline/run")
+                        .header("X-API-KEY", API_KEY)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                        {
+                            "channelId": "custom",
+                            "channelName": "@maisquepsicologia",
+                            "channelNiche": "Psicologia",
+                            "voiceId": "pt-BR-AntonioNeural",
+                            "affiliateUrl": null,
+                            "enableSubtitles": true,
+                            "subtitlesTheme": "CYAN_ELECTRIC",
+                            "subtitlesLayout": "full_sentences",
+                            "audioMode": "tts",
+                            "targetDurationSec": null,
+                            "flowClipsDir": null,
+                            "scriptIndex": 0,
+                            "topic": "É VOCÊ CONTRA VOCÊ! (VÍDEO MOTIVACIONAL) #Shorts",
+                            "sourceUrl": "https://www.youtube.com/watch?v=lohB80mWWPg",
+                            "visualDirective": "Cyberpunk dark futurista com hologramas e néon",
+                            "platform": "TIKTOK",
+                            "visualMode": "hybrid",
+                            "title": "É VOCÊ CONTRA VOCÊ! (VÍDEO MOTIVACIONAL) #Shorts",
+                            "narrationText": "O que você faria se pudesse voltar no tempo...",
+                            "firstComment": null
+                        }
+                        """))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.jobId").value("job_dyn_456"));
+    }
+
+    @Test
     @DisplayName("Deve gerar pacote do Google Flow com parâmetros 100% dinâmicos")
     void shouldGenerateFlowPackageWithDynamicParameters() throws Exception {
         when(aiPipelineService.generateFlowPackage(any())).thenReturn(java.util.Map.of(
