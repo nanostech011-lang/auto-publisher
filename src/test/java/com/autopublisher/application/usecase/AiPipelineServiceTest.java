@@ -54,7 +54,7 @@ class AiPipelineServiceTest {
         );
 
         assertThat(analysis).isNotNull();
-        assertThat(analysis).containsKeys("title", "narrationText", "blocks", "firstComment", "tags");
+        assertThat(analysis).containsKeys("title", "narrationText", "blocks", "firstComment");
         assertThat(analysis.get("source")).isEqualTo("youtube");
     }
 

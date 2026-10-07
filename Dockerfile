@@ -62,7 +62,7 @@ COPY --from=builder --chown=appuser:appgroup /build/extracted/snapshot-dependenc
 COPY --from=builder --chown=appuser:appgroup /build/extracted/application/ /app/
 
 # Copia scripts do pipeline e pacotes Node.js
-COPY --chown=appuser:appgroup package.json pnpm-lock.yaml* pnpm-workspace.yaml* /app/
+COPY --chown=appuser:appgroup package.json .npmrc* pnpm-lock.yaml* pnpm-workspace.yaml* /app/
 COPY --chown=appuser:appgroup pipeline/ /app/pipeline/
 
 # Instala dependências de produção do pipeline Node.js
