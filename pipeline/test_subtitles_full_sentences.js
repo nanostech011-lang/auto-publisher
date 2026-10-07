@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import {
   computeLineCapacity,
+  sanitizeEdgeTtsBoundaries,
   attachPunctuation,
   findSmartLineBreakIndex,
   groupWordsIntoFullSentences,
@@ -117,3 +118,80 @@ test('Subtitles Full Sentences - generateAssSubtitles com layout full_sentences 
 
   try { fs.unlinkSync(outAss); } catch (e) {}
 });
+
+test('Subtitles Full Sentences - sanitizeEdgeTtsBoundaries funde prefixos @ e # sem duplicar palavras', () => {
+  const rawBoundaries = [
+    { word: 'siga', startMs: 1000, endMs: 1300 },
+    { word: '@', startMs: 1350, endMs: 1600 },
+    { word: 'maisquepsicologia', startMs: 1610, endMs: 2500 },
+    { word: '#', startMs: 2600, endMs: 2900 },
+    { word: 'Shorts', startMs: 2910, endMs: 3400 }
+  ];
+
+  const sanitized = sanitizeEdgeTtsBoundaries(rawBoundaries);
+  assert.equal(sanitized.length, 3);
+  assert.equal(sanitized[0].word, 'siga');
+  assert.equal(sanitized[1].word, '@maisquepsicologia');
+  assert.equal(sanitized[1].startMs, 1350);
+  assert.equal(sanitized[1].endMs, 2500);
+  assert.equal(sanitized[2].word, '#Shorts');
+  assert.equal(sanitized[2].startMs, 2600);
+  assert.equal(sanitized[2].endMs, 3400);
+
+  const spokenText = 'siga @maisquepsicologia #Shorts';
+  const enriched = attachPunctuation(rawBoundaries, spokenText);
+  assert.equal(enriched.length, 3);
+  assert.equal(enriched[1].word, '@maisquepsicologia');
+  assert.equal(enriched[2].word, '#Shorts');
+});
+
+test('Subtitles Full Sentences - groupWordsIntoFullSentences garante invariante estrita de zero overlap', () => {
+  const boundaries = [
+    { word: 'Isso', startMs: 6863, endMs: 7151 },
+    { word: 'acontece,', startMs: 7163, endMs: 7788 },
+    { word: 'porque', startMs: 8088, endMs: 8388 },
+    { word: 'a', startMs: 8400, endMs: 8450 },
+    { word: 'nossa', startMs: 8463, endMs: 8763 },
+    { word: 'mente', startMs: 8775, endMs: 9088 },
+    { word: 'se', startMs: 9100, endMs: 9200 },
+    { word: 'refugia', startMs: 9213, endMs: 9701 },
+    { word: 'em', startMs: 9713, endMs: 9776 },
+    { word: 'micro-tarefas', startMs: 9788, endMs: 10626 }
+  ];
+
+  const cards = groupWordsIntoFullSentences(boundaries, { maxCharsPerLine: 26, minCardDurationMs: 1200 });
+  assert.ok(cards.length >= 1);
+
+  for (let i = 0; i < cards.length - 1; i++) {
+    const card = cards[i];
+    const nextCard = cards[i + 1];
+    assert.ok(card.endMs <= nextCard.startMs, `Card ${i} endMs (${card.endMs}) deve ser <= Card ${i+1} startMs (${nextCard.startMs})`);
+  }
+});
+
+test('Subtitles Full Sentences - generateAssSubtitles garante diálogos sem colisão de timestamps', () => {
+  const scratchDir = path.resolve('pipeline/scratch');
+  if (!fs.existsSync(scratchDir)) fs.mkdirSync(scratchDir, { recursive: true });
+  const outAss = path.join(scratchDir, 'test_no_collision.ass');
+
+  const boundaries = [
+    { word: 'Foco', startMs: 100, endMs: 600 },
+    { word: 'total.', startMs: 650, endMs: 1100 },
+    { word: 'Nunca', startMs: 1150, endMs: 1500 },
+    { word: 'desista.', startMs: 1550, endMs: 2000 }
+  ];
+
+  generateAssSubtitles({
+    wordBoundaries: boundaries,
+    outputAssPath: outAss,
+    theme: 'GOLD_PUNCH',
+    subtitlesLayout: 'full_sentences'
+  });
+
+  const content = fs.readFileSync(outAss, 'utf8');
+  const dialogueLines = content.split('\n').filter(l => l.startsWith('Dialogue:'));
+  assert.ok(dialogueLines.length >= 1);
+
+  try { fs.unlinkSync(outAss); } catch (e) {}
+});
+

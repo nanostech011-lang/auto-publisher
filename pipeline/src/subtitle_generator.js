@@ -93,11 +93,39 @@ function normalizeWordForMatching(word) {
 }
 
 /**
- * Recupera pontuação, acentos e caixa original alinhando os wordBoundaries do Edge-TTS
- * com os tokens correspondentes do texto falado (spokenText)
+ * Sanitiza e funde prefixos simbólicos (@ e #) que o Edge-TTS divide em boundaries separados
  */
-export function attachPunctuation(wordBoundaries, spokenText) {
-  if (!wordBoundaries || !Array.isArray(wordBoundaries) || wordBoundaries.length === 0) return [];
+export function sanitizeEdgeTtsBoundaries(wordBoundaries) {
+  if (!Array.isArray(wordBoundaries) || wordBoundaries.length === 0) return [];
+  const merged = [];
+
+  for (let i = 0; i < wordBoundaries.length; i++) {
+    const curr = wordBoundaries[i];
+    const next = wordBoundaries[i + 1];
+
+    if ((curr.word === '@' || curr.word === '#') && next && (next.startMs - curr.endMs <= 250)) {
+      merged.push({
+        word: curr.word + next.word,
+        startMs: curr.startMs,
+        endMs: next.endMs,
+        durationMs: next.endMs - curr.startMs
+      });
+      i++; // consome o próximo pois foi fundido ao símbolo
+    } else if (curr.word && curr.word.trim().length > 0) {
+      merged.push({ ...curr });
+    }
+  }
+
+  return merged;
+}
+
+/**
+ * Recupera pontuação, acentos e caixa original alinhando os wordBoundaries do Edge-TTS
+ * com os tokens correspondentes do texto falado (spokenText) com busca ancorada estritamente monotônica
+ */
+export function attachPunctuation(rawBoundaries, spokenText) {
+  const wordBoundaries = sanitizeEdgeTtsBoundaries(rawBoundaries);
+  if (!wordBoundaries || wordBoundaries.length === 0) return [];
   if (!spokenText || typeof spokenText !== 'string' || !spokenText.trim()) {
     return wordBoundaries.map(wb => ({ ...wb }));
   }
@@ -110,27 +138,39 @@ export function attachPunctuation(wordBoundaries, spokenText) {
     const normWb = normalizeWordForMatching(wb.word);
     if (!normWb) return { ...wb };
 
-    // Procura na janela deslizante do spokenText
-    let matchedToken = null;
-    const windowSize = Math.min(spokenTokens.length, spokenCursor + 6);
+    let bestMatchIdx = -1;
+    const windowEnd = Math.min(spokenTokens.length, spokenCursor + 8);
 
-    for (let j = spokenCursor; j < windowSize; j++) {
-      const candidate = spokenTokens[j];
-      const normCand = normalizeWordForMatching(candidate);
+    // 1. Busca correspondência exata normalizada na janela
+    for (let j = spokenCursor; j < windowEnd; j++) {
+      const normCand = normalizeWordForMatching(spokenTokens[j]);
       if (normCand === normWb) {
-        matchedToken = candidate;
-        spokenCursor = j + 1;
+        bestMatchIdx = j;
         break;
       }
     }
 
-    if (matchedToken) {
+    // 2. Se não achou exato, busca por prefixo/composto (ex: micro-tarefas, execute-a)
+    if (bestMatchIdx === -1) {
+      for (let j = spokenCursor; j < windowEnd; j++) {
+        const normCand = normalizeWordForMatching(spokenTokens[j]);
+        if (normCand.startsWith(normWb) || normWb.startsWith(normCand)) {
+          bestMatchIdx = j;
+          break;
+        }
+      }
+    }
+
+    if (bestMatchIdx !== -1) {
+      const matchedToken = spokenTokens[bestMatchIdx];
+      spokenCursor = bestMatchIdx + 1;
       return {
         ...wb,
         word: matchedToken
       };
     }
 
+    // Se não encontrou, preserva a palavra do TTS sem corromper o cursor
     return { ...wb };
   });
 }
@@ -203,8 +243,8 @@ export function groupWordsIntoFullSentences(wordBoundaries, layoutOpts = {}) {
 
   const maxCharsPerLine = layoutOpts.maxCharsPerLine || 26;
   const maxCardChars = maxCharsPerLine * 2; // Capacidade de 2 linhas confortáveis
-  const minCardDurationMs = layoutOpts.minCardDurationMs || 1200;
-  const maxCardDurationMs = layoutOpts.maxCardDurationMs || 5500;
+  const minCardDurationMs = layoutOpts.minCardDurationMs || 1000;
+  const maxCardDurationMs = layoutOpts.maxCardDurationMs || 5000;
 
   const rawChunks = [];
   let currentWords = [];
@@ -216,7 +256,8 @@ export function groupWordsIntoFullSentences(wordBoundaries, layoutOpts = {}) {
 
     const isSentenceEnd = /[.?!;]$/.test(wb.word);
     const gapToNext = nextWb ? (nextWb.startMs - wb.endMs) : 0;
-    const isStrongPause = gapToNext >= 260;
+    // Pausa verdadeira de fim de oração é >= 400ms (vírgulas normais no PT-BR têm ~280-350ms)
+    const isStrongPause = gapToNext >= 400;
 
     const currentDuration = wb.endMs - currentWords[0].startMs;
     const currentCharCount = currentWords.map(w => w.word.length).reduce((a, b) => a + b, 0) + (currentWords.length - 1);
@@ -231,13 +272,12 @@ export function groupWordsIntoFullSentences(wordBoundaries, layoutOpts = {}) {
       i === wordBoundaries.length - 1;
 
     if (shouldBreak) {
-      // Se estourou por limite de caracteres/tempo sem pontuação, tenta achar vírgula ou conjunção próxima
+      // Se estourou por limite de caracteres/tempo sem pontuação forte, tenta achar vírgula ou conjunção próxima
       if (!isSentenceEnd && !isStrongPause && currentWords.length > 5 && i < wordBoundaries.length - 1) {
-        // Encontra vírgula ou conjunção mais próxima do meio
-        const mid = Math.floor(currentWords.length / 2);
         let splitPoint = -1;
         for (let j = currentWords.length - 2; j >= 3; j--) {
-          if (/[,]$/.test(currentWords[j].word) || /^(mas|porém|porque|que|quando|se)$/i.test(currentWords[j + 1].word)) {
+          // Não quebra em "se" pois é predominantemente pronome reflexivo (ex: se refugia, se vê)
+          if (/[,]$/.test(currentWords[j].word) || /^(mas|porém|porque|quando|onde|como)$/i.test(currentWords[j + 1].word)) {
             splitPoint = j + 1;
             break;
           }
@@ -266,29 +306,42 @@ export function groupWordsIntoFullSentences(wordBoundaries, layoutOpts = {}) {
     }
   }
 
-  // Pós-processamento: Elimina cards órfãos de 1 palavra unindo ao vizinho mais adequado
-  const consolidated = [];
+  // Pós-processamento 1: Elimina cards órfãos de 1 palavra unindo ao vizinho mais adequado
+  const mergedOrphans = [];
   for (let i = 0; i < rawChunks.length; i++) {
     const chunk = rawChunks[i];
     if (chunk.words.length === 1) {
-      if (consolidated.length > 0 && consolidated[consolidated.length - 1].words.length < 12) {
-        // Une ao anterior
-        const prev = consolidated[consolidated.length - 1];
+      if (mergedOrphans.length > 0 && mergedOrphans[mergedOrphans.length - 1].words.length < 12) {
+        const prev = mergedOrphans[mergedOrphans.length - 1];
         prev.words.push(...chunk.words);
         prev.endMs = chunk.endMs;
         continue;
       } else if (i < rawChunks.length - 1) {
-        // Une ao próximo
         const next = rawChunks[i + 1];
         next.words.unshift(...chunk.words);
         next.startMs = chunk.startMs;
         continue;
       }
     }
+    mergedOrphans.push(chunk);
+  }
 
-    // Garante duração mínima perceptiva confortável (minCardDurationMs)
-    if (chunk.endMs - chunk.startMs < minCardDurationMs) {
-      chunk.endMs = chunk.startMs + minCardDurationMs;
+  // Pós-processamento 2: Invariante Estrita de Não-Sobreposição (Zero Overlap Guaranteed)
+  const consolidated = [];
+  for (let i = 0; i < mergedOrphans.length; i++) {
+    const chunk = mergedOrphans[i];
+    const nextChunk = mergedOrphans[i + 1];
+
+    // Se duração menor que o mínimo confortável, expande apenas até o espaço seguro antes do próximo
+    const naturalDuration = chunk.endMs - chunk.startMs;
+    if (naturalDuration < minCardDurationMs) {
+      const maxPossibleEnd = nextChunk ? Math.max(chunk.endMs, nextChunk.startMs - 20) : (chunk.startMs + minCardDurationMs);
+      chunk.endMs = Math.min(chunk.startMs + minCardDurationMs, maxPossibleEnd);
+    }
+
+    // Invariante Mandatória: chunk.endMs NUNCA pode alcançar ou ultrapassar nextChunk.startMs
+    if (nextChunk && chunk.endMs >= nextChunk.startMs) {
+      chunk.endMs = Math.max(chunk.words[chunk.words.length - 1].endMs, nextChunk.startMs - 20);
     }
 
     consolidated.push(chunk);
@@ -480,9 +533,13 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     const chunk = chunks[cIdx];
     const nextChunk = chunks[cIdx + 1];
 
-    // Duração do card estendida até o próximo chunk se o gap for curto (< 350ms)
-    const gapToNext = nextChunk ? Math.min(350, Math.max(0, nextChunk.startMs - chunk.endMs)) : 0;
-    const cardEndMs = chunk.endMs + gapToNext;
+    // Duração do card estendida confortavelmente até a proximidade do próximo chunk
+    // Mantém sempre pelo menos 20ms de margem limpa antes do próximo chunk para evitar colisão visual no libass
+    const gapToNext = nextChunk ? Math.max(0, nextChunk.startMs - chunk.endMs) : 0;
+    const extendMs = Math.min(250, gapToNext);
+    const cardEndMs = nextChunk
+      ? Math.min(nextChunk.startMs - 20, chunk.endMs + extendMs)
+      : (chunk.endMs + 300);
 
     const startStr = formatAssTime(chunk.startMs);
     const endStr = formatAssTime(cardEndMs);
@@ -518,9 +575,14 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         : escapeAssText(w.word.toUpperCase());
 
       const tIn = Math.max(0, w.startMs - chunk.startMs);
-      const rawDur = w.endMs - w.startMs;
-      const minActiveMs = Math.max(130, rawDur);
-      const tOut = Math.min(cardEndMs - chunk.startMs, tIn + minActiveMs);
+      const wordEndRel = w.endMs - chunk.startMs;
+      let tOut;
+      if (idx < words.length - 1) {
+        const nextWordStartRel = words[idx + 1].startMs - chunk.startMs;
+        tOut = Math.min(nextWordStartRel, Math.max(tIn + 40, wordEndRel));
+      } else {
+        tOut = Math.min(cardEndMs - chunk.startMs, Math.max(tIn + 60, wordEndRel));
+      }
 
       const lineBreak = (idx === splitPoint) ? '\\N' : '';
 
