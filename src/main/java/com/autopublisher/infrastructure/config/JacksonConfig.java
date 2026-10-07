@@ -5,7 +5,9 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,8 +16,8 @@ import java.io.IOException;
 
 /**
  * Configuração de serialização e desserialização Jackson.
- * Permite que modelos do domínio e requisições REST aceitem strings em minúsculas
- * ou maiúsculas (ex: "tts", "source_audio", "none") com fallback seguro.
+ * Garante suporte a Java 8 Date/Time (LocalDateTime via JavaTimeModule)
+ * e desserialização resiliente para tipos e enums do domínio.
  */
 @Configuration
 public class JacksonConfig {
@@ -24,6 +26,8 @@ public class JacksonConfig {
     public Jackson2ObjectMapperBuilderCustomizer jacksonCustomizer() {
         return builder -> {
             builder.featuresToEnable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS);
+            builder.featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+            builder.modulesToInstall(new JavaTimeModule());
 
             SimpleModule domainModule = new SimpleModule("DomainEnumModule");
             domainModule.addDeserializer(AudioMode.class, new JsonDeserializer<>() {
@@ -33,7 +37,7 @@ public class JacksonConfig {
                     return AudioMode.fromString(value);
                 }
             });
-            builder.modules(domainModule);
+            builder.modulesToInstall(domainModule);
         };
     }
 }

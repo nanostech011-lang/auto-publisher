@@ -32,7 +32,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.springframework.context.annotation.Import;
+import com.autopublisher.infrastructure.config.JacksonConfig;
+
 @WebMvcTest(DashboardApiController.class)
+@Import(JacksonConfig.class)
 @TestPropertySource(properties = {
         "autopublisher.security.api-key=test-dashboard-key-12345"
 })
