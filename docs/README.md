@@ -18,6 +18,7 @@ Bem-vindo à documentação oficial do **AutoPublisher Pro**, um microsserviço 
 
 ### 2. [Detalhes Operacionais e Estrutura de Custos](Detalhes_Operacional.md)
 *   **Auditoria de Custo Zero (R$ 0,00):** Detalhamento de como as camadas gratuitas (*Always Free*) do Google Cloud Run, Cloud Scheduler, Drive e Sheets cobrem 100% da infraestrutura.
+*   [**Plano de Hospedagem (Firebase + Cloud Run):**](Plano_Hospedagem_Firebase_CloudRun.md) Guia oficial passo a passo de deploy com Firebase Hosting, Cloud Run e Cloud Scheduler mantendo Custo R$ 0,00.
 *   **Funil de Monetização:** Estratégias de ganhos financeiros via YouTube Partner Program (Shorts & vídeos longos), links de afiliados com rastreamento UTM e parcerias.
 *   **Segurança contra Penalizações:** Diretrizes para evitar flags de spam e salvaguardar a saúde algorítmica do canal.
 
