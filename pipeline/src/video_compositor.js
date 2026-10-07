@@ -1,6 +1,12 @@
 import fs from 'fs';
 import path from 'path';
-import ffmpeg, { ffmpegBinary, ffprobeBinary } from './ffmpeg_env.js';
+import ffmpeg, {
+  ffmpegBinary,
+  ffprobeBinary,
+  FFMPEG_THREADS,
+  LOW_MEMORY_DECODE_OPTS,
+  LOW_MEMORY_X264_OPTS
+} from './ffmpeg_env.js';
 
 let detectedVideoCodec = null;
 
@@ -126,8 +132,13 @@ export async function composeFinalVideo({
 
     const command = ffmpeg()
       .input(concatListPath)
-      .inputOptions(['-f concat', '-safe 0'])
+      .inputOptions(['-f concat', '-safe 0', ...LOW_MEMORY_DECODE_OPTS])
       .input(audioPath);
+
+    // Perfil de baixo consumo de memória (evita SIGKILL do OOM killer no cgroup de 512MB)
+    const memoryOpts = encoderConfig.codec === 'libx264'
+      ? LOW_MEMORY_X264_OPTS
+      : [`-threads ${FFMPEG_THREADS}`, '-filter_complex_threads 1'];
 
     const hasBgMusic = bgMusicPath && fs.existsSync(bgMusicPath);
     if (hasBgMusic) {
@@ -181,6 +192,7 @@ export async function composeFinalVideo({
         '-map [v_out]',
         audioMap,
         `-c:v ${encoderConfig.codec}`,
+        ...memoryOpts,
         '-pix_fmt yuv420p',
         `-preset ${encoderConfig.preset || 'slow'}`,
         '-crf 20',

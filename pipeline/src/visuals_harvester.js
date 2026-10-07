@@ -1,7 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import { execFile } from 'child_process';
-import ffmpeg, { ffmpegBinary, ffprobeBinary } from './ffmpeg_env.js';
+import ffmpeg, {
+  ffmpegBinary,
+  ffprobeBinary,
+  LOW_MEMORY_DECODE_OPTS,
+  LOW_MEMORY_X264_OPTS,
+  LOW_MEMORY_X264_ARGS
+} from './ffmpeg_env.js';
 import { generateHighQualitySceneImage } from './ai_image_connector.js';
 import { generateCinematicTake } from './ai_video_connector.js';
 import {
@@ -52,6 +58,7 @@ export function createProceduralDarkScene({
       '-filter_complex', filterComplex,
       '-map', '[final]',
       '-c:v', 'libx264',
+      ...LOW_MEMORY_X264_ARGS,
       '-pix_fmt', 'yuv420p',
       '-preset', 'ultrafast',
       '-t', String(durationSeconds),
@@ -206,11 +213,12 @@ export function createCinematicMotionClip({
     return new Promise((resolve, reject) => {
       ffmpeg()
         .input(assetPath)
-        .inputOptions(['-stream_loop -1'])
+        .inputOptions(['-stream_loop -1', ...LOW_MEMORY_DECODE_OPTS])
         .outputOptions([
           `-t ${durationSeconds}`,
           `-vf scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920${transitionFade}`,
           '-c:v libx264',
+          ...LOW_MEMORY_X264_OPTS,
           '-pix_fmt yuv420p',
           '-preset fast'
         ])
@@ -269,6 +277,7 @@ export function createCinematicMotionClip({
         `-t ${durationSeconds}`,
         `-vf ${fullFilter}`,
         '-c:v libx264',
+        ...LOW_MEMORY_X264_OPTS,
         '-pix_fmt yuv420p',
         '-preset fast'
       ])
@@ -434,11 +443,12 @@ export function adaptExternalVideoClip({ inputPath, durationSeconds, outputPath 
   return new Promise((resolve, reject) => {
     ffmpeg()
       .input(inputPath)
-      .inputOptions(['-stream_loop -1']) // Permite loop suave caso o clipe do Flow seja mais curto
+      .inputOptions(['-stream_loop -1', ...LOW_MEMORY_DECODE_OPTS]) // Permite loop suave caso o clipe do Flow seja mais curto
       .outputOptions([
         `-t ${durationSeconds}`,
         '-vf scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=30',
         '-c:v libx264',
+        ...LOW_MEMORY_X264_OPTS,
         '-pix_fmt yuv420p',
         '-an',
         '-preset fast'

@@ -10,6 +10,7 @@ import fs from 'fs';
 import path from 'path';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+import { LOW_MEMORY_DECODE_OPTS, LOW_MEMORY_X264_OPTS } from './ffmpeg_env.js';
 import ffprobeInstaller from '@ffprobe-installer/ffprobe';
 
 const ffmpegBinary = process.env.FFMPEG_PATH || (fs.existsSync('/usr/bin/ffmpeg') ? '/usr/bin/ffmpeg' : ffmpegInstaller.path);
@@ -398,11 +399,12 @@ export function formatStockClipToExactDuration({
   return new Promise((resolve, reject) => {
     ffmpeg()
       .input(rawVideoPath)
-      .inputOptions(['-stream_loop -1'])
+      .inputOptions(['-stream_loop -1', ...LOW_MEMORY_DECODE_OPTS])
       .outputOptions([
         `-t ${dSec}`,
         `-vf scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920${transitionFade}`,
         '-c:v libx264',
+        ...LOW_MEMORY_X264_OPTS,
         '-pix_fmt yuv420p',
         '-r 30',
         '-preset fast'
