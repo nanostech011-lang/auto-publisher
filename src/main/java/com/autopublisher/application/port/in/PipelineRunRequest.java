@@ -1,10 +1,12 @@
 package com.autopublisher.application.port.in;
 
+import com.autopublisher.domain.model.AudioMode;
+
 /**
  * Requisicao para disparo do pipeline de geracao de video por IA.
  * Suporta canais customizados, selecao de plataforma, link de video do YouTube,
  * diretriz visual das imagens, perfil customizado (nome, nicho, voz, CTA),
- * estilo de legenda e clipes externos (Google Flow).
+ * estilo de legenda, modos de audio (TTS, SOURCE_AUDIO, NONE) e clipes externos.
  *
  * Todas as informacoes sao extraidas dinamicamente do Dashboard, sem hardcoding.
  */
@@ -25,8 +27,24 @@ public record PipelineRunRequest(
         Boolean enableSubtitles,
         String title,
         String narrationText,
-        String firstComment
+        String firstComment,
+        AudioMode audioMode,
+        Double targetDurationSec,
+        String subtitlesLayout
 ) {
+    public PipelineRunRequest(
+            String channelId, Integer scriptIndex, String topic, String platform,
+            String sourceUrl, String visualDirective, String visualMode,
+            String channelName, String channelNiche, String voiceId,
+            String affiliateUrl, String subtitlesTheme, String flowClipsDir,
+            Boolean enableSubtitles, String title, String narrationText,
+            String firstComment
+    ) {
+        this(channelId, scriptIndex, topic, platform, sourceUrl, visualDirective, visualMode,
+                channelName, channelNiche, voiceId, affiliateUrl, subtitlesTheme, flowClipsDir,
+                enableSubtitles, title, narrationText, firstComment, AudioMode.TTS, null, "full_sentences");
+    }
+
     public PipelineRunRequest(
             String channelId, Integer scriptIndex, String topic, String platform,
             String sourceUrl, String visualDirective, String visualMode,
@@ -40,7 +58,7 @@ public record PipelineRunRequest(
     }
 
     public PipelineRunRequest(String channelId, Integer scriptIndex, String topic, String platform) {
-        this(channelId, scriptIndex, topic, platform, null, null, "hybrid", null, null, null, null, null, null, true, null, null, null);
+        this(channelId, scriptIndex, topic, platform, null, null, "hybrid", null, null, null, null, null, null, true);
     }
 
     public PipelineRunRequest(String channelId, Integer scriptIndex, String topic, String platform, String sourceUrl) {
@@ -53,6 +71,14 @@ public record PipelineRunRequest(
 
     public PipelineRunRequest(String channelId, Integer scriptIndex, String topic, String platform, String sourceUrl, String visualDirective, String visualMode) {
         this(channelId, scriptIndex, topic, platform, sourceUrl, visualDirective, visualMode, null, null, null, null, null, null, true);
+    }
+
+    public AudioMode getAudioModeOrDefault() {
+        return audioMode != null ? audioMode : AudioMode.TTS;
+    }
+
+    public String getSubtitlesLayoutOrDefault() {
+        return (subtitlesLayout != null && !subtitlesLayout.isBlank()) ? subtitlesLayout.trim().toLowerCase() : "full_sentences";
     }
 
     public String getChannelIdOrDefault() {

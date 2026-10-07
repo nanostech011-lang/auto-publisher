@@ -15,7 +15,9 @@ export async function ingestGeneratedPost({
   driveVideoId = null,
   driveThumbnailId = null,
   batchIndex = 0,
-  totalBatch = 1
+  totalBatch = 1,
+  audioMode = 'tts',
+  initialStatus = null
 }) {
   const metadata = scriptData.metadata || {};
 
@@ -40,6 +42,8 @@ export async function ingestGeneratedPost({
     finalScheduleTime = `${targetDate.getFullYear()}-${pad(targetDate.getMonth() + 1)}-${pad(targetDate.getDate())} ${pad(targetDate.getHours())}:${pad(targetDate.getMinutes())}:${pad(targetDate.getSeconds())}`;
   }
 
+  const postStatus = initialStatus || (audioMode === 'source_audio' ? 'REVISAO_MANUAL' : 'PENDENTE');
+
   const payload = {
     id: postId,
     scheduledTime: finalScheduleTime,
@@ -52,12 +56,14 @@ export async function ingestGeneratedPost({
     categoryId: metadata.categoryId || 28,
     madeForKids: Boolean(metadata.madeForKids),
     privacy: metadata.privacy || 'PUBLIC',
-    firstComment: metadata.firstComment || ''
+    firstComment: metadata.firstComment || '',
+    status: postStatus
   };
 
   console.log(`\n--- Preparando Ingestao no AutoPublisher Pro ---`);
   console.log(`Post ID: ${postId}`);
   console.log(`Plataforma: ${platform}`);
+  console.log(`Status Inicial: ${postStatus}`);
   console.log(`Data de Agendamento: ${finalScheduleTime}`);
   console.log(`Titulo: ${payload.title}`);
 

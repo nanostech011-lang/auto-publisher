@@ -15,6 +15,7 @@ try {
 import { generateScript, loadChannelProfile } from './script_generator.js';
 import { resolveChannelConfig } from './config_resolver.js';
 import { synthesizeVoiceWithTimestamps } from './voice_synthesizer.js';
+import { enhancePtBrProsody, clampRate } from './ptbr_prosody_enhancer.js';
 import { generateAssSubtitles, generateSrtSubtitles } from './subtitle_generator.js';
 import { alignScenesWithWordBoundaries } from './scene_aligner.js';
 import { planBeatsAndSubTakes } from './beat_planner.js';
@@ -24,6 +25,9 @@ import { composeFinalVideo } from './video_compositor.js';
 import { ingestGeneratedPost } from './publisher_ingestor.js';
 import { runQualityControlGate } from './qc_gate.js';
 import { uploadPostAssetsToDrive } from './drive_uploader.js';
+import { getMediaLedger } from './media_ledger.js';
+import { estimateWordBoundaries, estimateVisualDuration } from './timing_estimator.js';
+import { extractSourceAudio } from './source_audio_extractor.js';
 
 // Parser simples de argumentos CLI
 function parseArgs() {
@@ -36,13 +40,16 @@ function parseArgs() {
     geminiKey: null,
     pexelsKey: null,
     visualMode: 'hybrid', // 'hybrid' | 'video' | 'image'
+    audioMode: 'tts', // 'tts' | 'none' | 'source_audio'
+    targetDurationSec: null,
     batch: 1,
     enableSubtitles: true,
     channelName: null,
     niche: null,
     voiceId: null,
     affiliateUrl: null,
-    subtitlesTheme: 'GOLD_PUNCH',
+    subtitlesTheme: null,
+    subtitlesLayout: 'full_sentences',
     title: null,
     narrationText: null,
     firstComment: null
@@ -99,6 +106,9 @@ function parseArgs() {
       options.enableSubtitles = false;
     } else if (args[i] === '--subtitles' || args[i] === '--com-legenda') {
       options.enableSubtitles = true;
+    } else if (args[i] === '--subtitles-layout' && args[i + 1]) {
+      options.subtitlesLayout = args[i + 1].toLowerCase();
+      i++;
     } else if ((args[i] === '--flow-clips-dir' || args[i] === '--clips-dir') && args[i + 1]) {
       options.flowClipsDir = path.resolve(args[i + 1]);
       i++;
@@ -125,6 +135,14 @@ function parseArgs() {
       i++;
     } else if (args[i] === '--first-comment' && args[i + 1]) {
       options.firstComment = args[i + 1];
+      i++;
+    } else if (args[i] === '--audio-mode' && args[i + 1]) {
+      options.audioMode = args[i + 1].toLowerCase();
+      i++;
+    } else if (args[i] === '--no-voice' || args[i] === '--sem-voz') {
+      options.audioMode = 'none';
+    } else if ((args[i] === '--duration' || args[i] === '--target-duration') && args[i + 1]) {
+      options.targetDurationSec = parseFloat(args[i + 1]);
       i++;
     }
   }
@@ -217,7 +235,8 @@ async function renderWithFallback({
 }
 
 export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1) {
-  const effectiveGeminiKey = options.geminiKey || process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+  try {
+    const effectiveGeminiKey = options.geminiKey || process.env.GEMINI_API_KEY || process.env.GEMINI_AI_API_KEY || process.env.GOOGLE_AI_API_KEY;
   const effectivePexelsKey = options.pexelsKey || process.env.PEXELS_API_KEY;
 
   console.log(`Canal: ${options.channel}`);
@@ -282,28 +301,97 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
   console.log(`Total de Palavras: ${scriptData.wordCount}`);
   console.log(`Cenas Previstas: ${scriptData.scenes.length}`);
 
-  // 2. Síntese de Voz Neural com Edge-TTS e Timestamps
-  console.log('\n>>> [2/6] Sintetizando locucao neural com Edge-TTS e timestamps...');
-  const voiceProfile = channelProfile.voice_profile || {};
-  const voiceId = options.voiceId || voiceProfile.voice_id || 'pt-BR-AntonioNeural';
-  // Taxa e tom estritamente calibrados para fala humana 100% natural, sem distorção robótica
-  const voiceRate = options.voiceRate || (options.voiceId ? '+0%' : (voiceProfile.rate || '+0%'));
-  const voicePitch = options.voicePitch || (options.voiceId ? '+0Hz' : (voiceProfile.pitch || '+0Hz'));
-  const audioPath = path.join(scratchDir, 'narration.mp3');
+  // 2. Configuração de Áudio / Síntese de Voz Neural
+  const audioMode = (options.audioMode || 'tts').toLowerCase();
+  let voiceResult = null;
+  let audioPath = null;
+  let targetDurationSeconds = 0;
 
-  const voiceResult = await synthesizeVoiceWithTimestamps({
-    text: scriptData.narrationText,
-    voice: voiceId,
-    rate: voiceRate,
-    pitch: voicePitch,
-    outputAudioPath: audioPath
-  });
+  if (audioMode === 'none') {
+    console.log('\n>>> [2/6] Modo de Áudio: NENHUM (Vídeo puramente visual, sem locução)...');
+    
+    // Determina a duração visual alvo
+    const defaultVisualDuration = options.targetDurationSec || channelProfile?.format?.target_duration_seconds || 15.0;
+    targetDurationSeconds = estimateVisualDuration(scriptData.scenes, scriptData.narrationText, defaultVisualDuration);
+    if (options.targetDurationSec && options.targetDurationSec > 0) {
+      targetDurationSeconds = Number(options.targetDurationSec.toFixed(2));
+    }
 
-  console.log(`Audio sintetizado com sucesso!`);
-  console.log(`Duracao exata: ${voiceResult.durationSeconds}s (${voiceResult.wordBoundaries.length} palavras mapeadas)`);
+    // Se o usuário tem texto narrado ou legendas habilitadas, gera wordBoundaries sintéticos proporcionais
+    const enhancedNarration = scriptData.narrationText ? enhancePtBrProsody(scriptData.narrationText) : '';
+    scriptData.spokenText = enhancedNarration;
 
-  if (voiceResult.wordBoundaries.length < 5) {
-    console.warn('[Pipeline] ⚠️  Poucos wordBoundaries capturados — Edge-TTS pode ter tido falha parcial. Verifique a qualidade do áudio.');
+    const syntheticBoundaries = enhancedNarration
+      ? estimateWordBoundaries(enhancedNarration, targetDurationSeconds)
+      : [];
+
+    voiceResult = {
+      audioPath: null,
+      durationSeconds: targetDurationSeconds,
+      wordBoundaries: syntheticBoundaries
+    };
+
+    console.log(`Duração visual planejada: ${targetDurationSeconds}s (${syntheticBoundaries.length} palavras mapeadas para legendas)`);
+  } else if (audioMode === 'source_audio') {
+    console.log('\n>>> [2/6] Modo de Áudio: REAPROVEITAR ÁUDIO DO VÍDEO FONTE...');
+    audioPath = path.join(scratchDir, 'source_audio.mp3');
+    const sourceUrl = options.sourceUrl || scriptData.sourceUrl;
+    if (!sourceUrl) {
+      throw new Error('Modo SOURCE_AUDIO exige a especificação de uma URL de origem (--url <link>).');
+    }
+
+    const extResult = await extractSourceAudio(sourceUrl, audioPath, {
+      targetLufs: channelProfile.audio_profile?.target_lufs || -14.0
+    });
+
+    targetDurationSeconds = Number(extResult.durationSeconds.toFixed(2));
+    const enhancedNarration = scriptData.narrationText ? enhancePtBrProsody(scriptData.narrationText) : '';
+    scriptData.spokenText = enhancedNarration;
+
+    const syntheticBoundaries = enhancedNarration
+      ? estimateWordBoundaries(enhancedNarration, targetDurationSeconds)
+      : [];
+
+    voiceResult = {
+      audioPath: extResult.audioPath,
+      durationSeconds: targetDurationSeconds,
+      wordBoundaries: syntheticBoundaries
+    };
+    console.log(`Áudio de origem extraído com sucesso (${targetDurationSeconds}s)! Status do post será REVISAO_MANUAL.`);
+  } else {
+    console.log('\n>>> [2/6] Sintetizando locucao neural com Edge-TTS e timestamps...');
+    const voiceProfile = channelProfile.voice_profile || {};
+    const voiceId = options.voiceId || voiceProfile.voice_id || 'pt-BR-AntonioNeural';
+    // Taxa e tom estritamente calibrados para fala humana 100% natural, sem distorção robótica (Decisão D6: [-6%, +4%])
+    const rawVoiceRate = options.voiceRate || (options.voiceId ? '+0%' : (voiceProfile.rate || '+0%'));
+    const voiceRate = clampRate(rawVoiceRate, '+0%');
+    const voicePitch = options.voicePitch || (options.voiceId ? '+0Hz' : (voiceProfile.pitch || '+0Hz'));
+    audioPath = path.join(scratchDir, 'narration.mp3');
+
+    // Enriquecimento prosódico PT-BR: acentos rigorosos, pausas respiratórias e expansões fonéticas
+    const enhancedNarration = enhancePtBrProsody(scriptData.narrationText);
+    scriptData.spokenText = enhancedNarration;
+
+    voiceResult = await synthesizeVoiceWithTimestamps({
+      text: enhancedNarration,
+      voice: voiceId,
+      rate: voiceRate,
+      pitch: voicePitch,
+      outputAudioPath: audioPath
+    });
+
+    console.log(`Audio sintetizado com sucesso!`);
+    console.log(`Duracao exata: ${voiceResult.durationSeconds}s (${voiceResult.wordBoundaries.length} palavras mapeadas)`);
+
+    if (voiceResult.wordBoundaries.length < 5) {
+      console.warn('[Pipeline] ⚠️  Poucos wordBoundaries capturados — Edge-TTS pode ter tido falha parcial. Verifique a qualidade do áudio.');
+    }
+
+    const rawAudioDuration = Number(voiceResult.durationSeconds) || 0;
+    // Duração alvo estritamente sincronizada com a locução (+ 0.15s de respiro final natural)
+    targetDurationSeconds = rawAudioDuration > 0
+      ? Number((rawAudioDuration + 0.15).toFixed(2))
+      : (channelProfile?.format?.target_duration_seconds || 60.0);
   }
 
   // 3. Geração de Legendas Dinâmicas (ASS / Karaokê)
@@ -311,40 +399,43 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
   const subtitlesPath = path.join(scratchDir, 'subtitles.ass');
   const srtPath = path.join(scratchDir, 'subtitles.srt');
 
-  // Seleciona tema de legenda: do dashboard, perfil do canal ou padrão
+  // Seleciona tema e layout de legenda: do dashboard, perfil do canal ou padrão
   const channelSubStyle = channelProfile.visual_profile?.subtitles_style;
   const channelSubTheme = options.subtitlesTheme || channelSubStyle?.theme || 'GOLD_PUNCH';
+  const effectiveSubLayout = options.subtitlesLayout || channelSubStyle?.layout || 'full_sentences';
 
-  console.log(`Tema de legenda aplicado: "${channelSubTheme}" (conforme seleção do painel/canal)`);
+  if (options.enableSubtitles && voiceResult.wordBoundaries.length > 0) {
+    console.log(`Tema de legenda aplicado: "${channelSubTheme}" (Layout: ${effectiveSubLayout.toUpperCase()})`);
 
-  generateAssSubtitles({
-    wordBoundaries: voiceResult.wordBoundaries,
-    outputAssPath: subtitlesPath,
-    theme: channelSubTheme,
-    // Se o usuário selecionou tema no painel, as cores do tema selecionado têm precedência absoluta
-    fontName: channelSubStyle?.font_name || null,
-    fontSize: channelSubStyle?.font_size || null,
-    primaryColor: options.subtitlesTheme ? null : (channelSubStyle?.primary_color || null),
-    activeWordColor: options.subtitlesTheme ? null : (channelSubStyle?.active_word_color || null),
-    outlineColor: channelSubStyle?.outline_color || null,
-    outlineWidth: channelSubStyle?.outline_width || null,
-    marginV: channelSubStyle?.margin_v || null,
-    popAnimation: true
-  });
-  generateSrtSubtitles({
-    wordBoundaries: voiceResult.wordBoundaries,
-    outputSrtPath: srtPath
-  });
-  console.log(`Legendas ASS e SRT compiladas.`);
+    generateAssSubtitles({
+      wordBoundaries: voiceResult.wordBoundaries,
+      outputAssPath: subtitlesPath,
+      theme: channelSubTheme,
+      // Se o usuário selecionou tema no painel, as cores do tema selecionado têm precedência absoluta
+      fontName: channelSubStyle?.font_name || null,
+      fontSize: channelSubStyle?.font_size || null,
+      primaryColor: options.subtitlesTheme ? null : (channelSubStyle?.primary_color || null),
+      activeWordColor: options.subtitlesTheme ? null : (channelSubStyle?.active_word_color || null),
+      outlineColor: channelSubStyle?.outline_color || null,
+      outlineWidth: channelSubStyle?.outline_width || null,
+      marginV: channelSubStyle?.margin_v || null,
+      popAnimation: true,
+      subtitlesLayout: effectiveSubLayout,
+      spokenText: scriptData.spokenText || scriptData.narrationText
+    });
+    generateSrtSubtitles({
+      wordBoundaries: voiceResult.wordBoundaries,
+      outputSrtPath: srtPath,
+      subtitlesLayout: effectiveSubLayout,
+      spokenText: scriptData.spokenText || scriptData.narrationText
+    });
+    console.log(`Legendas ASS e SRT compiladas.`);
+  } else {
+    console.log(`Legendas não geradas (desabilitadas ou sem texto).`);
+  }
 
   // 4. Coleta / Geração dos Cortes Visuais (9:16) e Thumbnail
   console.log('\n>>> [4/6] Calibrando sincronização fonética e densidade de cortes (Beat Planner)...');
-  const rawAudioDuration = Number(voiceResult.durationSeconds) || 0;
-  // Duração alvo estritamente sincronizada com a locução (+ 0.15s de respiro final natural)
-  // Elimina a cauda ociosa onde o vídeo continuava tocando após a mensagem ter terminado
-  const targetDurationSeconds = rawAudioDuration > 0
-    ? Number((rawAudioDuration + 0.15).toFixed(2))
-    : (channelProfile?.format?.target_duration_seconds || 60.0);
 
   // 4.1 Subdivide beats longos para cumprir a densidade cinematográfica (2 a 4 segundos por take)
   const cutsInterval = channelProfile?.format?.cuts_interval_seconds || '2-4';
@@ -420,6 +511,20 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
 
   // Detecção de trilha sonora de fundo (BGM)
   let bgMusicPath = null;
+  const configuredTrack = channelProfile.audio_profile?.bg_music_track;
+  if (configuredTrack) {
+    const candidatePaths = [
+      path.resolve(`pipeline/assets/music/${options.channel}/${configuredTrack}`),
+      path.resolve(`pipeline/assets/music/${configuredTrack}`),
+      path.resolve(configuredTrack)
+    ];
+    for (const cp of candidatePaths) {
+      if (fs.existsSync(cp)) {
+        bgMusicPath = cp;
+        break;
+      }
+    }
+  }
   const channelMusicDir = path.resolve(`pipeline/assets/music/${options.channel}`);
   const globalMusicDir = path.resolve('pipeline/assets/music');
 
@@ -553,7 +658,8 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
     driveVideoId: driveAssets.videoDriveId,
     driveThumbnailId: driveAssets.thumbnailDriveId,
     batchIndex: batchIndex,
-    totalBatch: totalBatch
+    totalBatch: totalBatch,
+    audioMode: options.audioMode
   });
 
   // Salva report.json consolidado (SDD v3.0 §3.7 e §7)
@@ -595,9 +701,24 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
   console.log(`Legenda:        ${subtitleStatus}`);
   console.log(`Elegivel TikTok Rewards: ${renderResult.durationSeconds >= 60 ? 'SIM (>= 60s)' : 'NAO'}`);
   console.log(`Status Ingestao: ${ingestResult.source}`);
-  console.log('===============================================================\n');
+    // Comita reservas no MediaLedger após sucesso completo
+    try {
+      const ledger = getMediaLedger();
+      ledger.commit(options.channel, path.basename(outputDir));
+    } catch (commitErr) {
+      console.warn('[Pipeline] Aviso: Falha ao comitar MediaLedger:', commitErr.message);
+    }
 
-  return { renderResult, ingestResult };
+    return { renderResult, ingestResult };
+  } catch (pipelineErr) {
+    try {
+      const ledger = getMediaLedger();
+      ledger.rollback(options.channel);
+    } catch (rbErr) {
+      console.warn('[Pipeline] Aviso ao reverter reservas do MediaLedger:', rbErr.message);
+    }
+    throw pipelineErr;
+  }
 }
 
 async function main() {
@@ -622,6 +743,10 @@ Opções:
   --batch <n>            Gerar N vídeos em lote
   --subtitles            Habilitar legendas queimadas no vídeo (padrão)
   --no-subtitles         Desabilitar legendas queimadas no vídeo
+  --audio-mode <modo>    tts | none | source_audio (padrão: tts)
+  --no-voice             Desabilitar locução neural (gera vídeo puramente visual)
+  --duration <seg>       Duração alvo em segundos (quando audio-mode for none)
+  --subtitles-layout     full_sentences | fast_words | static_cards (padrão: full_sentences)
   --gemini-key <chave>   Chave Google AI Studio (Gemini/Imagen 3)
   --pexels-key <chave>   Chave Pexels para B-Roll de vídeo real
   --help                 Exibe esta ajuda

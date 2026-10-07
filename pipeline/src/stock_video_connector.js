@@ -12,6 +12,7 @@ import ffmpeg from 'fluent-ffmpeg';
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 import { LOW_MEMORY_DECODE_OPTS, LOW_MEMORY_X264_OPTS } from './ffmpeg_env.js';
 import ffprobeInstaller from '@ffprobe-installer/ffprobe';
+import { deriveDirectiveAnchors, buildAnchorQuery, isBlockedObject, filterBlockedObjects } from './visual_directive.js';
 
 const ffmpegBinary = process.env.FFMPEG_PATH || (fs.existsSync('/usr/bin/ffmpeg') ? '/usr/bin/ffmpeg' : ffmpegInstaller.path);
 const ffprobeBinary = process.env.FFPROBE_PATH || (fs.existsSync('/usr/bin/ffprobe') ? '/usr/bin/ffprobe' : ffprobeInstaller.path);
@@ -25,6 +26,12 @@ try {
     process.loadEnvFile('.env');
   }
 } catch (ignored) {}
+
+// Cache em memória de respostas de busca durante a execução
+const searchResponseCache = new Map();
+export function clearSearchResponseCache() {
+  searchResponseCache.clear();
+}
 
 const PT_TO_EN_KEYWORDS = {
   'homem': 'man',
@@ -130,74 +137,80 @@ export function buildSmartContextualQueries({ scene = {}, phrase = '', visualDir
   const text = (phrase || scene.phrase || '').toLowerCase();
   const directive = (visualDirective || scene.visualDirective || '').trim();
 
-  // 0. Prioridade Absoluta: Queries concretas geradas pelo AI Storyboarder para este take
+  const directiveAnchors = directive ? deriveDirectiveAnchors(directive) : null;
+  const hasDirective = !!(directiveAnchors && directiveAnchors.hasDirective);
+
+  // 1. PRIORIDADE SOBERANA: Se o usuário informou diretriz visual, a âncora temática vem em primeiro lugar!
+  if (hasDirective) {
+    const anchorQuery = buildAnchorQuery({
+      directiveAnchors,
+      scenePhrase: text,
+      framing: scene.framing,
+      sceneIndex
+    });
+    if (anchorQuery) {
+      queries.push(anchorQuery);
+    }
+    for (const anchor of directiveAnchors.stockAnchorsEn) {
+      if (!queries.includes(anchor)) queries.push(anchor);
+    }
+  }
+
+  // 2. Queries geradas pelo AI Storyboarder para este take (filtrando objetos bloqueados se houver diretriz)
   if (Array.isArray(scene.stockQueries) && scene.stockQueries.length > 0) {
     for (const sq of scene.stockQueries) {
       if (typeof sq === 'string' && sq.trim().length > 2) {
-        queries.push(sq.trim());
+        if (!hasDirective || !isBlockedObject(sq, directiveAnchors.blockedObjects)) {
+          queries.push(sq.trim());
+        }
       }
     }
   }
 
-  // 1. Prioridade máxima: Diretriz visual customizada informada pelo usuário (ex: Guerreiros Persas, Anime, Cyberpunk)
-  if (directive) {
-    const cleanDir = directive.toLowerCase();
-    if (/persa|persian/i.test(cleanDir)) {
-      queries.push('persian warrior golden armor', 'ancient warrior battle desert', 'persian empire ruins');
-    } else if (/samurai|ninja|jap[aã]o/i.test(cleanDir)) {
-      queries.push('samurai katana warrior night', 'japanese armor silhouette', 'ancient samurai sword');
-    } else if (/anime|manga|shonen/i.test(cleanDir)) {
-      queries.push('anime night sky stars', 'cinematic neon city animation', 'hero silhouette mountain');
-    } else if (/ghibli|cozy|medieval|floresta\s*encantada/i.test(cleanDir)) {
-      queries.push('peaceful forest stream sunbeams', 'cozy campfire night stars', 'starry night forest fantasy');
-    } else if (/cyberpunk|neon|futurist/i.test(cleanDir)) {
-      queries.push('cyberpunk neon city rain', 'futuristic dark street lights', 'hacker computer screen');
-    } else {
-      queries.push(translateStockQueryToEnglish(directive));
-    }
-  }
-
-  // 2. Query ou Keywords fornecidas pelo analisador do roteiro
+  // 3. Query ou Keywords fornecidas pelo analisador do roteiro
   if (scene.stockQuery && typeof scene.stockQuery === 'string' && scene.stockQuery.trim().length > 2) {
-    queries.push(scene.stockQuery.trim());
-    queries.push(translateStockQueryToEnglish(scene.stockQuery));
+    if (!hasDirective || !isBlockedObject(scene.stockQuery, directiveAnchors.blockedObjects)) {
+      queries.push(scene.stockQuery.trim());
+      queries.push(translateStockQueryToEnglish(scene.stockQuery));
+    }
   }
 
   if (Array.isArray(scene.keywords) && scene.keywords.length > 0) {
     for (const kw of scene.keywords) {
       if (typeof kw === 'string' && kw.length > 2) {
-        queries.push(translateStockQueryToEnglish(kw));
+        if (!hasDirective || !isBlockedObject(kw, directiveAnchors.blockedObjects)) {
+          queries.push(translateStockQueryToEnglish(kw));
+        }
       }
     }
   }
 
-  // 3. Heurísticas conceituais de alta precisão baseadas na frase dita pelo locutor
-  if (/preguiç|preguica|ânimo|animo|cansad|procrastina/i.test(text)) {
-    queries.push('tired person glowing phone dark', 'procrastination exhausted night', 'dark moody thinking');
-  }
-  if (/dopamina|neurotransmissor|receptores|química|quimica/i.test(text)) {
-    queries.push('brain neural connections glowing', 'glowing abstract neural network', 'human mind thought dark');
-  }
-  if (/cérebro|cerebro|mente|amígdala|cognitiv/i.test(text)) {
-    queries.push('human head silhouette glow', 'brain glowing synapses 3d', 'deep concentration thinking');
-  }
-  if (/estud|trabalh|projeto|livro|ler\b|escrever/i.test(text)) {
-    queries.push('person studying night desk', 'reading book library shadows', 'working focused laptop');
-  }
-  if (/5\s*minutos|ação|acao|agir|vontade|primeiro\s*movimento/i.test(text)) {
-    queries.push('person tying running shoes', 'athlete start line focus', 'stopwatch clock ticking');
-  }
-  if (/silêncio|silencio|mentir|mentindo|verdade|pausa/i.test(text)) {
-    queries.push('intense eye contact stare', 'two people dramatic meeting shadows', 'mysterious face shadow');
-  }
-  if (/olho|olhar|contato\s*visual|repar/i.test(text)) {
-    queries.push('intense eyes close up dark', 'piercing stare dramatic lighting', 'eye contact gaze');
-  }
-  if (/dinheiro|rico|riqueza|ativo|patrimônio|patrimonio|milion/i.test(text)) {
-    queries.push('modern luxury skyscraper night', 'financial market graph dark', 'gold wealth success');
-  }
-  if (/tempo|ampulheta|horas|passando|relógio|relogio/i.test(text)) {
-    queries.push('hourglass dark sand glowing', 'clock ticking dark dramatic', 'time passing cinematic');
+  // 4. Heurísticas conceituais baseadas na frase (apenas se não houver diretriz ou se não colidir com objetos bloqueados)
+  if (!hasDirective) {
+    if (/preguiç|preguica|ânimo|animo|cansad|procrastina/i.test(text)) {
+      queries.push('tired person glowing phone dark', 'procrastination exhausted night', 'dark moody thinking');
+    }
+    if (/dopamina|neurotransmissor|receptores|química|quimica/i.test(text)) {
+      queries.push('brain neural connections glowing', 'glowing abstract neural network', 'human mind thought dark');
+    }
+    if (/cérebro|cerebro|mente|amígdala|cognitiv/i.test(text)) {
+      queries.push('human head silhouette glow', 'brain glowing synapses 3d', 'deep concentration thinking');
+    }
+    if (/estud|trabalh|projeto|livro|ler\b|escrever/i.test(text)) {
+      queries.push('person studying night desk', 'reading book library shadows', 'working focused laptop');
+    }
+    if (/5\s*minutos|ação|acao|agir|vontade|primeiro\s*movimento/i.test(text)) {
+      queries.push('person tying running shoes', 'athlete start line focus', 'stopwatch clock ticking');
+    }
+    if (/tempo|ampulheta|horas|passando|relógio|relogio/i.test(text)) {
+      queries.push('hourglass dark sand glowing', 'clock ticking dark dramatic', 'time passing cinematic');
+    }
+  } else {
+    // Quando há diretriz, heurísticas de disciplina e tecnologia reforçam a estética sem objetos bloqueados
+    if (/ação|acao|agir|combate|tático|força/i.test(text)) {
+      const dynamicAction = buildAnchorQuery({ directiveAnchors, scenePhrase: 'tactical action', sceneIndex });
+      if (dynamicAction && !queries.includes(dynamicAction)) queries.push(dynamicAction);
+    }
   }
   if (/flow|concentra|foco\b|atenção|atencao/i.test(text)) {
     queries.push('deep focus worker dark', 'meditation calm sunrise', 'laser focus person');
@@ -251,7 +264,7 @@ export function buildSmartContextualQueries({ scene = {}, phrase = '', visualDir
 /**
  * Busca vídeo vertical (9:16) na API do Pexels com suporte a anti-repetição
  */
-export async function searchPexelsVideo({ query, apiKey = null, usedVideoIds = null }) {
+export async function searchPexelsVideo({ query, apiKey = null, usedVideoIds = null, maxPages = 3 }) {
   const effectiveKey = (apiKey !== null && apiKey !== undefined) ? apiKey : process.env.PEXELS_API_KEY;
   if (!effectiveKey) {
     return { success: false, error: 'PEXELS_API_KEY não configurada' };
@@ -259,47 +272,55 @@ export async function searchPexelsVideo({ query, apiKey = null, usedVideoIds = n
 
   try {
     const cleanQuery = encodeURIComponent(query.slice(0, 80));
-    const url = `https://api.pexels.com/videos/search?query=${cleanQuery}&orientation=portrait&size=medium&per_page=10`;
-    const res = await fetch(url, {
-      headers: {
-        Authorization: effectiveKey
-      }
-    });
 
-    if (!res.ok) {
-      return { success: false, error: `Pexels API retornou HTTP ${res.status}` };
-    }
+    for (let page = 1; page <= maxPages; page++) {
+      const cacheKey = `pexels_vid_${cleanQuery}_${page}`;
+      let data = searchResponseCache.get(cacheKey);
 
-    const data = await res.json();
-    if (!data.videos || data.videos.length === 0) {
-      return { success: false, error: `Nenhum vídeo vertical encontrado no Pexels para: "${query}"` };
-    }
-
-    // Escolhe o vídeo mais adequado respeitando a anti-repetição
-    for (const video of data.videos) {
-      const vidId = String(video.id);
-      if (usedVideoIds && usedVideoIds.has(vidId)) {
-        continue; // Ignora clipe já utilizado em take anterior
+      if (!data) {
+        const url = `https://api.pexels.com/videos/search?query=${cleanQuery}&orientation=portrait&size=medium&per_page=25&page=${page}`;
+        const res = await fetch(url, {
+          headers: { Authorization: effectiveKey }
+        });
+        if (!res.ok) {
+          if (page === 1) return { success: false, error: `Pexels API retornou HTTP ${res.status}` };
+          break;
+        }
+        data = await res.json();
+        searchResponseCache.set(cacheKey, data);
       }
 
-      // Procura arquivos de vídeo com orientação vertical
-      const files = video.video_files || [];
-      // Prioriza HD vertical (1080x1920 ou 720x1280)
-      const idealFile = files.find(f => (f.width && f.height && f.height > f.width && f.width >= 720)) ||
-                        files.find(f => f.quality === 'hd') ||
-                        files[0];
+      if (!data.videos || data.videos.length === 0) {
+        break;
+      }
 
-      if (idealFile && idealFile.link) {
-        if (usedVideoIds) usedVideoIds.add(vidId);
-        return {
-          success: true,
-          videoId: vidId,
-          provider: 'Pexels Video API',
-          videoUrl: idealFile.link,
-          width: idealFile.width,
-          height: idealFile.height,
-          duration: video.duration
-        };
+      // Escolhe o vídeo mais adequado respeitando a anti-repetição
+      for (const video of data.videos) {
+        const rawId = String(video.id);
+        const scopedId = `pexels:${rawId}`;
+        if (usedVideoIds && (usedVideoIds.has(scopedId) || usedVideoIds.has(rawId))) {
+          continue; // Ignora clipe já utilizado
+        }
+
+        // Procura arquivos de vídeo com orientação vertical
+        const files = video.video_files || [];
+        const idealFile = files.find(f => (f.width && f.height && f.height > f.width && f.width >= 720)) ||
+                          files.find(f => f.quality === 'hd') ||
+                          files[0];
+
+        if (idealFile && idealFile.link) {
+          return {
+            success: true,
+            videoId: scopedId,
+            rawId,
+            scopedId,
+            provider: 'Pexels Video API',
+            videoUrl: idealFile.link,
+            width: idealFile.width,
+            height: idealFile.height,
+            duration: video.duration
+          };
+        }
       }
     }
 
@@ -310,9 +331,9 @@ export async function searchPexelsVideo({ query, apiKey = null, usedVideoIds = n
 }
 
 /**
- * Busca vídeo na API do Pixabay como fallback secundário com suporte a anti-repetição
+ * Busca vídeo na API do Pixabay como fallback secundário com suporte a anti-repetição e paginação
  */
-export async function searchPixabayVideo({ query, apiKey = null, usedVideoIds = null }) {
+export async function searchPixabayVideo({ query, apiKey = null, usedVideoIds = null, maxPages = 3 }) {
   const effectiveKey = (apiKey !== null && apiKey !== undefined) ? apiKey : process.env.PIXABAY_API_KEY;
   if (!effectiveKey) {
     return { success: false, error: 'PIXABAY_API_KEY não configurada' };
@@ -320,38 +341,55 @@ export async function searchPixabayVideo({ query, apiKey = null, usedVideoIds = 
 
   try {
     const cleanQuery = encodeURIComponent(query.slice(0, 80));
-    const url = `https://pixabay.com/api/videos/?key=${effectiveKey}&q=${cleanQuery}&video_type=all&per_page=10`;
-    const res = await fetch(url);
 
-    if (!res.ok) {
-      return { success: false, error: `Pixabay API retornou HTTP ${res.status}` };
-    }
+    for (let page = 1; page <= maxPages; page++) {
+      const cacheKey = `pixabay_vid_${cleanQuery}_${page}`;
+      let data = searchResponseCache.get(cacheKey);
 
-    const data = await res.json();
-    if (!data.hits || data.hits.length === 0) {
-      return { success: false, error: `Nenhum vídeo encontrado no Pixabay para: "${query}"` };
-    }
-
-    for (const hit of data.hits) {
-      const vidId = String(hit.id);
-      if (usedVideoIds && usedVideoIds.has(vidId)) {
-        continue;
+      if (!data) {
+        const url = `https://pixabay.com/api/videos/?key=${effectiveKey}&q=${cleanQuery}&video_type=all&per_page=25&page=${page}`;
+        const res = await fetch(url);
+        if (!res.ok) {
+          if (page === 1) return { success: false, error: `Pixabay API retornou HTTP ${res.status}` };
+          break;
+        }
+        data = await res.json();
+        searchResponseCache.set(cacheKey, data);
       }
 
-      const videos = hit.videos || {};
-      const candidate = videos.medium || videos.large || videos.small;
+      if (!data.hits || data.hits.length === 0) {
+        break;
+      }
 
-      if (candidate && candidate.url) {
-        if (usedVideoIds) usedVideoIds.add(vidId);
-        return {
-          success: true,
-          videoId: vidId,
-          provider: 'Pixabay Video API',
-          videoUrl: candidate.url,
-          width: candidate.width,
-          height: candidate.height,
-          duration: hit.duration
-        };
+      for (const hit of data.hits) {
+        const rawId = String(hit.id);
+        const scopedId = `pixabay:${rawId}`;
+        if (usedVideoIds && (usedVideoIds.has(scopedId) || usedVideoIds.has(rawId))) {
+          continue;
+        }
+
+        const videos = hit.videos || {};
+        const candidate = videos.medium || videos.large || videos.small;
+
+        if (candidate && candidate.url) {
+          // Garante orientação vertical no Pixabay (height > width)
+          const isVertical = (candidate.width && candidate.height)
+            ? (candidate.height >= candidate.width)
+            : true;
+          if (!isVertical) continue;
+
+          return {
+            success: true,
+            videoId: scopedId,
+            rawId,
+            scopedId,
+            provider: 'Pixabay Video API',
+            videoUrl: candidate.url,
+            width: candidate.width,
+            height: candidate.height,
+            duration: hit.duration
+          };
+        }
       }
     }
 
@@ -473,9 +511,13 @@ export async function fetchAndPrepareStockBroll({
     });
 
     if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 20480) {
+      if (usedVideoIds && searchResult.scopedId) {
+        usedVideoIds.add(searchResult.scopedId);
+      }
       return {
         success: true,
         provider: searchResult.provider,
+        videoId: searchResult.scopedId,
         outputPath
       };
     }
@@ -493,7 +535,7 @@ export async function fetchAndPrepareStockBroll({
 /**
  * Busca imagem/foto vertical (9:16) na API de Photos do Pexels com suporte a anti-repetição
  */
-export async function searchPexelsPhoto({ query, apiKey = null, usedPhotoIds = null }) {
+export async function searchPexelsPhoto({ query, apiKey = null, usedPhotoIds = null, maxPages = 3 }) {
   const effectiveKey = (apiKey !== null && apiKey !== undefined) ? apiKey : process.env.PEXELS_API_KEY;
   if (!effectiveKey) {
     return { success: false, error: 'PEXELS_API_KEY não configurada' };
@@ -501,39 +543,48 @@ export async function searchPexelsPhoto({ query, apiKey = null, usedPhotoIds = n
 
   try {
     const cleanQuery = encodeURIComponent(query.slice(0, 80));
-    const url = `https://api.pexels.com/v1/search?query=${cleanQuery}&orientation=portrait&size=large&per_page=12`;
-    const res = await fetch(url, {
-      headers: {
-        Authorization: effectiveKey
-      }
-    });
 
-    if (!res.ok) {
-      return { success: false, error: `Pexels Photo API retornou HTTP ${res.status}` };
-    }
+    for (let page = 1; page <= maxPages; page++) {
+      const cacheKey = `pexels_photo_${cleanQuery}_${page}`;
+      let data = searchResponseCache.get(cacheKey);
 
-    const data = await res.json();
-    if (!data.photos || data.photos.length === 0) {
-      return { success: false, error: `Nenhuma foto vertical no Pexels para: "${query}"` };
-    }
-
-    for (const photo of data.photos) {
-      const pId = String(photo.id);
-      if (usedPhotoIds && usedPhotoIds.has(pId)) {
-        continue;
+      if (!data) {
+        const url = `https://api.pexels.com/v1/search?query=${cleanQuery}&orientation=portrait&size=large&per_page=25&page=${page}`;
+        const res = await fetch(url, {
+          headers: { Authorization: effectiveKey }
+        });
+        if (!res.ok) {
+          if (page === 1) return { success: false, error: `Pexels Photo API retornou HTTP ${res.status}` };
+          break;
+        }
+        data = await res.json();
+        searchResponseCache.set(cacheKey, data);
       }
 
-      // Prioriza fontes de altíssima definição Full HD/4K (large2x ou original) antes de portrait/small
-      const imgUrl = photo.src?.large2x || photo.src?.original || photo.src?.large || photo.src?.portrait;
-      if (imgUrl) {
-        if (usedPhotoIds) usedPhotoIds.add(pId);
-        return {
-          success: true,
-          photoId: pId,
-          provider: 'Pexels Photo API',
-          photoUrl: imgUrl,
-          photographer: photo.photographer
-        };
+      if (!data.photos || data.photos.length === 0) {
+        break;
+      }
+
+      for (const photo of data.photos) {
+        const rawId = String(photo.id);
+        const scopedId = `pexels:${rawId}`;
+        if (usedPhotoIds && (usedPhotoIds.has(scopedId) || usedPhotoIds.has(rawId))) {
+          continue;
+        }
+
+        // Prioriza fontes de altíssima definição Full HD/4K (large2x ou original) antes de portrait/small
+        const imgUrl = photo.src?.large2x || photo.src?.original || photo.src?.large || photo.src?.portrait;
+        if (imgUrl) {
+          return {
+            success: true,
+            photoId: scopedId,
+            rawId,
+            scopedId,
+            provider: 'Pexels Photo API',
+            photoUrl: imgUrl,
+            photographer: photo.photographer
+          };
+        }
       }
     }
 
@@ -544,9 +595,9 @@ export async function searchPexelsPhoto({ query, apiKey = null, usedPhotoIds = n
 }
 
 /**
- * Busca foto na API do Pixabay como fallback secundário com suporte a anti-repetição
+ * Busca foto na API do Pixabay como fallback secundário com suporte a anti-repetição e paginação
  */
-export async function searchPixabayPhoto({ query, apiKey = null, usedPhotoIds = null }) {
+export async function searchPixabayPhoto({ query, apiKey = null, usedPhotoIds = null, maxPages = 3 }) {
   const effectiveKey = (apiKey !== null && apiKey !== undefined) ? apiKey : process.env.PIXABAY_API_KEY;
   if (!effectiveKey) {
     return { success: false, error: 'PIXABAY_API_KEY não configurada' };
@@ -554,33 +605,44 @@ export async function searchPixabayPhoto({ query, apiKey = null, usedPhotoIds = 
 
   try {
     const cleanQuery = encodeURIComponent(query.slice(0, 80));
-    const url = `https://pixabay.com/api/?key=${effectiveKey}&q=${cleanQuery}&image_type=photo&orientation=vertical&per_page=12`;
-    const res = await fetch(url);
 
-    if (!res.ok) {
-      return { success: false, error: `Pixabay Photo API retornou HTTP ${res.status}` };
-    }
+    for (let page = 1; page <= maxPages; page++) {
+      const cacheKey = `pixabay_photo_${cleanQuery}_${page}`;
+      let data = searchResponseCache.get(cacheKey);
 
-    const data = await res.json();
-    if (!data.hits || data.hits.length === 0) {
-      return { success: false, error: `Nenhuma foto no Pixabay para: "${query}"` };
-    }
-
-    for (const hit of data.hits) {
-      const pId = String(hit.id);
-      if (usedPhotoIds && usedPhotoIds.has(pId)) {
-        continue;
+      if (!data) {
+        const url = `https://pixabay.com/api/?key=${effectiveKey}&q=${cleanQuery}&image_type=photo&orientation=vertical&per_page=25&page=${page}`;
+        const res = await fetch(url);
+        if (!res.ok) {
+          if (page === 1) return { success: false, error: `Pixabay Photo API retornou HTTP ${res.status}` };
+          break;
+        }
+        data = await res.json();
+        searchResponseCache.set(cacheKey, data);
       }
 
-      const imgUrl = hit.largeImageURL || hit.webformatURL;
-      if (imgUrl) {
-        if (usedPhotoIds) usedPhotoIds.add(pId);
-        return {
-          success: true,
-          photoId: pId,
-          provider: 'Pixabay Photo API',
-          photoUrl: imgUrl
-        };
+      if (!data.hits || data.hits.length === 0) {
+        break;
+      }
+
+      for (const hit of data.hits) {
+        const rawId = String(hit.id);
+        const scopedId = `pixabay:${rawId}`;
+        if (usedPhotoIds && (usedPhotoIds.has(scopedId) || usedPhotoIds.has(rawId))) {
+          continue;
+        }
+
+        const imgUrl = hit.largeImageURL || hit.webformatURL;
+        if (imgUrl) {
+          return {
+            success: true,
+            photoId: scopedId,
+            rawId,
+            scopedId,
+            provider: 'Pixabay Photo API',
+            photoUrl: imgUrl
+          };
+        }
       }
     }
 
@@ -621,11 +683,14 @@ export async function fetchAndPrepareStockPhoto({
       try {
         await downloadRemoteFile(res.photoUrl, outputPath);
         if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 5000) {
+          if (usedPhotoIds && res.scopedId) {
+            usedPhotoIds.add(res.scopedId);
+          }
           return {
             success: true,
             provider: res.provider,
             outputPath,
-            photoId: res.photoId,
+            photoId: res.scopedId || res.photoId,
             matchedQuery: q
           };
         }
@@ -643,11 +708,14 @@ export async function fetchAndPrepareStockPhoto({
       try {
         await downloadRemoteFile(res.photoUrl, outputPath);
         if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 5000) {
+          if (usedPhotoIds && res.scopedId) {
+            usedPhotoIds.add(res.scopedId);
+          }
           return {
             success: true,
             provider: res.provider,
             outputPath,
-            photoId: res.photoId,
+            photoId: res.scopedId || res.photoId,
             matchedQuery: q
           };
         }

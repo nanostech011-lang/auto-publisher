@@ -64,12 +64,58 @@ export function escapeAssPathForFFmpeg(assPath) {
 }
 
 /**
+ * Constrói o grafo de filtros de áudio para o FFmpeg com base na presença de voz e trilha.
+ */
+export function buildAudioFilterGraph({
+  hasVoice = true,
+  hasBgMusic = false,
+  voiceInputIndex = 1,
+  bgMusicInputIndex = 2,
+  targetLufs = -14,
+  bgMusicVol = 0.18,
+  fadeOutSec = 2.5,
+  totalDurationSeconds = 15,
+  padFilter = 'apad'
+} = {}) {
+  const filters = [];
+  const fadeOutStart = Math.max(1, (totalDurationSeconds || 15) - fadeOutSec);
+
+  if (hasVoice && hasBgMusic) {
+    filters.push(
+      `[${voiceInputIndex}:a]highpass=f=80,acompressor=threshold=0.08:ratio=3:attack=15:release=150,aformat=channel_layouts=stereo:sample_rates=48000,asplit=2[voice_play][voice_key]`,
+      `[${bgMusicInputIndex}:a]aformat=channel_layouts=stereo:sample_rates=48000,volume=${bgMusicVol},afade=t=out:st=${fadeOutStart}:d=${fadeOutSec}[bg_raw]`,
+      `[bg_raw][voice_key]sidechaincompress=threshold=0.04:ratio=4:attack=20:release=250[bg_ducked]`,
+      `[voice_play][bg_ducked]amix=inputs=2:duration=longest:dropout_transition=2[mixed_raw]`,
+      `[mixed_raw]loudnorm=I=${targetLufs}:TP=-1.5:LRA=9:linear=true,aformat=channel_layouts=stereo:sample_rates=48000,${padFilter}[a_out]`
+    );
+  } else if (hasVoice && !hasBgMusic) {
+    filters.push(
+      `[${voiceInputIndex}:a]highpass=f=80,acompressor=threshold=0.08:ratio=3:attack=15:release=150,loudnorm=I=${targetLufs}:TP=-1.5:LRA=9:linear=true,aformat=channel_layouts=stereo:sample_rates=48000,${padFilter}[a_out]`
+    );
+  } else if (!hasVoice && hasBgMusic) {
+    const musicOnlyVol = Math.min(1.0, (bgMusicVol || 0.18) * 2.5);
+    filters.push(
+      `[${bgMusicInputIndex}:a]aformat=channel_layouts=stereo:sample_rates=48000,volume=${musicOnlyVol},afade=t=out:st=${fadeOutStart}:d=${fadeOutSec},loudnorm=I=${targetLufs}:TP=-1.5:LRA=9:linear=true,${padFilter}[a_out]`
+    );
+  } else {
+    filters.push(
+      `aevalsrc=0:d=${totalDurationSeconds}:s=48000:c=stereo,${padFilter}[a_out]`
+    );
+  }
+
+  return {
+    complexFilters: filters,
+    audioMap: '-map [a_out]'
+  };
+}
+
+/**
  * Monta o video final completo com cortes, audio de locucao, trilha dark e legendas dinamicas queimadas.
  *
  * @param {Object} params
  * @param {string[]} params.videoClips          Lista de caminhos dos clips de vídeo
- * @param {string}   params.audioPath           Caminho do áudio da locução (MP3)
- * @param {string}   params.subtitlesAssPath    Caminho do arquivo .ass de legendas
+ * @param {string}   [params.audioPath]         Caminho do áudio da locução (MP3, opcional)
+ * @param {string}   [params.subtitlesAssPath]  Caminho do arquivo .ass de legendas
  * @param {string}   params.outputVideoPath     Caminho de saída do vídeo final
  * @param {number}   params.totalDurationSeconds Duração total do vídeo em segundos
  * @param {string}   [params.bgMusicPath]       Caminho da trilha sonora de fundo (opcional)
@@ -77,7 +123,7 @@ export function escapeAssPathForFFmpeg(assPath) {
  */
 export async function composeFinalVideo({
   videoClips,
-  audioPath,
+  audioPath = null,
   subtitlesAssPath,
   outputVideoPath,
   totalDurationSeconds,
@@ -92,12 +138,14 @@ export async function composeFinalVideo({
   }
 
   // Parâmetros de áudio cinematográfico do canal
-  const targetLufs = audioProfile.target_lufs || -14;
-  const bgMusicVol = audioProfile.bg_music_volume || 0.18;
-  const fadeOutSec = audioProfile.fade_out_seconds || 2.5;
+  const targetLufs = audioProfile.target_lufs ?? -14;
+  const bgMusicVol = audioProfile.bg_music_volume ?? 0.18;
+  const fadeOutSec = audioProfile.fade_out_seconds ?? 2.5;
 
   // Cria arquivo de lista de concatenacao para o FFmpeg
-  const scratchDir = path.dirname(audioPath);
+  const scratchDir = (audioPath && fs.existsSync(path.dirname(audioPath)))
+    ? path.dirname(audioPath)
+    : dir;
   const concatListPath = path.join(scratchDir, 'concat_list.txt');
 
   // Normaliza paths para barras normais no concat list (FFmpeg aceita ambos nos demais inputs)
@@ -124,31 +172,38 @@ export async function composeFinalVideo({
   }
 
   return new Promise((resolve, reject) => {
-    // Comando FFmpeg:
-    // Input 0: Concatenacao dos clips de video
-    // Input 1: Audio da locucao
-    // Filtro de video: color grading cinematografico + queima condicional de legenda .ass
-    // Audio: locucao normalizada + mixagem opcional de trilha de fundo
+    // Configura inputs do FFmpeg de acordo com a presenca de voz e musica
+    const hasVoice = Boolean(audioPath && fs.existsSync(audioPath));
+    const hasBgMusic = Boolean(bgMusicPath && fs.existsSync(bgMusicPath));
 
     const command = ffmpeg()
       .input(concatListPath)
-      .inputOptions(['-f concat', '-safe 0', ...LOW_MEMORY_DECODE_OPTS])
-      .input(audioPath);
+      .inputOptions(['-f concat', '-safe 0', ...LOW_MEMORY_DECODE_OPTS]);
+
+    let voiceInputIndex = -1;
+    let bgMusicInputIndex = -1;
+
+    if (hasVoice) {
+      command.input(audioPath);
+      voiceInputIndex = 1;
+      if (hasBgMusic) {
+        command.input(bgMusicPath).inputOptions(['-stream_loop -1']);
+        bgMusicInputIndex = 2;
+        console.log(`[FFmpeg Compositor] Trilha sonora de fundo integrada: ${path.basename(bgMusicPath)}`);
+      }
+    } else if (hasBgMusic) {
+      command.input(bgMusicPath).inputOptions(['-stream_loop -1']);
+      bgMusicInputIndex = 1;
+      console.log(`[FFmpeg Compositor] Modo sem voz: Trilha sonora principal integrada: ${path.basename(bgMusicPath)}`);
+    } else {
+      console.log('[FFmpeg Compositor] Modo sem voz e sem trilha: gerando áudio estéreo silencioso de conformidade.');
+    }
 
     // Perfil de baixo consumo de memória (evita SIGKILL do OOM killer no cgroup de 512MB)
     const memoryOpts = encoderConfig.codec === 'libx264'
       ? LOW_MEMORY_X264_OPTS
       : [`-threads ${FFMPEG_THREADS}`, '-filter_complex_threads 1'];
 
-    const hasBgMusic = bgMusicPath && fs.existsSync(bgMusicPath);
-    if (hasBgMusic) {
-      command.input(bgMusicPath).inputOptions(['-stream_loop -1']);
-      console.log(`[FFmpeg Compositor] Trilha sonora de fundo integrada: ${path.basename(bgMusicPath)}`);
-    }
-
-    // Pipeline de pós-produção cinematográfica:
-    // 1. Color grading (vinheta suave + curva de contraste sutil cinematográfica)
-    // 2. Queima condicional de legendas com nitidez máxima por cima do vídeo graduado
     const complexFilters = [];
 
     // Filtro base de color grading cinematográfico
@@ -162,29 +217,23 @@ export async function composeFinalVideo({
       complexFilters.push(`${colorGrade}[v_out]`);
     }
 
-    let audioMap = '-map [a_out]';
     const targetSamples = totalDurationSeconds > 0 ? Math.ceil(totalDurationSeconds * 48000) : null;
     const padFilter = targetSamples ? `apad=whole_len=${targetSamples}` : 'apad';
 
-    if (hasBgMusic) {
-      const fadeOutStart = Math.max(1, (totalDurationSeconds || 60) - fadeOutSec);
-      complexFilters.push(
-        // P4.1: Cadeia de voz: highpass 80Hz + compressor transparente + split para chave de sidechain
-        `[1:a]highpass=f=80,acompressor=threshold=0.08:ratio=3:attack=15:release=150,aformat=channel_layouts=stereo:sample_rates=48000,asplit=2[voice_play][voice_key]`,
-        // Trilha de fundo com fade out suave no encerramento
-        `[2:a]aformat=channel_layouts=stereo:sample_rates=48000,volume=${bgMusicVol},afade=t=out:st=${fadeOutStart}:d=${fadeOutSec}[bg_raw]`,
-        // P4.4: Ducking automático via sidechain (voz abaixa a música em tempo real)
-        `[bg_raw][voice_key]sidechaincompress=threshold=0.04:ratio=4:attack=20:release=250[bg_ducked]`,
-        // P4.3: Mixagem com cauda natural de música até o corte de vídeo
-        `[voice_play][bg_ducked]amix=inputs=2:duration=longest:dropout_transition=2[mixed_raw]`,
-        // Masterização EBU R128 no mix final completo e pad de áudio para sincronia milimétrica A/V
-        `[mixed_raw]loudnorm=I=${targetLufs}:TP=-1.5:LRA=9:linear=true,aformat=channel_layouts=stereo:sample_rates=48000,${padFilter}[a_out]`
-      );
-    } else {
-      complexFilters.push(
-        `[1:a]highpass=f=80,acompressor=threshold=0.08:ratio=3:attack=15:release=150,loudnorm=I=${targetLufs}:TP=-1.5:LRA=9:linear=true,aformat=channel_layouts=stereo:sample_rates=48000,${padFilter}[a_out]`
-      );
-    }
+    const audioGraph = buildAudioFilterGraph({
+      hasVoice,
+      hasBgMusic,
+      voiceInputIndex,
+      bgMusicInputIndex,
+      targetLufs,
+      bgMusicVol,
+      fadeOutSec,
+      totalDurationSeconds,
+      padFilter
+    });
+
+    complexFilters.push(...audioGraph.complexFilters);
+    const audioMap = audioGraph.audioMap;
 
     command
       .complexFilter(complexFilters)

@@ -14,6 +14,7 @@
 
 import fs from 'fs';
 import { detectAestheticStyle } from './ai_prompt_generator.js';
+import { deriveDirectiveAnchors, isBlockedObject, filterBlockedObjects } from './visual_directive.js';
 
 // Carregamento de variáveis de ambiente
 try {
@@ -28,6 +29,18 @@ try {
  * eliminando metáforas abstratas repetitivas (como cérebros ou estátuas estáticas).
  */
 export const PHYSICAL_ARCHETYPES = [
+  // --- 0. Tático, Militar, Forças Especiais e Policiais em Ação ---
+  {
+    id: 'tactical_police_combat',
+    keywords: ['polícia', 'policiais', 'swat', 'bope', 'soldado', 'soldados', 'tático', 'segurança', 'combate', 'guerra', 'caveira', 'missão'],
+    visualIntent: 'Operadores táticos e policiais fortemente armados em operação urbana com iluminação cinematográfica de chiaroscuro',
+    framing: 'medium_shot',
+    cameraMotion: 'push_in',
+    stockQueries: ['police tactical operation', 'swat urban combat', 'tactical soldiers armed', 'special forces action'],
+    actionSubject: 'elite tactical law enforcement officers in dark combat gear moving purposefully through urban environment with intense focus, cinematic edge lighting',
+    cinemagraphFX: 'subtle_smoke',
+    subjectType: 'human_action'
+  },
   // --- 1. Dopamina, Telas, Vício Digital e Distração ---
   {
     id: 'phone_doomscrolling',
@@ -590,23 +603,30 @@ export function buildTwoLayerPrompt({ layerA, layerB }) {
  */
 export function matchPhysicalArchetype(phrase = '', visualDirective = '', takeIndex = 0, usedArchetypeIds = new Set()) {
   const p = (phrase || '').toLowerCase();
-  const dir = (visualDirective || '').toLowerCase();
+  const dir = (visualDirective || '').trim();
 
-  // 1. Prioridade máxima para diretriz customizada explícita (ex: Guerreiros Persas)
-  if (/persa|persian/i.test(dir)) {
-    const persian = PHYSICAL_ARCHETYPES.find(a => a.id === 'persian_golden_immortals');
-    if (persian) return persian;
-  }
-  if (/samurai|katana/i.test(dir)) {
-    const samurai = PHYSICAL_ARCHETYPES.find(a => a.id === 'samurai_katana_blade');
-    if (samurai) return samurai;
+  // 1. Prioridade máxima para diretriz customizada explícita
+  if (dir) {
+    const directiveAnchors = deriveDirectiveAnchors(dir);
+    if (directiveAnchors.hasDirective && directiveAnchors.archetype) {
+      const matched = PHYSICAL_ARCHETYPES.find(a => a.id === directiveAnchors.archetype.id);
+      if (matched) return matched;
+    }
   }
 
   // 2. Pontua os arquétipos por correspondência de palavras-chave na frase
   let bestMatch = null;
   let highestScore = 0;
 
+  const directiveAnchors = dir ? deriveDirectiveAnchors(dir) : null;
+  const blockedList = directiveAnchors?.hasDirective ? directiveAnchors.blockedObjects : [];
+
   for (const arch of PHYSICAL_ARCHETYPES) {
+    // Se há diretriz visual, elimina completamente arquétipos que usem objetos bloqueados
+    if (blockedList.length > 0 && isBlockedObject(`${arch.id} ${arch.actionSubject} ${arch.visualIntent}`, blockedList)) {
+      continue;
+    }
+
     let score = 0;
     for (const kw of arch.keywords) {
       const regex = new RegExp(`\\b${kw}`, 'i');
@@ -630,9 +650,13 @@ export function matchPhysicalArchetype(phrase = '', visualDirective = '', takeIn
     return bestMatch;
   }
 
-  // 3. Fallback inteligente rotativo por takeIndex (evita repetições cíclicas)
-  const available = PHYSICAL_ARCHETYPES.filter(a => !usedArchetypeIds.has(a.id));
-  const pool = available.length > 0 ? available : PHYSICAL_ARCHETYPES;
+  // 3. Fallback inteligente rotativo por takeIndex (filtrando bloqueados se houver diretriz)
+  let candidatePool = PHYSICAL_ARCHETYPES;
+  if (blockedList.length > 0) {
+    candidatePool = PHYSICAL_ARCHETYPES.filter(a => !isBlockedObject(`${a.id} ${a.actionSubject} ${a.visualIntent}`, blockedList));
+  }
+  const available = candidatePool.filter(a => !usedArchetypeIds.has(a.id));
+  const pool = available.length > 0 ? available : (candidatePool.length > 0 ? candidatePool : PHYSICAL_ARCHETYPES);
   return pool[takeIndex % pool.length];
 }
 
@@ -741,16 +765,31 @@ export async function generateStoryboardBatchGemini({
     subTakeIndex: t.subTakeIndex || 0
   }));
 
+  const directiveAnchors = deriveDirectiveAnchors(visualDirective);
+  const directiveRule = directiveAnchors.hasDirective
+    ? `
+SOVEREIGN VISUAL DIRECTIVE (USER MANDATORY SPECIFICATION):
+The user explicitly specified the subjects, action and aesthetic: "${visualDirective}".
+- The subject of 100% of the takes MUST be strictly derived from these core anchors: ${directiveAnchors.stockAnchorsEn.join(', ')}.
+- STRICTLY FORBIDDEN: detached metaphors and generic everyday items (e.g. NEVER use shoelaces, running shoes, alarm clocks, stopwatches, hourglasses, empty hallways, steering wheels).
+- All stock queries and AI prompts MUST explicitly feature these directive subjects performing the action.
+`
+    : '';
+
+  const rule2Examples = directiveAnchors.hasDirective
+    ? `Ground every take in the user's directive subjects (${directiveAnchors.stockAnchorsEn.slice(0, 3).join(', ')}). Never use generic detached metaphors.`
+    : `Ground every take in real, physical, tangible reality (e.g. hands counting money, phone in dark room, reading book under lamp, looking into bathroom mirror).`;
+
   const systemInstruction = `You are a world-class Director of Photography and Lead Storyboard Artist for high-retention vertical videos (Shorts/Reels/TikTok).
 Your mission is to generate a comprehensive shot-list for all takes of a video about: "${topic}".
 Visual Style Profile:
 - Universe: ${layerA.universe}
 - Lighting: ${layerA.lighting}
 - Lens & Camera: ${layerA.cameraLens}
-
+${directiveRule}
 CRITICAL RULES:
 1. STRICT ZERO REPETITION: Every single take MUST show a completely distinct physical object, human action, or environment. Never use the same visual subject twice in the same video!
-2. NO ABSTRACT JARGON: Ground every take in real, physical, tangible reality (e.g. hands counting money, phone in dark room, tying running shoes, reading book under lamp, looking into bathroom mirror, hourglass sand, alarm clock).
+2. NO ABSTRACT JARGON: ${rule2Examples}
 3. VARIATION IN FRAMING: Alternate camera framing (medium_shot, close_up, extreme_close_up, over_the_shoulder, wide_shot).
 4. STOCK QUERIES: For each take, provide 3 to 4 concrete, realistic English search queries suitable for Pexels/Pixabay video/photo search.
 5. AI PROMPT: Provide an English 2-layer image prompt combining the channel aesthetic with the specific physical action of that take.

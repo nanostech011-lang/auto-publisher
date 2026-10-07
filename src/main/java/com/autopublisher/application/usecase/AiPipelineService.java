@@ -2,6 +2,7 @@ package com.autopublisher.application.usecase;
 
 import com.autopublisher.application.port.in.PipelineJobStatus;
 import com.autopublisher.application.port.in.PipelineRunRequest;
+import com.autopublisher.domain.model.AudioMode;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -435,6 +436,11 @@ public class AiPipelineService {
             configMap.put("title", request.getTitle());
             configMap.put("narrationText", request.getNarrationText());
             configMap.put("firstComment", request.getFirstComment());
+            configMap.put("audioMode", request.getAudioModeOrDefault().name().toLowerCase());
+            if (request.targetDurationSec() != null && request.targetDurationSec() > 0) {
+                configMap.put("targetDurationSec", request.targetDurationSec());
+            }
+            configMap.put("subtitlesLayout", request.getSubtitlesLayoutOrDefault());
             if (geminiApiKey != null && !geminiApiKey.isBlank()) configMap.put("geminiKey", geminiApiKey.trim());
             if (pexelsApiKey != null && !pexelsApiKey.isBlank()) configMap.put("pexelsKey", pexelsApiKey.trim());
 
@@ -524,6 +530,21 @@ public class AiPipelineService {
                 command.add("--first-comment");
                 command.add(request.getFirstComment().trim());
             }
+
+            if (request.getAudioModeOrDefault() == AudioMode.NONE) {
+                command.add("--no-voice");
+            } else {
+                command.add("--audio-mode");
+                command.add(request.getAudioModeOrDefault().name().toLowerCase());
+            }
+
+            if (request.targetDurationSec() != null && request.targetDurationSec() > 0) {
+                command.add("--duration");
+                command.add(String.valueOf(request.targetDurationSec()));
+            }
+
+            command.add("--subtitles-layout");
+            command.add(request.getSubtitlesLayoutOrDefault());
 
             if (geminiApiKey != null && !geminiApiKey.isBlank()) {
                 command.add("--gemini-key");

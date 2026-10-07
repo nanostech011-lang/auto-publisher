@@ -41,3 +41,6 @@ service-account*.json
 
 docs/manual/test_run/
 docs/manual/manual_screenshot.png
+
+pipeline/.cache/
+pipeline/state/

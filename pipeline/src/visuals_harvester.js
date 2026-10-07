@@ -17,6 +17,16 @@ import {
 } from './stock_video_connector.js';
 import { validateAssetQuality } from './asset_quality_gate.js';
 import { globalAssetCache } from './asset_cache.js';
+import { getMediaLedger } from './media_ledger.js';
+
+export const CINEMATIC_FRAMING_ROTATION = [
+  'wide dynamic action',
+  'low angle hero',
+  'tactical tracking',
+  'close up intense detail',
+  'aerial drone perspective',
+  'pov first person action'
+];
 
 /**
  * Cria uma cena de vídeo 9:16 procedural com estética dark chiaroscuro usando filtros avançados do FFmpeg.
@@ -239,20 +249,25 @@ export function createCinematicMotionClip({
 
   switch (motionType) {
     case 'pan_left_right':
+    case 'pan_right':
       motionFilter = `${basePrep},zoompan=z=1.10:d=1:x='trunc((iw-iw/zoom)*min(1,on/(30*${dSec})))':y='trunc(ih/2-(ih/zoom/2))':s=1080x1920:fps=30`;
       break;
     case 'pan_right_left':
+    case 'pan_left':
       motionFilter = `${basePrep},zoompan=z=1.10:d=1:x='trunc((iw-iw/zoom)*max(0,1-on/(30*${dSec})))':y='trunc(ih/2-(ih/zoom/2))':s=1080x1920:fps=30`;
       break;
     case 'reveal_zoom_out':
+    case 'pull_out':
       // Zoom out contínuo e suave de 1.10 até 1.01 proporcional à duração do take (estável e sem tremor)
       motionFilter = `${basePrep},zoompan=z='max(1.01,1.10-(0.09*on/(30*${dSec})))':d=1:x='trunc(iw/2-(iw/zoom/2))':y='trunc(ih/2-(ih/zoom/2))':s=1080x1920:fps=30`;
       break;
     case 'atmospheric_drift':
+    case 'orbit':
       // Drift diagonal suave e linear sem oscilação senoidal brusca
       motionFilter = `${basePrep},zoompan=z='min(1.10,1.01+(0.08*on/(30*${dSec})))':d=1:x='trunc((iw/2-(iw/zoom/2))+(iw*0.03*(on/(30*${dSec}))))':y='trunc((ih/2-(ih/zoom/2))+(ih*0.02*(on/(30*${dSec}))))':s=1080x1920:fps=30`;
       break;
     case 'push_in':
+    case 'zoom_in':
     default:
       // Zoom in contínuo e suave de 1.01 até 1.11 proporcional à duração do take (estável e sem tremor)
       motionFilter = `${basePrep},zoompan=z='min(1.11,1.01+(0.10*on/(30*${dSec})))':d=1:x='trunc(iw/2-(iw/zoom/2))':y='trunc(ih/2-(ih/zoom/2))':s=1080x1920:fps=30`;
@@ -481,8 +496,9 @@ export async function harvestVisualScenes({
   const effectiveFlowDir = flowClipsDir || (hasClipsInDefault ? defaultFlowDir : null);
   const fixedVideoSeed = Math.floor(Math.random() * 100000);
   const usedPrompts = new Set();
-  const usedStockVideoIds = new Set();
-  const usedStockPhotoIds = new Set();
+  const ledger = getMediaLedger();
+  const usedStockVideoIds = ledger.getAllUsedKeys(channelId);
+  const usedStockPhotoIds = ledger.getAllUsedKeys(channelId);
   let lastCinemagraphFX = null;
 
   console.log(`Iniciando renderizacao de ${scenes.length} takes visuais dinâmicos (Modo: ${visualMode.toUpperCase()})...`);
@@ -515,9 +531,12 @@ export async function harvestVisualScenes({
     const effectiveDirective = visualDirective || scene.visualDirective || '';
     const effectivePexelsKey = pexelsApiKey || process.env.PEXELS_API_KEY;
 
+    // Aplica rotação suave de enquadramentos cinematográficos
+    const framingStyle = scene.framing || CINEMATIC_FRAMING_ROTATION[i % CINEMATIC_FRAMING_ROTATION.length];
+
     // Constrói queries contextuais semânticas em inglês para busca no acervo de estoque
     const contextualQueries = buildSmartContextualQueries({
-      scene,
+      scene: { ...scene, framing: framingStyle },
       phrase: scene.phrase || '',
       visualDirective: effectiveDirective,
       channelAesthetic: effectiveAesthetic,
@@ -622,6 +641,7 @@ export async function harvestVisualScenes({
       if (stockResult.success && fs.existsSync(clipPath)) {
         const gate = await validateAssetQuality({ filePath: clipPath, strict: false });
         if (gate.passed) {
+          if (stockResult.videoId) ledger.reserve(channelId, stockResult.videoId);
           console.log(`  -> B-Roll real aprovado pelo Quality Gate via ${stockResult.provider}!`);
           videoClips.push(clipPath);
           continue;
@@ -647,6 +667,7 @@ export async function harvestVisualScenes({
       if (photoResult.success && fs.existsSync(photoResult.outputPath)) {
         const gate = await validateAssetQuality({ filePath: photoResult.outputPath, strict: false });
         if (gate.passed) {
+          if (photoResult.photoId) ledger.reserve(channelId, photoResult.photoId);
           assetForClip = photoResult.outputPath;
           isAiGenerated = false;
           console.log(`  -> Foto editorial 1080x1920 aprovada pelo Quality Gate via ${photoResult.provider} (termo: "${photoResult.matchedQuery}")`);

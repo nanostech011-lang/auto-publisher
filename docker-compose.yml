@@ -36,6 +36,7 @@ services:
       - ./pipeline/src:/app/pipeline/src:ro
       - ./pipeline/assets:/app/pipeline/assets:ro
       - ./pipeline/output:/app/pipeline/output
+      - ./pipeline/state:/app/pipeline/state
       - ./logs:/app/logs
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/api/v1/health || exit 1"]

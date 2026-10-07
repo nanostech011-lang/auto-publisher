@@ -8,7 +8,8 @@ public enum PublishStatus {
     PROCESSANDO,
     PUBLICADO,
     ERRO_TEMPORARIO,
-    COTA_ESGOTADA;
+    COTA_ESGOTADA,
+    REVISAO_MANUAL;
 
     public static PublishStatus fromString(String value) {
         if (value == null || value.trim().isEmpty()) {

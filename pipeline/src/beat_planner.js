@@ -6,13 +6,12 @@
  * e enquadramento visual sobre o mesmo asset, sem custo adicional de geração de IA.
  */
 
-const MOTION_VARIATIONS = [
+export const MOTION_VARIATIONS = [
   'push_in',
-  'pull_out',
-  'pan_left',
-  'pan_right',
-  'zoom_in',
-  'orbit'
+  'reveal_zoom_out',
+  'pan_left_right',
+  'pan_right_left',
+  'atmospheric_drift'
 ];
 
 /**

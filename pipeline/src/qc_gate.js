@@ -3,6 +3,8 @@ import path from 'path';
 import crypto from 'crypto';
 import { execFile } from 'child_process';
 import ffmpeg, { ffmpegBinary, ffprobeBinary } from './ffmpeg_env.js';
+import { deriveDirectiveAnchors, isBlockedObject } from './visual_directive.js';
+import { ScriptLedger } from './script_ledger.js';
 
 /**
  * Utilitário promisificado para ffprobe
@@ -394,29 +396,128 @@ export async function runQualityControlGate({
   };
   if (!qc12Passed) overallPassed = false;
 
-  // QC-13: Ineditismo (SHA-1 do roteiro)
+  // QC-13: Ineditismo (SHA-1 e similaridade semântica)
   let qc13Passed = true;
-  let scriptHash = '';
+  let qc13Measured = 'N/A';
+  let qc13Message = 'Roteiro inédito';
   if (scriptData && scriptData.narrationText) {
-    scriptHash = crypto.createHash('sha1').update(scriptData.narrationText.trim()).digest('hex');
-    const historyPath = path.resolve('pipeline/state/script_history.json');
-    if (fs.existsSync(historyPath)) {
-      try {
-        const history = JSON.parse(fs.readFileSync(historyPath, 'utf8'));
-        if (history && history.includes(scriptHash)) {
-          qc13Passed = false;
-        }
-      } catch (ignored) {}
+    try {
+      const channelId = channelConfig.channel_id || 'custom';
+      const noveltyResult = new ScriptLedger().checkNovelty(scriptData.narrationText, channelId);
+      qc13Passed = noveltyResult.novel;
+      qc13Measured = noveltyResult.sha1 ? noveltyResult.sha1.slice(0, 10) : `sim: ${noveltyResult.similarity}`;
+      qc13Message = noveltyResult.novel
+        ? `Roteiro inédito (similaridade máx: ${noveltyResult.similarity})`
+        : `Roteiro duplicado/similar detectado (${noveltyResult.reason}, sim: ${noveltyResult.similarity})`;
+    } catch (ledgerErr) {
+      qc13Passed = true;
+      qc13Message = `Aviso ao consultar ScriptLedger: ${ledgerErr.message}`;
     }
   }
   checks['QC-13_ScriptNovelty'] = {
     name: 'Ineditismo e Anti-Duplicação',
     passed: qc13Passed,
-    measured: scriptHash ? scriptHash.slice(0, 10) : 'N/A',
-    threshold: 'Hash único no canal',
-    message: qc13Passed ? 'Roteiro inédito' : 'Roteiro duplicado detectado no histórico do canal'
+    measured: qc13Measured,
+    threshold: 'Hash único e similaridade < 55%',
+    message: qc13Message
   };
   if (!qc13Passed) overallPassed = false;
+
+  // QC-14: Aderência à Diretriz Visual Soberana (Fase 1C)
+  let qc14Passed = true;
+  let qc14Measured = 'Sem diretriz (N/A)';
+  let qc14Message = 'Diretriz visual não especificada';
+  let qc14Threshold = '>= 80% aderência dos takes';
+
+  const rawDirective = scriptData?.visualDirective || '';
+  if (rawDirective && Array.isArray(scriptData?.scenes) && scriptData.scenes.length > 0) {
+    const directiveAnchors = deriveDirectiveAnchors(rawDirective);
+    if (directiveAnchors.hasDirective && directiveAnchors.stockAnchorsEn.length > 0) {
+      const anchorTokens = directiveAnchors.stockAnchorsEn
+        .flatMap(a => a.toLowerCase().split(/\s+/))
+        .filter(t => t.length > 2);
+
+      let adheringScenes = 0;
+      let hasBlockedObjects = false;
+
+      for (const scene of scriptData.scenes) {
+        const textToCheck = `${scene.prompt || ''} ${scene.aiPrompt || ''} ${scene.stockQuery || ''} ${(scene.stockQueries || []).join(' ')} ${scene.phrase || ''}`.toLowerCase();
+        
+        if (isBlockedObject(textToCheck, directiveAnchors.blockedObjects)) {
+          hasBlockedObjects = true;
+        }
+
+        const matchesAnchor = anchorTokens.some(token => textToCheck.includes(token));
+        if (matchesAnchor) {
+          adheringScenes++;
+        }
+      }
+
+      const adherenceRate = adheringScenes / scriptData.scenes.length;
+      qc14Measured = `${(adherenceRate * 100).toFixed(0)}% (${adheringScenes}/${scriptData.scenes.length})`;
+
+      if (hasBlockedObjects) {
+        qc14Passed = false;
+        qc14Message = 'Objetos genéricos bloqueados detectados nas cenas';
+      } else if (adherenceRate < 0.80) {
+        qc14Passed = false;
+        qc14Message = `Aderência insuficiente à diretriz visual (${qc14Measured} < 80%)`;
+      } else {
+        qc14Passed = true;
+        qc14Message = `Diretriz cumprida com sucesso (${qc14Measured} dos takes)`;
+      }
+
+      if (!qc14Passed) overallPassed = false;
+    }
+  }
+
+  checks['QC-14_DirectiveAdherence'] = {
+    name: 'Aderência à Diretriz Visual',
+    passed: qc14Passed,
+    measured: qc14Measured,
+    threshold: qc14Threshold,
+    message: qc14Message
+  };
+
+  // QC-15: Legibilidade e Densidade de Legendas (Fase 1B / 2)
+  let qc15Passed = true;
+  let qc15Measured = 'N/A';
+  let qc15Message = 'Legendas ausentes ou desabilitadas';
+  if (assPath && fs.existsSync(assPath)) {
+    try {
+      const content = fs.readFileSync(assPath, 'utf8');
+      const styleMatch = content.match(/Style:\s*Default,[^,]+,(\d+)/i);
+      const fontSize = styleMatch ? parseInt(styleMatch[1], 10) : 48;
+      
+      const dialogueLines = content.split('\n').filter(l => l.startsWith('Dialogue:'));
+      let maxBreaksPerCard = 0;
+      for (const line of dialogueLines) {
+        const textPart = line.split(',').slice(9).join(',');
+        const breaks = (textPart.match(/\\N/g) || []).length;
+        if (breaks > maxBreaksPerCard) maxBreaksPerCard = breaks;
+      }
+
+      const fontOk = fontSize >= 40;
+      const breaksOk = maxBreaksPerCard <= 1;
+
+      qc15Passed = fontOk && breaksOk;
+      qc15Measured = `Fonte: ${fontSize}px, Linhas máx: ${maxBreaksPerCard + 1}`;
+      qc15Message = qc15Passed
+        ? 'Legibilidade ideal (fonte >= 40px e max 2 linhas)'
+        : (!fontOk ? 'Fonte menor que 40px' : 'Mais de 2 linhas por card de legenda');
+    } catch (assErr) {
+      qc15Passed = true;
+      qc15Message = `Aviso ao ler ASS: ${assErr.message}`;
+    }
+  }
+  checks['QC-15_SubtitleLegibility'] = {
+    name: 'Legibilidade e Densidade de Legendas',
+    passed: qc15Passed,
+    measured: qc15Measured,
+    threshold: 'Fonte >= 40px, linhas <= 2 por card',
+    message: qc15Message
+  };
+  if (!qc15Passed) overallPassed = false;
 
   // Salva relatório qc.json
   const totalChecks = Object.keys(checks).length;

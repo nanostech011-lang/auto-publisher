@@ -16,6 +16,7 @@ Cada decisão reflete a busca por **resiliência, escalabilidade, desacoplamento
 | [**ADR 0004**](0004-arquitetura-hexagonal-ports-and-adapters.md) | Adoção de Arquitetura Hexagonal (Ports and Adapters) | **Aceito** | 2026-09-03 | Isolamento completo do domínio de publicação para viabilizar extensão plugável para Instagram Reels e TikTok. |
 | [**ADR 0005**](0005-google-sheets-como-banco-de-dados-e-painel-operacional.md) | Google Sheets como Banco de Dados Operacional e UI | **Aceito** | 2026-09-03 | Eliminação de custos de bancos gerenciados e frontend usando Google Sheets como interface e tabela transacional. |
 | [**ADR 0006**](0006-fonte-de-visuais-e-teto-de-qualidade.md) | Fonte dos Visuais e o Teto de Qualidade do Vídeo Gerado | **Proposto** | 2026-09-15 | Segmentação da premissa de custo zero por domínio: infraestrutura permanece em R$ 0,00, geração de imagem passa a ter custo medido com teto por execução, rompendo o teto de 0,59 MP do tier gratuito. |
+| [**ADR 0007**](0007-modos-de-audio-e-reaproveitamento-de-audio-proprio.md) | Modos de Áudio, Vídeo Puramente Visual e Salvaguardas de Áudio Próprio | **Aceito** | 2026-10-07 | Introdução de `AudioMode` (TTS, NONE, SOURCE_AUDIO), fail-closed `ENABLE_SOURCE_AUDIO`, status `REVISAO_MANUAL` e grafo de áudio universal no FFmpeg. |
 
 ---
 

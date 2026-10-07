@@ -52,7 +52,7 @@ RUN addgroup -S appgroup -g 10001 && \
     adduser -S appuser -u 10001 -G appgroup -h /app -s /bin/sh
 
 # Diretórios de trabalho do pipeline com permissões estritas
-RUN mkdir -p /app/pipeline/scratch /app/pipeline/output /app/logs && \
+RUN mkdir -p /app/pipeline/scratch /app/pipeline/output /app/pipeline/state /app/logs && \
     chown -R appuser:appgroup /app
 
 # Copia camadas Spring Boot do builder (isolamento de cache por frequência de alteração)

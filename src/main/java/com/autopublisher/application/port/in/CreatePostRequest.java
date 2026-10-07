@@ -29,8 +29,27 @@ public record CreatePostRequest(
         Integer categoryId,
         Boolean madeForKids,
         PrivacyStatus privacy,
-        String firstComment
+        String firstComment,
+        PublishStatus status
 ) {
+    public CreatePostRequest(
+            String id,
+            String scheduledTime,
+            Platform platform,
+            String videoDriveId,
+            String thumbnailDriveId,
+            String title,
+            String description,
+            String tags,
+            Integer categoryId,
+            Boolean madeForKids,
+            PrivacyStatus privacy,
+            String firstComment
+    ) {
+        this(id, scheduledTime, platform, videoDriveId, thumbnailDriveId, title,
+                description, tags, categoryId, madeForKids, privacy, firstComment, PublishStatus.PENDENTE);
+    }
+
     private static final Pattern DRIVE_ID_PATTERN = Pattern.compile("/d/([a-zA-Z0-9_-]+)");
 
     /**
@@ -69,7 +88,7 @@ public record CreatePostRequest(
                 cleanVideoId,
                 cleanThumbId,
                 metadata,
-                PublishStatus.PENDENTE,
+                status != null ? status : PublishStatus.PENDENTE,
                 0,
                 (firstComment != null && !firstComment.trim().isEmpty()) ? firstComment.trim() : null
         );

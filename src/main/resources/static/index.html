@@ -515,6 +515,18 @@
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
+                                    <label class="text-[11px] text-slate-600 font-bold block mb-1">Modo de Áudio & Locução</label>
+                                    <select id="studioAudioModeSelect" onchange="onStudioAudioModeChange()" class="w-full input-3d p-2 text-xs font-semibold cursor-pointer">
+                                        <option value="tts" selected>🎙️ Locução Neural PT-BR (Edge-TTS)</option>
+                                        <option value="none">🔇 Sem Locução (Somente Visual / Trilha)</option>
+                                        <option value="source_audio">🎬 Reaproveitar Áudio do Link (YouTube)</option>
+                                    </select>
+                                </div>
+                                <div id="studioDurationWrapper" class="hidden">
+                                    <label class="text-[11px] text-slate-600 font-bold block mb-1">Duração Alvo (segundos)</label>
+                                    <input type="number" id="studioTargetDuration" min="10" max="180" step="1" value="15" class="w-full input-3d p-2 text-xs font-mono font-bold text-center">
+                                </div>
+                                <div id="studioVoiceWrapper">
                                     <label class="text-[11px] text-slate-600 font-bold block mb-1">Voz Neural</label>
                                     <select id="customChannelVoice" onchange="onCustomVoiceChange(); onCustomProfileFieldChange()" class="w-full input-3d p-2 text-xs cursor-pointer">
                                         <option value="pt-BR-AntonioNeural" selected>pt-BR-AntonioNeural (Masculina - Autoridade & Envolvente)</option>
@@ -525,10 +537,10 @@
                                         <option value="pt-BR-BrendaNeural">pt-BR-BrendaNeural (Feminina - Suave, Calma & Acolhedora)</option>
                                     </select>
                                 </div>
-                                <div>
-                                    <label class="text-[11px] text-slate-600 font-bold block mb-1">Link de Afiliado (CTA)</label>
-                                    <input type="text" id="customChannelAffiliate" oninput="onCustomProfileFieldChange(); onCustomChannelAffiliateChange()" placeholder="https://meulink.com/vip" value="https://meulink.com/vip" class="w-full input-3d p-2 text-xs font-mono">
-                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-600 font-bold block mb-1">Link de Afiliado (CTA)</label>
+                                <input type="text" id="customChannelAffiliate" oninput="onCustomProfileFieldChange(); onCustomChannelAffiliateChange()" placeholder="https://meulink.com/vip" value="https://meulink.com/vip" class="w-full input-3d p-2 text-xs font-mono">
                             </div>
                         </div>
 
@@ -581,13 +593,26 @@
                                 </label>
                             </div>
                             
-                            <select id="studioSubtitlesTheme" class="w-full input-3d p-2.5 font-semibold text-xs cursor-pointer">
-                                <option value="GOLD_PUNCH" selected>🟡 Hormozi Gold Punch (Amarelo Neon & Borda Preta - Viral)</option>
-                                <option value="CYAN_ELECTRIC">🔵 Cyan Electric (Ciano Elétrico & Néon Futurista)</option>
-                                <option value="EMERALD_NEON">🟢 Emerald Neon (Verde Esmeralda Dinheiro & Retenção)</option>
-                                <option value="WHITE_CLEAN">⚪ Clean White (Branco Puro & Sombra Profunda)</option>
-                                <option value="TIKTOK_VIRAL">🔴 TikTok High Impact (Vermelho & Amarelo Punch)</option>
-                            </select>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] text-slate-500 font-bold block mb-1">Paleta de Cores:</label>
+                                    <select id="studioSubtitlesTheme" class="w-full input-3d p-2 font-semibold text-xs cursor-pointer">
+                                        <option value="GOLD_PUNCH" selected>🟡 Hormozi Gold Punch (Viral)</option>
+                                        <option value="CYAN_ELECTRIC">🔵 Cyan Electric (Néon)</option>
+                                        <option value="EMERALD_NEON">🟢 Emerald Neon (Verde)</option>
+                                        <option value="WHITE_CLEAN">⚪ Clean White (Branco)</option>
+                                        <option value="TIKTOK_VIRAL">🔴 TikTok High Impact</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-slate-500 font-bold block mb-1">Layout & Ritmo:</label>
+                                    <select id="studioSubtitlesLayout" class="w-full input-3d p-2 font-semibold text-xs cursor-pointer">
+                                        <option value="full_sentences" selected>📄 Orações Completas (Natural)</option>
+                                        <option value="fast_words">⚡ Karaokê Dinâmico (2-3 palavras)</option>
+                                        <option value="static_cards">🃏 Cards Estáticos</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Card de Fonte dos Visuais e Detecção Automática de Clipes -->
@@ -2497,6 +2522,28 @@ try {
             if (sumBadge) sumBadge.innerText = platBadgeText;
         }
 
+        function onStudioAudioModeChange() {
+            const mode = document.getElementById('studioAudioModeSelect')?.value || 'tts';
+            const durWrap = document.getElementById('studioDurationWrapper');
+            const voiceWrap = document.getElementById('studioVoiceWrapper');
+            const voiceLabel = document.getElementById('studioVoiceLabel');
+
+            if (mode === 'none') {
+                if (durWrap) durWrap.classList.remove('hidden');
+                if (voiceWrap) voiceWrap.classList.add('hidden');
+                if (voiceLabel) voiceLabel.innerText = 'Sem Locução (Visual/Trilha)';
+            } else if (mode === 'source_audio') {
+                if (durWrap) durWrap.classList.add('hidden');
+                if (voiceWrap) voiceWrap.classList.add('hidden');
+                if (voiceLabel) voiceLabel.innerText = 'Áudio do Link (YouTube)';
+            } else {
+                if (durWrap) durWrap.classList.add('hidden');
+                if (voiceWrap) voiceWrap.classList.remove('hidden');
+                const v = document.getElementById('customChannelVoice')?.value || 'pt-BR-AntonioNeural';
+                if (voiceLabel) voiceLabel.innerText = v;
+            }
+        }
+
         function setStudioMode(mode) {
             studioCurrentMode = mode;
             const btnYt = document.getElementById('btnModeYoutube');
@@ -3362,6 +3409,11 @@ try {
             const customAffiliate = document.getElementById('customChannelAffiliate')?.value?.trim() || null;
             const enableSubtitles = document.getElementById('studioEnableSubtitles') ? document.getElementById('studioEnableSubtitles').checked : true;
             const subtitlesTheme = document.getElementById('studioSubtitlesTheme')?.value || 'GOLD_PUNCH';
+            const subtitlesLayout = document.getElementById('studioSubtitlesLayout')?.value || 'full_sentences';
+            const audioMode = document.getElementById('studioAudioModeSelect')?.value || 'tts';
+            const targetDurationSec = (audioMode === 'none')
+                ? (parseFloat(document.getElementById('studioTargetDuration')?.value) || 15)
+                : null;
 
             let flowClipsDir = null;
             const useClipsChk = document.getElementById('chkUseFlowClips');
@@ -3384,8 +3436,14 @@ try {
             }
             if (sourceUrl) appendStudioLog(`Fonte de Origem: YouTube (${sourceUrl})`);
             if (visualDirective) appendStudioLog(`🎨 Diretriz Visual: "${visualDirective}"`);
-            appendStudioLog(`🗣️ Voz Neural: ${customVoice || 'Padrão'}`);
-            appendStudioLog(`💬 Legendas: ${enableSubtitles ? `ATIVADAS (${subtitlesTheme})` : 'DESATIVADAS'}`);
+            if (audioMode === 'none') {
+                appendStudioLog(`🔇 Modo de Áudio: SEM LOCUÇÃO (Vídeo puramente visual, duração: ${targetDurationSec || 15}s)`);
+            } else if (audioMode === 'source_audio') {
+                appendStudioLog(`🎬 Modo de Áudio: REAPROVEITAR ÁUDIO DO LINK (Revisão Manual)`);
+            } else {
+                appendStudioLog(`🗣️ Voz Neural: ${customVoice || 'Padrão'}`);
+            }
+            appendStudioLog(`💬 Legendas: ${enableSubtitles ? `ATIVADAS (${subtitlesTheme} • Layout: ${subtitlesLayout})` : 'DESATIVADAS'}`);
 
             if (flowClipsDir) {
                 appendStudioLog(`🎬 [Modo Estúdio Veo] Incorporando ${studioFlowClipsState.clipsCount} clipe(s) externos da pasta "${flowClipsDir}"`);
@@ -3409,6 +3467,9 @@ try {
                         affiliateUrl: customAffiliate,
                         enableSubtitles: enableSubtitles,
                         subtitlesTheme: subtitlesTheme,
+                        subtitlesLayout: subtitlesLayout,
+                        audioMode: audioMode,
+                        targetDurationSec: targetDurationSec,
                         flowClipsDir: flowClipsDir,
                         scriptIndex: scriptIdx,
                         topic: customTopic,

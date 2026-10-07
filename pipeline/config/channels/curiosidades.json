@@ -44,7 +44,7 @@
   },
   "audio_profile": {
     "voice_volume": 1.0,
-    "bg_music_track": "pipeline/assets/music/dark_ambient_loop.mp3",
+    "bg_music_track": "pipeline/assets/music/cinematic_dark_ambient.mp3",
     "bg_music_volume": 0.09,
     "fade_out_seconds": 2.0,
     "target_lufs": -14.0
