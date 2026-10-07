@@ -42,10 +42,14 @@ RUN apk add --no-cache \
     ttf-dejavu \
     ca-certificates \
     tzdata \
-    curl && \
+    curl \
+    gcompat && \
     fc-cache -f -v && \
-    npm install -g pnpm && \
+    npm install -g pnpm@10.32.1 && \
     rm -rf /var/cache/apk/* /root/.npm
+
+ENV pnpm_config_pmOnFail=ignore
+ENV pnpm_config_pm_on_fail=ignore
 
 # Criação de usuário não-root seguro (UID 10001) para Cloud Run e Kubernetes
 RUN addgroup -S appgroup -g 10001 && \
@@ -66,7 +70,7 @@ COPY --chown=appuser:appgroup package.json .npmrc* pnpm-lock.yaml* pnpm-workspac
 COPY --chown=appuser:appgroup pipeline/ /app/pipeline/
 
 # Instala dependências de produção do pipeline Node.js
-RUN pnpm install --prod --ignore-scripts && \
+RUN pnpm install --prod --ignore-scripts --config.pmOnFail=ignore && \
     chown -R appuser:appgroup /app/node_modules
 
 # Alterna para o usuário não-privilegiado
