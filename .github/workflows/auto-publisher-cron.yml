@@ -1,0 +1,57 @@
+name: AutoPublisher Pro - Gatilho Serverless (GitHub Actions)
+
+on:
+  schedule:
+    # Executa a cada 1 hora (ex: 08:00, 09:00, 10:00... UTC)
+    # Totalmente gratuito dentro dos 2.000 minutos mensais do GitHub Actions
+    - cron: '0 * * * *'
+  
+  # Permite acionar manualmente a qualquer momento pelo botão "Run workflow" no GitHub
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Motivo do disparo manual'
+        required: false
+        default: 'Disparo manual sob demanda'
+
+concurrency:
+  group: auto-publisher-cron
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Executar Fila de Postagens Pendentes
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout do Repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 21 LTS (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Permissao de Execucao no Maven Wrapper
+        run: chmod +x ./mvnw
+
+      - name: Executar Lote de Publicacao (Modo Run-Once)
+        env:
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          GOOGLE_SHEETS_SPREADSHEET_ID: ${{ secrets.GOOGLE_SHEETS_SPREADSHEET_ID }}
+          AUTOPUBLISHER_SECURITY_API_KEY: ${{ secrets.AUTOPUBLISHER_SECURITY_API_KEY }}
+          AUTOPUBLISHER_AI_GEMINI_API_KEY: ${{ secrets.AUTOPUBLISHER_AI_GEMINI_API_KEY }}
+          AUTOPUBLISHER_AI_PEXELS_API_KEY: ${{ secrets.AUTOPUBLISHER_AI_PEXELS_API_KEY }}
+          AUTOPUBLISHER_AI_PIXABAY_API_KEY: ${{ secrets.AUTOPUBLISHER_AI_PIXABAY_API_KEY }}
+          SPRING_PROFILES_ACTIVE: prod
+          SPRING_THREADS_VIRTUAL_ENABLED: 'true'
+        run: |
+          echo "========================================================================"
+          echo "Disparando AutoPublisher Pro via GitHub Actions Serverless..."
+          echo "========================================================================"
+          ./mvnw spring-boot:run -Dspring-boot.run.arguments="--autopublisher.run-once=true" --no-transfer-progress

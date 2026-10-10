@@ -11,7 +11,9 @@
     "preinstall": "npx only-allow pnpm",
     "test": "node --test pipeline/test_*.js",
     "test:pipeline": "node --test pipeline/test_*.js",
-    "pipeline": "node pipeline/src/run_pipeline.js"
+    "pipeline": "node pipeline/src/run_pipeline.js",
+    "deploy:cloudrun": "powershell -ExecutionPolicy Bypass -File scripts/deploy-cloudrun.ps1",
+    "deploy:firebase": "powershell -ExecutionPolicy Bypass -File scripts/deploy-firebase.ps1"
   },
   "packageManager": "pnpm@10.32.1",
   "engines": {
