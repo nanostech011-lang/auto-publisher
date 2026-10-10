@@ -303,6 +303,7 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
 
   // 2. Configuração de Áudio / Síntese de Voz Neural
   const audioMode = (options.audioMode || 'tts').toLowerCase();
+  const effectiveVoiceId = options.voiceId || channelProfile.voice_profile?.voice_id || 'pt-BR-AntonioNeural';
   let voiceResult = null;
   let audioPath = null;
   let targetDurationSeconds = 0;
@@ -361,7 +362,7 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
   } else {
     console.log('\n>>> [2/6] Sintetizando locucao neural com Edge-TTS e timestamps...');
     const voiceProfile = channelProfile.voice_profile || {};
-    const voiceId = options.voiceId || voiceProfile.voice_id || 'pt-BR-AntonioNeural';
+    const voiceId = effectiveVoiceId;
     // Taxa e tom estritamente calibrados para fala humana 100% natural, sem distorção robótica (Decisão D6: [-6%, +4%])
     const rawVoiceRate = options.voiceRate || (options.voiceId ? '+0%' : (voiceProfile.rate || '+0%'));
     const voiceRate = clampRate(rawVoiceRate, '+0%');
@@ -644,7 +645,7 @@ export async function runSinglePipeline(options, batchIndex = 0, totalBatch = 1)
       })),
       stages: [
         { id: 'script', status: 'ok', durationSeconds: voiceResult.durationSeconds },
-        { id: 'tts', status: 'ok', voiceId },
+        { id: 'tts', status: 'ok', voiceId: effectiveVoiceId },
         { id: 'subtitles', status: 'ok', theme: channelSubTheme },
         { id: 'visuals', status: 'ok', clipsCount: videoClips.length },
         { id: 'render', status: 'ok', durationSeconds: renderResult.durationSeconds },

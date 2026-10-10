@@ -2908,6 +2908,10 @@ try {
                 });
 
                 if (res.ok) {
+                    const contentType = res.headers.get('content-type') || '';
+                    if (!contentType.includes('application/json')) {
+                        throw new Error('Servidor retornou HTML em vez de JSON. Certifique-se de acessar o painel pelo backend Spring Boot em http://localhost:8085');
+                    }
                     const data = await res.json();
                     const scriptObj = data.script || data;
                     scriptObj.fromYouTube = true;
@@ -3545,6 +3549,8 @@ try {
 
                 const res = await fetch('/api/v1/dashboard/pipeline/flow-clips-status', { headers });
                 if (res.ok) {
+                    const contentType = res.headers.get('content-type') || '';
+                    if (!contentType.includes('application/json')) return;
                     const data = await res.json();
                     studioFlowClipsState = data;
                     renderFlowClipsStatusUI(data);
