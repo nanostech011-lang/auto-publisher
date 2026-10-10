@@ -2,6 +2,7 @@ import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import fs from 'fs';
 import path from 'path';
 import ffmpeg from './ffmpeg_env.js';
+import { estimateWordBoundaries } from './timing_estimator.js';
 
 function sanitizeTtsText(str) {
   if (!str) return '';
@@ -13,6 +14,66 @@ function sanitizeTtsText(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
+}
+
+/**
+ * Fallback resiliente: síntese direta em arquivo (sem metadados de boundary no WebSocket).
+ * Evita que a Microsoft encerre o socket prematuramente em textos extensos.
+ */
+async function _synthesizeDirectToFile({ text, voice, outputAudioPath }) {
+  const tts = new MsEdgeTTS();
+  await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3);
+
+  const dir = path.dirname(outputAudioPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  const safeText = sanitizeTtsText(text);
+  const tempDir = path.join(dir, `tts_tmp_${Date.now()}`);
+  fs.mkdirSync(tempDir, { recursive: true });
+
+  const res = await tts.toFile(tempDir, safeText);
+
+  if (!res.audioFilePath || !fs.existsSync(res.audioFilePath)) {
+    throw new Error('Falha ao gerar arquivo de áudio via Edge-TTS toFile.');
+  }
+
+  if (fs.existsSync(outputAudioPath)) {
+    try { fs.unlinkSync(outputAudioPath); } catch (ignored) {}
+  }
+  fs.renameSync(res.audioFilePath, outputAudioPath);
+
+  try {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  } catch (ignored) {}
+
+  return new Promise((resolve, reject) => {
+    ffmpeg.ffprobe(outputAudioPath, (err, metadata) => {
+      if (err || !metadata?.format?.duration) {
+        return reject(new Error('Falha ao inspecionar áudio gerado pelo Edge-TTS: ' + (err?.message || 'duração ausente')));
+      }
+
+      const durSec = metadata.format.duration;
+      const durationMs = Math.round(durSec * 1000);
+      const stats = fs.statSync(outputAudioPath);
+
+      const boundaries = estimateWordBoundaries(text, durSec).map(wb => ({
+        word: wb.word,
+        startMs: Math.round(wb.start * 1000),
+        endMs: Math.round(wb.end * 1000),
+        durationMs: Math.round((wb.end - wb.start) * 1000)
+      }));
+
+      resolve({
+        audioPath: outputAudioPath,
+        fileSizeBytes: stats.size,
+        durationMs: durationMs,
+        durationSeconds: Number(durSec.toFixed(2)),
+        wordBoundaries: boundaries
+      });
+    });
+  });
 }
 
 async function _synthesizeSingleAttempt({
@@ -47,11 +108,49 @@ async function _synthesizeSingleAttempt({
       }
     }, 35000);
 
-    const safeReject = (err) => {
+    const safeReject = async (err) => {
       if (!settled) {
         settled = true;
         clearTimeout(timeoutTimer);
         try { tts.close(); } catch (ignored) {}
+
+        // Se o WebSocket encerrou prematuramente, mas o arquivo já tem tamanho substancial (>= 8KB),
+        // valida o áudio existente antes de descartar!
+        if (fs.existsSync(outputAudioPath)) {
+          const stats = fs.statSync(outputAudioPath);
+          if (stats.size >= 8192) {
+            try {
+              const probeRes = await new Promise((resProbe, rejProbe) => {
+                ffmpeg.ffprobe(outputAudioPath, (probeErr, meta) => {
+                  if (!probeErr && meta?.format?.duration && meta.format.duration >= 3.0) {
+                    resProbe(meta.format.duration);
+                  } else {
+                    rejProbe(probeErr || new Error('Duração insuficiente'));
+                  }
+                });
+              });
+
+              const durMs = Math.round(probeRes * 1000);
+              const boundaries = wordBoundaries.length >= 5 ? wordBoundaries : estimateWordBoundaries(text, probeRes).map(wb => ({
+                word: wb.word,
+                startMs: Math.round(wb.start * 1000),
+                endMs: Math.round(wb.end * 1000),
+                durationMs: Math.round((wb.end - wb.start) * 1000)
+              }));
+
+              return resolve({
+                audioPath: outputAudioPath,
+                fileSizeBytes: stats.size,
+                durationMs: durMs,
+                durationSeconds: Number(probeRes.toFixed(2)),
+                wordBoundaries: boundaries
+              });
+            } catch (recoveryErr) {
+              // segue para rejeição e fallback para toFile
+            }
+          }
+        }
+
         try { if (fs.existsSync(outputAudioPath)) fs.unlinkSync(outputAudioPath); } catch (ignored) {}
         reject(err);
       }
@@ -156,7 +255,7 @@ async function _synthesizeSingleAttempt({
 
 /**
  * Sintetizador de voz neural Edge-TTS com extração de word boundaries e retentativas automáticas.
- * Custo R$ 0,00 e resiliência a oscilações temporárias de WebSocket.
+ * Custo R$ 0,00 e resiliência a oscilações temporárias de WebSocket com fallback para toFile.
  */
 export async function synthesizeVoiceWithTimestamps({
   text,
@@ -190,5 +289,16 @@ export async function synthesizeVoiceWithTimestamps({
     }
   }
 
-  throw lastError;
+  // Fallback de alta resiliência: se o streaming WebSocket oscilar, executa síntese direta estável em arquivo
+  console.log('[Voice Synthesizer] 🛡️ Acionando síntese direta estável (toFile) como fallback de máxima resiliência...');
+  try {
+    return await _synthesizeDirectToFile({
+      text,
+      voice,
+      outputAudioPath
+    });
+  } catch (directErr) {
+    console.error('[Voice Synthesizer] ❌ Falha também no fallback toFile:', directErr.message);
+    throw lastError || directErr;
+  }
 }
