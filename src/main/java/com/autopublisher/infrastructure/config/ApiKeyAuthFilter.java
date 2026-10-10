@@ -50,6 +50,10 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
+        // Preflight CORS requests nunca exigem API key e devem passar livremente
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
         String path = request.getRequestURI();
         // Permite navegacao estatica, documentacao e endpoints publicos
         if (!path.startsWith("/api/")) {

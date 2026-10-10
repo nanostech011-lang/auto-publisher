@@ -5,6 +5,7 @@ on:
     branches:
       - main
     paths:
+      - 'frontend/**'
       - 'src/main/resources/static/**'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
@@ -34,7 +35,7 @@ jobs:
       - name: Fazer Upload do Artefato HTML Estatico
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'src/main/resources/static'
+          path: 'frontend'
 
       - name: Publicar no GitHub Pages
         id: deployment

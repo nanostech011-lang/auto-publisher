@@ -54,6 +54,9 @@ class ApiKeyAuthFilterTest {
 
         MockHttpServletRequest apiReq = new MockHttpServletRequest("GET", "/api/v1/dashboard/overview");
         assertThat(filter.shouldNotFilter(apiReq)).isFalse();
+
+        MockHttpServletRequest optionsReq = new MockHttpServletRequest("OPTIONS", "/api/v1/dashboard/overview");
+        assertThat(filter.shouldNotFilter(optionsReq)).isTrue();
     }
 
     @Test

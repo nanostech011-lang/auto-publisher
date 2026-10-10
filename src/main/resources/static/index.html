@@ -1785,6 +1785,140 @@ try {
             });
         });
 
+        
+        // ==========================================
+        // GESTÃO DE URL BASE DA API & CORS (DECOUPLED FRONTEND)
+        // ==========================================
+        function getApiBaseUrl() {
+            let url = localStorage.getItem('autopublisher_api_base_url');
+            if (url && url.trim() !== '') {
+                return url.trim().replace(/\/+$/, '');
+            }
+            const hostname = window.location.hostname;
+            const isHostedRemotely = hostname.endsWith('github.io') || hostname.endsWith('pages.dev') || hostname.endsWith('vercel.app') || hostname.endsWith('netlify.app');
+            if (!isHostedRemotely) {
+                return window.location.origin;
+            }
+            return '';
+        }
+
+        function getApiUrl(path) {
+            if (!path) return '';
+            if (path.startsWith('http://') || path.startsWith('https://')) return path;
+            const base = getApiBaseUrl();
+            const cleanPath = path.startsWith('/') ? path : '/' + path;
+            return base ? (base + cleanPath) : cleanPath;
+        }
+
+        function openBackendModal() {
+            const modal = document.getElementById('modalBackendConfig');
+            if (!modal) return;
+            const inputUrl = document.getElementById('inputBackendBaseUrl');
+            const inputKey = document.getElementById('inputBackendApiKey');
+            const resBox = document.getElementById('backendTestResult');
+            if (resBox) resBox.className = 'hidden';
+            if (inputUrl) inputUrl.value = localStorage.getItem('autopublisher_api_base_url') || '';
+            if (inputKey) inputKey.value = getApiKey() || '';
+            modal.classList.remove('hidden');
+        }
+
+        function closeBackendModal() {
+            const modal = document.getElementById('modalBackendConfig');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function setPresetBackend(preset) {
+            const inputUrl = document.getElementById('inputBackendBaseUrl');
+            if (inputUrl) inputUrl.value = preset;
+        }
+
+        async function testBackendUrlConnection() {
+            const inputUrl = document.getElementById('inputBackendBaseUrl');
+            const resBox = document.getElementById('backendTestResult');
+            if (!resBox) return;
+
+            let url = (inputUrl ? inputUrl.value : '').trim();
+            if (url) url = url.replace(/\/+$/, '');
+            const testEndpoint = url ? (url + '/api/v1/health') : '/api/v1/health';
+
+            resBox.className = 'p-3 rounded-xl border bg-slate-50 border-slate-300 text-slate-700 block text-xs font-mono';
+            resBox.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-purple-600 mr-1.5"></i> Testando comunicação com ' + testEndpoint + '...';
+
+            try {
+                const start = Date.now();
+                const res = await fetch(testEndpoint, { method: 'GET', signal: AbortSignal.timeout(6000) });
+                const elapsed = Date.now() - start;
+                if (res.ok) {
+                    const data = await res.json();
+                    resBox.className = 'p-3 rounded-xl border bg-emerald-50 border-emerald-300 text-emerald-800 block text-xs font-mono';
+                    resBox.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-600 mr-1.5"></i> Conexão estabelecida com sucesso! (' + elapsed + 'ms)<br>Serviço: ' + (data.service || 'autopublisher') + ' | Status: ' + (data.status || 'UP');
+                } else {
+                    resBox.className = 'p-3 rounded-xl border bg-amber-50 border-amber-300 text-amber-800 block text-xs font-mono';
+                    resBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-600 mr-1.5"></i> Resposta inesperada do servidor: HTTP ' + res.status + ' ' + res.statusText;
+                }
+            } catch (err) {
+                resBox.className = 'p-3 rounded-xl border bg-rose-50 border-rose-300 text-rose-800 block text-xs font-mono';
+                resBox.innerHTML = '<i class="fa-solid fa-circle-xmark text-rose-600 mr-1.5"></i> Falha ao conectar: ' + err.message + '<br><span class="text-[10px] text-slate-500">Verifique se o backend está ligado e se o CORS está liberado.</span>';
+            }
+        }
+
+        async function saveBackendConfig() {
+            const inputUrl = document.getElementById('inputBackendBaseUrl');
+            const inputKey = document.getElementById('inputBackendApiKey');
+            const url = (inputUrl ? inputUrl.value : '').trim();
+            const key = (inputKey ? inputKey.value : '').trim();
+
+            if (url) {
+                localStorage.setItem('autopublisher_api_base_url', url.replace(/\/+$/, ''));
+            } else {
+                localStorage.removeItem('autopublisher_api_base_url');
+            }
+
+            if (key) {
+                localStorage.setItem('auto_publisher_api_key', key);
+            }
+
+            closeBackendModal();
+            showToast('Configurações de backend salvas! Reconectando...', 'success');
+            await checkBackendConnection();
+            if (typeof loadAllDashboardData === 'function') {
+                loadAllDashboardData();
+            }
+        }
+
+        async function checkBackendConnection() {
+            const dot = document.getElementById('dotBackend');
+            const badge = document.getElementById('backendStatusText');
+            const base = getApiBaseUrl();
+
+            const isRemoteHost = window.location.hostname.endsWith('github.io') || window.location.hostname.endsWith('pages.dev') || window.location.hostname.endsWith('vercel.app');
+            if (!base && isRemoteHost) {
+                if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping shrink-0';
+                if (badge) badge.innerText = 'Conectar API';
+                return false;
+            }
+
+            try {
+                const testUrl = getApiUrl('/api/v1/health');
+                const start = Date.now();
+                const res = await fetch(testUrl, { method: 'GET', signal: AbortSignal.timeout(5000) });
+                const elapsed = Date.now() - start;
+                if (res.ok) {
+                    if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shrink-0';
+                    if (badge) badge.innerText = 'API ' + elapsed + 'ms';
+                    return true;
+                } else {
+                    if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0';
+                    if (badge) badge.innerText = 'HTTP ' + res.status;
+                    return false;
+                }
+            } catch (e) {
+                if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0';
+                if (badge) badge.innerText = 'API Offline';
+                return false;
+            }
+        }
+
         // Gestão de API Key
         function getApiKey() {
             let key = localStorage.getItem('auto_publisher_api_key');
@@ -1899,7 +2033,7 @@ try {
                 const key = getApiKey();
                 if (key) headers['X-API-KEY'] = key;
 
-                const res = await fetch('/api/v1/dashboard/credentials', { headers });
+                const res = await fetch(getApiUrl('/api/v1/dashboard/credentials'), { headers });
                 if (res.ok) {
                     const data = await res.json();
                     const dotSheets = document.getElementById('dotSheets');
@@ -1973,7 +2107,7 @@ try {
                 if (key) headers['X-API-KEY'] = key;
 
                 try {
-                    const tenantRes = await fetch('/api/v1/dashboard/tenant/me', { headers });
+                    const tenantRes = await fetch(getApiUrl('/api/v1/dashboard/tenant/me'), { headers });
                     if (tenantRes.ok) {
                         const tenantData = await tenantRes.json();
                         const tBadge = document.getElementById('activeTenantName');
@@ -1983,7 +2117,7 @@ try {
                     console.debug('Tenant info:', te);
                 }
 
-                const res = await fetch('/api/v1/dashboard/posts', { headers });
+                const res = await fetch(getApiUrl('/api/v1/dashboard/posts'), { headers });
                 if (res.ok) {
                     const data = await res.json();
                     allPostsData = Array.isArray(data) ? data : (data.posts || []);
@@ -2284,7 +2418,7 @@ try {
                 const key = getApiKey();
                 if (key) headers['X-API-KEY'] = key;
 
-                const res = await fetch('/api/v1/publisher/run', {
+                const res = await fetch(getApiUrl('/api/v1/publisher/run'), {
                     method: 'POST',
                     headers,
                     body: JSON.stringify({ triggerSource: 'DASHBOARD_MANUAL' })
@@ -2480,7 +2614,7 @@ try {
                 const key = getApiKey();
                 if (key) headers['X-API-KEY'] = key;
 
-                const res = await fetch('/api/v1/dashboard/posts', {
+                const res = await fetch(getApiUrl('/api/v1/dashboard/posts'), {
                     method: 'POST',
                     headers,
                     body: JSON.stringify(payload)
@@ -2893,7 +3027,7 @@ try {
                 const key = getApiKey();
                 if (key) headers['X-API-KEY'] = key;
 
-                const res = await fetch('/api/v1/dashboard/pipeline/analyze-youtube', {
+                const res = await fetch(getApiUrl('/api/v1/dashboard/pipeline/analyze-youtube'), {
                     method: 'POST',
                     headers,
                     body: JSON.stringify({ 
@@ -3064,7 +3198,7 @@ try {
                 const key = getApiKey();
                 if (key) headers['X-API-KEY'] = key;
 
-                const res = await fetch('/api/v1/dashboard/pipeline/preview-script', {
+                const res = await fetch(getApiUrl('/api/v1/dashboard/pipeline/preview-script'), {
                     method: 'POST',
                     headers,
                     body: JSON.stringify({
@@ -3482,7 +3616,7 @@ try {
                 const key = getApiKey();
                 if (key) headers['X-API-KEY'] = key;
 
-                const res = await fetch('/api/v1/dashboard/pipeline/run', {
+                const res = await fetch(getApiUrl('/api/v1/dashboard/pipeline/run'), {
                     method: 'POST',
                     headers,
                     body: JSON.stringify({
@@ -3547,7 +3681,7 @@ try {
                 const key = getApiKey();
                 if (key) headers['X-API-KEY'] = key;
 
-                const res = await fetch('/api/v1/dashboard/pipeline/flow-clips-status', { headers });
+                const res = await fetch(getApiUrl('/api/v1/dashboard/pipeline/flow-clips-status'), { headers });
                 if (res.ok) {
                     const contentType = res.headers.get('content-type') || '';
                     if (!contentType.includes('application/json')) return;
@@ -3644,7 +3778,7 @@ try {
                 const key = getApiKey();
                 if (key) headers['X-API-KEY'] = key;
 
-                const res = await fetch('/api/v1/dashboard/pipeline/flow-package', {
+                const res = await fetch(getApiUrl('/api/v1/dashboard/pipeline/flow-package'), {
                     method: 'POST',
                     headers,
                     body: JSON.stringify({
@@ -3790,7 +3924,7 @@ try {
                     const key = getApiKey();
                     if (key) headers['X-API-KEY'] = key;
 
-                    const res = await fetch(`/api/v1/dashboard/pipeline/jobs/${jobId}`, { headers });
+                    const res = await fetch(getApiUrl(`/api/v1/dashboard/pipeline/jobs/${jobId}`), { headers });
                     if (res.ok) {
                         const job = await res.json();
                         setStudioProgress(job.progressPercent, job.currentStep);
@@ -3857,13 +3991,13 @@ try {
             const btnDownload = document.getElementById('btnDownloadVideo');
 
             if (videoPath) {
-                const mediaUrl = `/api/v1/dashboard/pipeline/media?path=${encodeURIComponent(videoPath)}`;
+                const mediaUrl = getApiUrl(`/api/v1/dashboard/pipeline/media?path=${encodeURIComponent(videoPath)}`);
                 if (videoPlayer) videoPlayer.src = mediaUrl;
                 if (btnDownload) btnDownload.href = mediaUrl;
             }
 
             if (thumbPath && thumbPreview) {
-                thumbPreview.src = `/api/v1/dashboard/pipeline/media?path=${encodeURIComponent(thumbPath)}`;
+                thumbPreview.src = getApiUrl(`/api/v1/dashboard/pipeline/media?path=${encodeURIComponent(thumbPath)}`);
             } else if (thumbPreview) {
                 thumbPreview.src = document.getElementById('studioYtThumb')?.src || 'docs/manual/dashboard_screenshot.png';
             }
@@ -3963,7 +4097,7 @@ try {
             const previewDownload = document.getElementById('detailDownloadVideoLink');
 
             if (post.videoDriveId && (post.videoDriveId.includes('pipeline') || post.videoDriveId.endsWith('.mp4'))) {
-                const streamUrl = `/api/v1/dashboard/pipeline/media?path=${encodeURIComponent(post.videoDriveId)}`;
+                const streamUrl = getApiUrl(`/api/v1/dashboard/pipeline/media?path=${encodeURIComponent(post.videoDriveId)}`);
                 if (previewVideo) previewVideo.src = streamUrl;
                 if (previewDownload) previewDownload.href = streamUrl;
                 if (previewContainer) previewContainer.classList.remove('hidden');
@@ -4003,7 +4137,7 @@ try {
                 const key = getApiKey();
                 if (key) headers['X-API-KEY'] = key;
 
-                const res = await fetch(`/api/v1/dashboard/posts/${postId}/retry`, {
+                const res = await fetch(getApiUrl(`/api/v1/dashboard/posts/${postId}/retry`), {
                     method: 'POST',
                     headers
                 });
@@ -4067,5 +4201,77 @@ try {
             }, 3500);
         }
     </script>
+
+    <!-- Modal: Configuração de Backend & Conexão Serverless -->
+    <div id="modalBackendConfig" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-view">
+        <div class="card-3d max-w-lg w-full p-6 space-y-5 bg-white shadow-2xl border border-slate-200">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-server"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-sm">Conexão com o Backend Serverless</h3>
+                        <p class="text-[11px] text-slate-500">Defina o endpoint da API para esta interface</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeBackendModal()" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-800 mb-1">URL Base da API (Cloud Run ou Local)</label>
+                    <div class="relative">
+                        <input type="url" id="inputBackendBaseUrl" placeholder="Ex: https://autopublisher-xxxxx.a.run.app ou http://localhost:8085" class="w-full input-3d p-2.5 font-mono text-xs">
+                    </div>
+                    <p class="text-[11px] text-slate-500 mt-1">Deixe em branco se a interface estiver rodando no mesmo servidor/porta do backend.</p>
+                </div>
+
+                <div class="flex gap-2 items-center flex-wrap">
+                    <button type="button" onclick="testBackendUrlConnection()" id="btnTestBackend" class="btn-3d-white px-3 py-1.5 flex items-center gap-1.5 font-bold">
+                        <i class="fa-solid fa-bolt text-amber-500"></i>
+                        <span>Testar Conexão</span>
+                    </button>
+                    <button type="button" onclick="setPresetBackend('http://localhost:8085')" class="text-[11px] text-slate-600 hover:text-purple-600 px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
+                        localhost:8085
+                    </button>
+                    <button type="button" onclick="setPresetBackend('')" class="text-[11px] text-slate-600 hover:text-purple-600 px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
+                        Mesmo Host (Origem)
+                    </button>
+                </div>
+
+                <!-- Resultado do Teste de Conexão -->
+                <div id="backendTestResult" class="hidden p-3 rounded-xl border text-xs font-mono"></div>
+
+                <div>
+                    <label class="block font-bold text-slate-800 mb-1">Chave de Acesso (X-API-KEY)</label>
+                    <div class="relative">
+                        <input type="password" id="inputBackendApiKey" placeholder="sua-chave-secreta..." class="w-full input-3d p-2.5 font-mono text-xs pr-9">
+                        <button type="button" onclick="toggleVisibility('inputBackendApiKey', 'eyeBackendApiKey')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
+                            <i class="fa-solid fa-eye" id="eyeBackendApiKey"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-purple-50/80 border border-purple-200 rounded-xl text-[11px] text-purple-900 space-y-1">
+                    <div class="font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-lock text-purple-600"></i> Armazenamento Seguro no Navegador
+                    </div>
+                    <div>Os dados ficam salvos exclusivamente no seu navegador (<code>localStorage</code>) e são enviados apenas nos headers das requisições autorizadas.</div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                <button type="button" onclick="closeBackendModal()" class="px-4 py-2 btn-3d-white text-xs">Cancelar</button>
+                <button type="button" onclick="saveBackendConfig()" class="px-5 py-2 btn-3d-primary text-xs flex items-center gap-1.5">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span>Salvar & Conectar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
