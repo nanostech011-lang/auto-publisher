@@ -1797,7 +1797,10 @@ try {
             const hostname = window.location.hostname;
             const isHostedRemotely = hostname.endsWith('github.io') || hostname.endsWith('pages.dev') || hostname.endsWith('vercel.app') || hostname.endsWith('netlify.app');
             if (!isHostedRemotely) {
-                return window.location.origin;
+                if (window.location.port === '8085' || window.location.port === '8080') {
+                    return window.location.origin;
+                }
+                return 'http://localhost:8085';
             }
             return '';
         }
@@ -1839,7 +1842,7 @@ try {
 
             let url = (inputUrl ? inputUrl.value : '').trim();
             if (url) url = url.replace(/\/+$/, '');
-            const testEndpoint = url ? (url + '/api/v1/health') : '/api/v1/health';
+            const testEndpoint = url ? (url + '/api/v1/health') : getApiUrl('/api/v1/health');
 
             resBox.className = 'p-3 rounded-xl border bg-slate-50 border-slate-300 text-slate-700 block text-xs font-mono';
             resBox.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-purple-600 mr-1.5"></i> Testando comunicação com ' + testEndpoint + '...';
