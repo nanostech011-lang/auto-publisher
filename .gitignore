@@ -9,7 +9,6 @@
 !skills.json
 !plugins.json
 !mcp_config.example.json
-!firebase.json
 !pipeline/**/*.json
 credentials.json
 client_secret*.json
@@ -61,7 +60,6 @@ playwright/.cache/
 docs/manual/manual_screenshot.png
 docs/manual/test_run/
 .playwright-mcp/
-.firebase/
 
 # Pipeline & Renderização de Mídia (Zero-Copy)
 # Bloqueio de mídias geradas e scratch temporário
