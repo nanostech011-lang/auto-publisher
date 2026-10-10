@@ -284,7 +284,7 @@
                 </button>
 
                 <!-- Documentation -->
-                <a href="/docs/manual/index.html" target="_blank" class="text-xs text-slate-600 hover:text-purple-600 px-2.5 py-1.5 rounded-lg hover:bg-purple-50 transition-colors hidden xl:flex items-center gap-1.5 font-medium" title="Abrir Manual Operacional">
+                <a href="https://github.com/nanostech011-lang/auto-publisher/blob/main/docs/manual/index.html" target="_blank" class="text-xs text-slate-600 hover:text-purple-600 px-2.5 py-1.5 rounded-lg hover:bg-purple-50 transition-colors hidden xl:flex items-center gap-1.5 font-medium" title="Abrir Manual Operacional">
                     <i class="fa-solid fa-book-open text-purple-500"></i>
                     <span>Manual</span>
                 </a>
@@ -307,6 +307,22 @@
     </header>
 
     <!-- Main Container -->
+    
+    <!-- Banner de Aviso quando no GitHub Pages sem Backend Conectado -->
+    <div id="backendDisconnectedBanner" class="hidden bg-gradient-to-r from-amber-500 via-purple-600 to-indigo-600 text-white px-4 py-2.5 shadow-md">
+        <div class="max-w-[1600px] mx-auto flex items-center justify-between gap-3 flex-wrap text-xs">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation text-amber-200 text-sm"></i>
+                <span class="font-bold">Backend Não Conectado:</span>
+                <span>Informe a URL do seu backend serverless (Google Cloud Run ou local) para operar este painel no GitHub Pages.</span>
+            </div>
+            <button type="button" onclick="openBackendModal()" class="px-3.5 py-1 bg-white text-purple-900 font-bold rounded-lg shadow-sm hover:bg-purple-50 transition-all flex items-center gap-1.5 shrink-0 cursor-pointer">
+                <i class="fa-solid fa-plug text-purple-600"></i>
+                <span>Conectar Backend Agora</span>
+            </button>
+        </div>
+    </div>
+
     <main class="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 flex-1 w-full">
 
         <!-- =================================================================== -->
@@ -1789,6 +1805,30 @@ try {
         // ==========================================
         // GESTÃO DE URL BASE DA API & CORS (DECOUPLED FRONTEND)
         // ==========================================
+        
+        // ==========================================
+        // FETCH GUARD: Intercepta chamadas 404/405 quando o Backend não estiver conectado
+        // ==========================================
+        const _origFetch = window.fetch;
+        window.fetch = async function(resource, init) {
+            let urlStr = (typeof resource === 'string') ? resource : (resource ? resource.url : '');
+            const isRemote = window.location.hostname.endsWith('github.io') || window.location.hostname.endsWith('pages.dev');
+            if (isRemote && !getApiBaseUrl()) {
+                if (urlStr && (urlStr.startsWith('/api/') || urlStr.includes('/api/v1/'))) {
+                    console.warn('[AutoPublisher] Chamada para ' + urlStr + ' prevenida: URL do Backend ainda não configurada no GitHub Pages.');
+                    return new Response(JSON.stringify({ 
+                        status: 'UNCONFIGURED', 
+                        message: 'Configure a URL do backend no topo da tela.' 
+                    }), {
+                        status: 503,
+                        statusText: 'Backend Not Configured',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                }
+            }
+            return _origFetch.apply(this, arguments);
+        };
+
         function getApiBaseUrl() {
             let url = localStorage.getItem('autopublisher_api_base_url');
             if (url && url.trim() !== '') {
@@ -1898,6 +1938,8 @@ try {
             if (!base && isRemoteHost) {
                 if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping shrink-0';
                 if (badge) badge.innerText = 'Conectar API';
+                const banner = document.getElementById('backendDisconnectedBanner');
+                if (banner) banner.classList.remove('hidden');
                 return false;
             }
 
@@ -1909,6 +1951,8 @@ try {
                 if (res.ok) {
                     if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shrink-0';
                     if (badge) badge.innerText = 'API ' + elapsed + 'ms';
+                    const banner = document.getElementById('backendDisconnectedBanner');
+                    if (banner) banner.classList.add('hidden');
                     return true;
                 } else {
                     if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0';
@@ -4258,6 +4302,17 @@ try {
                     </div>
                 </div>
 
+                
+                <div class="p-3 bg-purple-50/90 border border-purple-200 rounded-xl text-[11px] text-purple-900 space-y-2">
+                    <div class="font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-cloud text-purple-600"></i> Como Conectar seu Backend ao GitHub Pages:
+                    </div>
+                    <ul class="list-disc pl-4 space-y-1 text-slate-700">
+                        <li><strong>Google Cloud Run (Produção R$ 0,00):</strong> Cole a URL gerada pelo Cloud Run (ex: <code>https://autopublisher-xxxxx.a.run.app</code>).</li>
+                        <li><strong>Desenvolvimento Local com Túnel HTTPS:</strong> Use <code>npx localtunnel --port 8085</code> ou <code>cloudflared</code> no seu PC e cole a URL HTTPS aqui.</li>
+                        <li><strong>Executar Localmente no Navegador:</strong> Se você quiser rodar 100% no seu PC sem internet, abra diretamente <code>http://localhost:8085</code> no seu navegador.</li>
+                    </ul>
+                </div>
                 <div class="p-3 bg-purple-50/80 border border-purple-200 rounded-xl text-[11px] text-purple-900 space-y-1">
                     <div class="font-bold flex items-center gap-1.5">
                         <i class="fa-solid fa-lock text-purple-600"></i> Armazenamento Seguro no Navegador
